@@ -1,22 +1,19 @@
-export const RADAR_BG = 0x050505;
-export const GRID_COLOR = 0x111111;
-export const GRID_SPACING = 30;
+export const RADAR_BG = 0x0e1513;
+export const GRID_COLOR = 0x70fdc3;
+export const GRID_SPACING = 28;
 
-export const PLAYER_COLOR = '#ffffff';
+export const MINT_COLOR = 0x70fdc3;
+export const CORAL_COLOR = 0xffb4ab;
+export const PLAYER_COLOR = '#70fdc3';
 export const PLAYER_SPEED = 180;
-export const PLAYER_RADIUS = 8;
+export const PLAYER_RADIUS = 11;
 
-export const SPORE_COLOR = '#e0e0e0';
-export const SPORE_RADIUS = 3;
 export const SPORE_SPEED = 350;
 export const SPORE_FIRE_RATE = 4;
 
-export const ANTIBODY_COLOR = '#cc3333';
-export const ANTIBODY_RADIUS = 4;
+export const ANTIBODY_COLOR = '#ffb4ab';
 
-export const NODE_STROKE_COLOR = 0x333333;
-export const NODE_FILL_COLOR = 0x1a1a1a;
-export const NODE_RADIUS = 20;
+export const HOST_SIZE = 52;
 
 export const HIT_FLASH_DURATION = 0.1;
 
@@ -39,6 +36,4 @@ export const PATTERN_INTERVALS: Record<string, number> = {
   summon: 4.0,
 };
 
-export const ANTIBODY_CHARS = ['v', 'x', '*'] as const;
-export const PLAYER_CHAR = '[+]';
-export const NODE_CHAR = 'H';
+export const MONO_FONT = "'JetBrains Mono', monospace";

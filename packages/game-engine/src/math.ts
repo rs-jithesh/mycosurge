@@ -11,11 +11,14 @@ import {
   WATER_YIELD_THRESHOLD,
   NUTRIENT_YIELD_THRESHOLD,
   STARVATION_THRESHOLD,
+  STARVATION_STATE_THRESHOLD,
   LYSATE_RAW_DECAY_RATE,
   LYSATE_MAX_STABILIZE_RATE,
   LYSATE_STABILIZE_WATER_COST,
   LYSATE_STABILIZE_NUTRIENT_COST,
   LYSATE_CAP_EXPAND_AMOUNT,
+  SKILL_COST_SCALE,
+  TRAUMA_BASE_DURATION,
   getLysateCapExpandCost,
 } from '@mycosurge/config';
 import type { GameState } from './state';
@@ -56,11 +59,20 @@ export function getTraumaReduction(allocations: Record<string, number>): number 
 
 export function getEffectiveMaxBiomass(state: GameState): number {
   const bonus = getMaxBiomassBonus(state.skillAllocations);
-  return MAX_BIOMASS_BASE * (1 + bonus);
+  return state.maxBiomass * (1 + bonus);
+}
+
+/** True when either reserve is below the starvation-state threshold. */
+export function isStarving(state: GameState): boolean {
+  const waterRatio = state.waterCap > 0 ? state.water / state.waterCap : 1;
+  const nutrientRatio = state.nutrientsCap > 0 ? state.nutrients / state.nutrientsCap : 1;
+  return waterRatio < STARVATION_STATE_THRESHOLD || nutrientRatio < STARVATION_STATE_THRESHOLD;
 }
 
 export function getEffectiveBiomassPerSec(state: GameState): number {
   if (state.isInTrauma) return 0;
+  // Starvation halts passive growth in the full game (the tutorial manages its own economy).
+  if (state.gamePhase === 'active' && isStarving(state)) return 0;
 
   const alertMult = getAlertMultiplier(state.alertLevel);
   const depletionMult = getDepletionMultiplier(state.assimilationPercent);
@@ -133,23 +145,41 @@ export function expandBiomassCap(state: GameState): boolean {
   return true;
 }
 
+export type CapResource = 'water' | 'nutrients' | 'biomass';
+
+export function getCapExpandCost(state: GameState, resource: CapResource): number {
+  const count =
+    resource === 'water'
+      ? getWaterExpandCount(state)
+      : resource === 'nutrients'
+        ? getNutrientExpandCount(state)
+        : getBiomassExpandCount(state);
+  return getLysateCapExpandCost(count);
+}
+
+export function expandCap(state: GameState, resource: CapResource): boolean {
+  switch (resource) {
+    case 'water':
+      return expandWaterCap(state);
+    case 'nutrients':
+      return expandNutrientCap(state);
+    case 'biomass':
+      return expandBiomassCap(state);
+  }
+}
+
 function tickLysate(state: GameState, deltaSec: number): void {
   if (state.lysateRaw <= 0) return;
 
-  const stabilizeAmount = Math.min(
-    state.lysateRaw,
-    LYSATE_MAX_STABILIZE_RATE * deltaSec,
-    state.water / (LYSATE_STABILIZE_WATER_COST * deltaSec) || 0,
-    state.nutrients / (LYSATE_STABILIZE_NUTRIENT_COST * deltaSec) || 0,
-  );
+  const desired = Math.min(state.lysateRaw, LYSATE_MAX_STABILIZE_RATE * deltaSec);
+  const affordableByWater = state.water / LYSATE_STABILIZE_WATER_COST;
+  const affordableByNutrient = state.nutrients / LYSATE_STABILIZE_NUTRIENT_COST;
 
-  if (stabilizeAmount >= 1) {
-    const waterCost = stabilizeAmount * LYSATE_STABILIZE_WATER_COST * deltaSec;
-    const nutrientCost = stabilizeAmount * LYSATE_STABILIZE_NUTRIENT_COST * deltaSec;
-    state.water = Math.max(0, state.water - waterCost);
-    state.nutrients = Math.max(0, state.nutrients - nutrientCost);
-    state.lysateRaw -= stabilizeAmount;
-    state.lysateBanked += stabilizeAmount;
+  if (desired > 0 && affordableByWater >= desired && affordableByNutrient >= desired) {
+    state.water = Math.max(0, state.water - desired * LYSATE_STABILIZE_WATER_COST);
+    state.nutrients = Math.max(0, state.nutrients - desired * LYSATE_STABILIZE_NUTRIENT_COST);
+    state.lysateRaw -= desired;
+    state.lysateBanked += desired;
   } else {
     const decay = Math.min(state.lysateRaw, LYSATE_RAW_DECAY_RATE * deltaSec);
     state.lysateRaw = Math.max(0, state.lysateRaw - decay);
@@ -176,7 +206,7 @@ export function tickIdle(state: GameState, deltaSec: number): void {
   const perSec = getEffectiveBiomassPerSec(state);
   const gained = perSec * deltaSec;
 
-  state.biomass = Math.min(state.biomass + gained, maxBiomass);
+  state.biomass = Math.min(state.biomass + gained, Math.max(state.biomass, maxBiomass));
   state.totalBiomassEarned += gained;
 
   if (state.assimilationPercent > 0 && !state.isInTrauma) {
@@ -195,7 +225,7 @@ export function applyDepletion(state: GameState, assimilationDelta: number): voi
 export function enterTrauma(state: GameState): void {
   if (state.isInTrauma) return;
   const reduction = getTraumaReduction(state.skillAllocations);
-  const duration = 30 * (1 - reduction);
+  const duration = TRAUMA_BASE_DURATION * (1 - reduction);
 
   state.isInTrauma = true;
   state.traumaTimer = Math.max(5, duration);
@@ -204,7 +234,7 @@ export function enterTrauma(state: GameState): void {
 }
 
 export function getSkillLevelCost(baseCost: number, currentLevel: number): number {
-  return Math.floor(baseCost * Math.pow(1.5, currentLevel));
+  return Math.floor(baseCost * Math.pow(SKILL_COST_SCALE, currentLevel));
 }
 
 export function canAffordSkill(biomass: number, baseCost: number, currentLevel: number): boolean {

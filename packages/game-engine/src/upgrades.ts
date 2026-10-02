@@ -1,6 +1,5 @@
-import { UPGRADES } from '@mycosurge/config';
+import { UPGRADES, getGeneratorCost } from '@mycosurge/config';
 import type { GameState } from './state';
-import { getSkillLevelCost } from './math';
 
 export function purchaseUpgrade(state: GameState, upgradeId: string): boolean {
   const def = UPGRADES.find((u) => u.id === upgradeId);
@@ -14,7 +13,7 @@ export function purchaseUpgrade(state: GameState, upgradeId: string): boolean {
     if (prereqLevel < 1) return false;
   }
 
-  const cost = getSkillLevelCost(def.baseCost, currentLevel);
+  const cost = getGeneratorCost(def.baseCost, currentLevel, def.costScale);
   if (state.biomass < cost) return false;
 
   state.biomass -= cost;

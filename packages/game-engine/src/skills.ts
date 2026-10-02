@@ -98,7 +98,7 @@ function applySkillEffects(state: GameState, skillId: string): void {
       state.combatStats.emergencyEvac = true;
       break;
     case 'mycelial_expansion':
-      state.maxBiomass = 100 * (1 + level * 0.75);
+      // Cap bonus is applied via getMaxBiomassBonus(); no raw mutation here.
       break;
     case 'metabolic_efficiency':
       break;

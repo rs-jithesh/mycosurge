@@ -23,7 +23,7 @@ export function purchaseGenerator(state: GameState, generatorId: string): boolea
   const currentLevel = state.generators[generatorId] ?? 0;
   if (currentLevel >= def.maxLevel) return false;
 
-  const cost = getGeneratorCost(def.baseCost, currentLevel);
+  const cost = getGeneratorCost(def.baseCost, currentLevel, def.costScale);
   if (state.biomass < cost) return false;
 
   state.biomass -= cost;

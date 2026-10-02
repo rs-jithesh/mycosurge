@@ -1,8 +1,11 @@
 export { SKILL_TREES, SKILL_NODES, SKILL_TREE_ORDER } from './skill-trees';
 export type { SkillTree, SkillNodeDef } from './skill-trees';
 
-export { HOSTS } from './hosts';
+export { HOSTS, HOST_TIER_UNLOCK, isHostUnlocked } from './hosts';
 export type { HostDef } from './hosts';
+
+export { STRAINS, getStrain, NORMAL_STRAIN_ID } from './strains';
+export type { StrainDef, StrainId } from './strains';
 
 export {
   GENERATORS,

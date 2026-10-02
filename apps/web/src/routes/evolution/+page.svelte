@@ -1,21 +1,16 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import { gameStore } from '$lib/stores/game.svelte';
   import { SKILL_NODES, UPGRADES, getGeneratorCost } from '@mycosurge/config';
   import type { UpgradeCategory } from '@mycosurge/config';
-  import { getSkillLevelCost } from '@mycosurge/game-engine';
+  import { getSkillLevelCost, arePrerequisitesMet } from '@mycosurge/game-engine';
+
+  onMount(() => {
+    if (gameStore.state.gamePhase !== 'active') goto('/');
+  });
 
   let openCategory = $state<UpgradeCategory | null>(null);
-
-  let availableSkills = $derived(
-    SKILL_NODES.filter((s) => {
-      const current = gameStore.state.skillAllocations[s.id] ?? 0;
-      if (current >= s.maxLevel) return false;
-      for (const p of s.prerequisites) {
-        if ((gameStore.state.skillAllocations[p] ?? 0) < 1) return false;
-      }
-      return true;
-    }),
-  );
 
   function skillCost(skillId: string): number {
     const current = gameStore.state.skillAllocations[skillId] ?? 0;
@@ -28,7 +23,7 @@
     const current = gameStore.state.upgradeLevels[upgradeId] ?? 0;
     const def = UPGRADES.find((u) => u.id === upgradeId);
     if (!def) return Infinity;
-    return getGeneratorCost(def.baseCost, current);
+    return getGeneratorCost(def.baseCost, current, def.costScale);
   }
 
   function canPurchaseUpgrade(upgradeId: string): boolean {
@@ -49,25 +44,35 @@
   function categoryLabel(cat: UpgradeCategory): string {
     switch (cat) {
       case 'mycelial':
-        return 'MYCELIAL NETWORK';
+        return 'Network';
       case 'incursion':
-        return 'INCURSION PROTOCOLS';
+        return 'Combat';
       case 'structural':
-        return 'STRUCTURAL';
+        return 'Structure';
     }
   }
 
   function categoryUpgrades(cat: UpgradeCategory) {
     return UPGRADES.filter((u) => u.category === cat);
   }
+
+  function nameFor(id: string): string {
+    return (
+      SKILL_NODES.find((s) => s.id === id)?.name ?? UPGRADES.find((u) => u.id === id)?.name ?? id
+    );
+  }
+
+  function prereqLabel(ids: string[]): string {
+    return `Requires ${ids.map(nameFor).join(', ')}`;
+  }
 </script>
 
 <div class="evolution-view">
   <!-- ── NEURAL MUTATIONS (Skills) ── -->
   <section class="panel">
-    <h2 class="panel-title text-label-caps">&gt; NEURAL MUTATIONS</h2>
+    <h2 class="panel-title text-label-caps">Mutations</h2>
     {#if SKILL_NODES.length === 0}
-      <p class="empty-text text-data-mono">SYS: No skill tree data available.</p>
+      <p class="empty-text text-data-mono">No mutations available right now.</p>
     {:else}
       <div class="skill-grid">
         {#each SKILL_NODES as skill}
@@ -75,30 +80,28 @@
           {@const cost = skillCost(skill.id)}
           {@const canAfford = gameStore.biomass >= cost}
           {@const maxed = level >= skill.maxLevel}
-          {@const meetsPrereqs = skill.prerequisites.every(
-            (p) => (gameStore.state.skillAllocations[p] ?? 0) >= 1,
-          )}
+          {@const meetsPrereqs = arePrerequisitesMet(gameStore.state, skill.id)}
           <div class="upgrade-item" class:upgrade-locked={!meetsPrereqs && !maxed}>
             <div class="upgrade-header">
               <span class="text-label-caps upgrade-name">{skill.name}</span>
-              <span class="text-data-mono upgrade-level">LV.{level}/{skill.maxLevel}</span>
+              <span class="text-data-mono upgrade-level">Level {level}/{skill.maxLevel}</span>
             </div>
             <div class="upgrade-desc text-data-mono">{skill.description}</div>
             <div class="upgrade-footer">
               {#if maxed}
-                <span class="text-label-caps upgrade-max">MAX</span>
+                <span class="text-label-caps upgrade-max">Maxed</span>
               {:else if !meetsPrereqs}
                 <span class="text-data-mono upgrade-prereqs"
-                  >REQ: {skill.prerequisites.join(', ')}</span
+                  >{prereqLabel(skill.prerequisites)}</span
                 >
               {:else}
-                <span class="text-data-mono upgrade-cost">COST: {cost} BM</span>
+                <span class="text-data-mono upgrade-cost">{cost} Biomass</span>
                 <button
                   class="cmd-btn upgrade-btn"
                   disabled={!canAfford}
                   onclick={() => gameStore.purchaseSkill(skill.id)}
                 >
-                  > EXE: PURCHASE
+                  Upgrade
                 </button>
               {/if}
             </div>
@@ -110,7 +113,7 @@
 
   <!-- ── ECONOMY UPGRADES ── -->
   <section class="panel">
-    <h2 class="panel-title text-label-caps">&gt; ECONOMY UPGRADES</h2>
+    <h2 class="panel-title text-label-caps">Growth upgrades</h2>
 
     {#each ['mycelial', 'incursion', 'structural'] as cat}
       {@const upgrades = categoryUpgrades(cat as UpgradeCategory)}
@@ -120,7 +123,7 @@
           onclick={() => toggleCategory(cat as UpgradeCategory)}
         >
           <span>{categoryLabel(cat as UpgradeCategory)} ({upgrades.length})</span>
-          <span class="collapse-arrow">{openCategory === cat ? '[-]' : '[+]'}</span>
+          <span class="collapse-arrow">{openCategory === cat ? '−' : '+'}</span>
         </button>
 
         {#if openCategory === cat}
@@ -135,25 +138,25 @@
               )}
               <div class="upgrade-item" class:upgrade-locked={!meetsPrereqs && !maxed}>
                 <div class="upgrade-header">
-                  <span class="text-label-caps upgrade-name">UPG: {upgrade.name}</span>
-                  <span class="text-data-mono upgrade-level">LV.{level}/{upgrade.maxLevel}</span>
+                  <span class="text-label-caps upgrade-name">{upgrade.name}</span>
+                  <span class="text-data-mono upgrade-level">Level {level}/{upgrade.maxLevel}</span>
                 </div>
                 <div class="upgrade-desc text-data-mono">{upgrade.description}</div>
                 <div class="upgrade-footer">
                   {#if maxed}
-                    <span class="text-label-caps upgrade-max">MAX</span>
+                    <span class="text-label-caps upgrade-max">Maxed</span>
                   {:else if !meetsPrereqs}
                     <span class="text-data-mono upgrade-prereqs"
-                      >REQ: {upgrade.prereqs.join(', ')}</span
+                      >{prereqLabel(upgrade.prereqs)}</span
                     >
                   {:else}
-                    <span class="text-data-mono upgrade-cost">COST: {cost} BM</span>
+                    <span class="text-data-mono upgrade-cost">{cost} Biomass</span>
                     <button
                       class="cmd-btn upgrade-btn"
                       disabled={!canBuy}
                       onclick={() => gameStore.purchaseUpgrade(upgrade.id)}
                     >
-                      > EXE: PURCHASE
+                      Upgrade
                     </button>
                   {/if}
                 </div>
@@ -167,10 +170,10 @@
 
   <!-- ── EVOLUTIONARY ECHOES ── -->
   <section class="panel">
-    <h2 class="panel-title text-label-caps">&gt; EVOLUTIONARY ECHOES</h2>
+    <h2 class="panel-title text-label-caps">Evolutionary echoes</h2>
     {#if gameStore.acquiredEchoes.length === 0}
       <p class="empty-text text-data-mono">
-        SYS: No echoes acquired. Consume hosts to inherit their traits.
+        No echoes yet. Defeat a host on the Radar to inherit its trait.
       </p>
     {:else}
       <div class="echo-list">
@@ -193,7 +196,9 @@
 
   .panel {
     border: 1px solid var(--border);
-    background: var(--surface);
+    background: var(--surface-container);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     padding: var(--space-panel-padding);
   }
 
@@ -216,7 +221,9 @@
   }
 
   .upgrade-item {
-    border: 1px solid var(--border);
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-high);
+    border-radius: var(--radius-md);
     padding: var(--space-unit) var(--space-panel-padding);
     display: flex;
     flex-direction: column;
@@ -286,9 +293,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-unit) var(--space-panel-padding);
-    border: 1px solid var(--border);
+    min-height: 44px;
+    padding: 12px var(--space-panel-padding);
+    border: 1px solid var(--outline-variant);
     background: var(--surface-container-low);
+    border-radius: var(--radius-md);
     color: var(--primary);
     text-align: left;
     cursor: pointer;
@@ -313,7 +322,9 @@
 
   .echo-item {
     padding: var(--space-unit) var(--space-panel-padding);
-    border: 1px solid var(--border);
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-high);
+    border-radius: var(--radius-md);
     color: var(--on-surface);
   }
 

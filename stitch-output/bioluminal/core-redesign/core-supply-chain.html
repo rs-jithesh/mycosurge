@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MYCOSURGE - Core Supply Chain Cockpit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bg: '#080d0b',
+            surface: {
+              DEFAULT: '#0d1613',
+              low: '#0a110f',
+              card: '#101c18',
+              hover: '#142520',
+              border: '#1a2e26'
+            },
+            mint: {
+              DEFAULT: '#4fe0a8',
+              glow: 'rgba(79, 224, 168, 0.15)',
+              dim: '#23614a'
+            },
+            cyan: {
+              DEFAULT: '#38bdf8',
+              glow: 'rgba(56, 189, 248, 0.15)'
+            },
+            amber: {
+              DEFAULT: '#f59e0b',
+              glow: 'rgba(245, 158, 11, 0.15)',
+              warn: '#fbbf24'
+            },
+            coral: {
+              DEFAULT: '#f43f5e',
+              glow: 'rgba(244, 63, 94, 0.15)',
+              dim: '#5c1d27'
+            }
+          },
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #080d0b;
+      color: #d1fae5;
+      font-family: 'Space Grotesk', sans-serif;
+      overflow-x: hidden;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a110f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1a2e26;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #23614a;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-bg text-emerald-100 flex flex-col antialiased selection:bg-mint selection:text-black">
+
+  <!-- TOP BAR -->
+  <header class="h-14 border-b border-surface-border bg-surface-low/90 backdrop-blur px-6 flex items-center justify-between z-30 shrink-0">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-mint shadow-[0_0_8px_#4fe0a8]"></span>
+        <span class="text-mint font-bold tracking-wider text-lg">MYCOSURGE</span>
+      </div>
+      <span class="text-xs tracking-widest text-emerald-600/70 uppercase border-l border-surface-border pl-4">Colony Engine // Substrate Alpha</span>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-mint/10 border border-mint/20 text-xs text-mint font-medium">
+        <span class="inline-block w-1.5 h-1.5 rounded-full bg-mint animate-pulse"></span>
+        <span>Online</span>
+      </div>
+      <button class="text-xs text-emerald-400/60 hover:text-emerald-300 hover:bg-surface-card px-3 py-1.5 rounded border border-surface-border transition-colors">
+        Reset
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN VIEWPORT (LEFT RAIL + WORKSPACE) -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- LEFT NAVIGATION RAIL (~180px) -->
+    <aside class="w-[180px] shrink-0 border-r border-surface-border bg-surface-low p-3 flex flex-col justify-between z-20">
+      <div class="space-y-1">
+        <div class="text-[10px] uppercase tracking-wider text-emerald-500/50 px-3 py-2 font-mono">Module</div>
+        
+        <!-- Core (Active) -->
+        <a href="#core" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-card border border-mint/30 text-mint font-medium shadow-[inset_0_0_12px_rgba(79,224,168,0.06)]">
+          <span class="w-1.5 h-1.5 rounded-full bg-mint"></span>
+          <span class="text-sm">Core</span>
+        </a>
+
+        <!-- Radar -->
+        <a href="#radar" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-emerald-400/60 hover:text-emerald-200 hover:bg-surface-card/60 transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-800"></span>
+          <span class="text-sm">Radar</span>
+        </a>
+
+        <!-- Evolution -->
+        <a href="#evolution" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-emerald-400/60 hover:text-emerald-200 hover:bg-surface-card/60 transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-800"></span>
+          <span class="text-sm">Evolution</span>
+        </a>
+
+        <!-- Expeditions -->
+        <a href="#expeditions" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-emerald-400/60 hover:text-emerald-200 hover:bg-surface-card/60 transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-800"></span>
+          <span class="text-sm">Expeditions</span>
+        </a>
+      </div>
+
+      <div class="p-3 rounded-lg bg-surface-card/40 border border-surface-border/50 text-[11px] mono text-emerald-600/80">
+        <div>NET EFF: <span class="text-amber">STALLED</span></div>
+        <div class="text-[10px] text-coral/80 mt-0.5">DEPLETED: WTR/NUT</div>
+      </div>
+    </aside>
+
+    <!-- PIPELINE WORKSPACE -->
+    <main class="flex-1 flex flex-col justify-between overflow-y-auto p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0d1f17]/40 via-bg to-bg relative">
+      
+      <!-- SUBTLE SUPPLY CHAIN OVERVIEW HEADER -->
+      <div class="flex items-center justify-between mb-3 px-2">
+        <div class="flex items-center gap-3">
+          <h1 class="text-xs uppercase tracking-[0.2em] font-semibold text-emerald-400/70">Metabolic Supply Chain</h1>
+          <span class="text-[11px] mono text-emerald-600">Left-to-Right Biomass Generation &amp; Cap Expansion</span>
+        </div>
+        <div class="text-[11px] mono text-emerald-500/60 flex items-center gap-2">
+          <span>Flow Rate: <span class="text-coral">0.0 /sec</span> (Starvation State)</span>
+        </div>
+      </div>
+
+      <!-- FIVE STAGES HORIZONTAL PIPELINE CONTAINER -->
+      <div class="relative py-2">
+        
+        <!-- UPPER FEEDBACK LOOP: AUTOMATION -> INTAKE -->
+        <!-- SVG Curved connector line -->
+        <div class="absolute -top-3 left-4 right-4 h-6 pointer-events-none z-10 hidden xl:block">
+          <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 24">
+            <defs>
+              <linearGradient id="feedbackGrad" x1="1" y1="0" x2="0" y2="0">
+                <stop offset="0%" stop-color="#4fe0a8" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.6"/>
+              </linearGradient>
+            </defs>
+            <!-- Automation center is ~col 3 (50%), Intake center is ~col 1 (10%) -->
+            <path d="M 500 18 C 500 2, 100 2, 100 18" fill="none" stroke="url(#feedbackGrad)" stroke-width="1.5" stroke-dasharray="4 3" />
+            <polygon points="100,21 96,15 104,15" fill="#38bdf8" />
+          </svg>
+          <div class="absolute -top-1 left-[28%] -translate-x-1/2 bg-surface-low px-2 py-0.5 rounded border border-surface-border text-[10px] mono text-mint font-medium">
+            ↺ feedback: +Water / +Nutrients per sec
+          </div>
+        </div>
+
+        <!-- THE 5 STAGE COLUMNS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 items-stretch relative">
+
+          <!-- STAGE 1: INTAKE (BOTTLENECK HIGHLIGHT: CORAL/AMBER GLOW) -->
+          <div class="rounded-xl border border-coral/60 bg-gradient-to-b from-[#1c1214] to-surface-card p-4 flex flex-col justify-between relative shadow-[0_0_24px_rgba(244,63,94,0.18)] ring-1 ring-coral/40">
+            <!-- Bottleneck Tag -->
+            <div class="absolute -top-2.5 left-4 px-2 py-0.5 rounded bg-coral text-[10px] font-bold uppercase tracking-wider text-black mono">
+              Bottleneck
+            </div>
+
+            <div>
+              <!-- Header -->
+              <div class="flex items-center justify-between mb-2 pt-1">
+                <span class="text-xs font-mono font-semibold text-emerald-400/60 uppercase tracking-wider">01 // INTAKE</span>
+                <span class="text-[10px] mono text-coral font-medium">DEPLETED</span>
+              </div>
+              <h2 class="text-base font-bold text-white tracking-tight">Ambient Substrate</h2>
+              
+              <!-- Warning inline explanation -->
+              <div class="mt-2 p-2 rounded-lg bg-coral/10 border border-coral/30 text-[11px] text-coral leading-tight flex items-start gap-1.5">
+                <span class="text-xs leading-none">●</span>
+                <span>Starving — restore Water and Nutrients to restart passive growth.</span>
+              </div>
+
+              <!-- Resource 1: Water -->
+              <div class="mt-4 space-y-1.5">
+                <div class="flex justify-between items-baseline text-xs">
+                  <span class="text-cyan font-semibold flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyan shadow-[0_0_4px_#38bdf8]"></span>
+                    Water
+                  </span>
+                  <span class="mono font-semibold text-cyan text-sm">72 <span class="text-cyan/40 text-xs font-normal">/ 100</span></span>
+                </div>
+                <!-- Pill Meter -->
+                <div class="h-2 w-full bg-surface-low rounded-full overflow-hidden p-0.5 border border-surface-border">
+                  <div class="h-full bg-cyan rounded-full shadow-[0_0_6px_#38bdf8]" style="width: 72%"></div>
+                </div>
+                <div class="flex justify-end">
+                  <button class="text-[10px] mono px-2 py-0.5 rounded-full bg-surface hover:bg-surface-hover border border-surface-border hover:border-cyan/40 text-cyan transition-colors">
+                    +10 cap · 12 Lysate
+                  </button>
+                </div>
+              </div>
+
+              <!-- Resource 2: Nutrients -->
+              <div class="mt-3 space-y-1.5">
+                <div class="flex justify-between items-baseline text-xs">
+                  <span class="text-mint font-semibold flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-mint shadow-[0_0_4px_#4fe0a8]"></span>
+                    Nutrients
+                  </span>
+                  <span class="mono font-semibold text-mint text-sm">48 <span class="text-mint/40 text-xs font-normal">/ 100</span></span>
+                </div>
+                <!-- Pill Meter -->
+                <div class="h-2 w-full bg-surface-low rounded-full overflow-hidden p-0.5 border border-surface-border">
+                  <div class="h-full bg-mint rounded-full shadow-[0_0_6px_#4fe0a8]" style="width: 48%"></div>
+                </div>
+                <div class="flex justify-end">
+                  <button class="text-[10px] mono px-2 py-0.5 rounded-full bg-surface hover:bg-surface-hover border border-surface-border hover:border-mint/40 text-mint transition-colors">
+                    +10 cap · 12 Lysate
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Manual Action -->
+            <div class="mt-6 pt-3 border-t border-surface-border">
+              <button class="w-full group p-2.5 rounded-lg bg-surface border border-surface-border hover:border-mint/60 hover:bg-surface-hover transition-all text-left flex justify-between items-center">
+                <div>
+                  <div class="text-xs font-semibold text-emerald-100 group-hover:text-mint flex items-center gap-1.5">
+                    <span>Absorb</span>
+                    <span class="text-[10px] text-emerald-400 font-mono font-normal">+2 Water · +2 Nutrients</span>
+                  </div>
+                  <div class="text-[10px] text-emerald-500/70 mt-0.5">Manual osmosis pulse</div>
+                </div>
+                <span class="text-[10px] mono px-2 py-1 rounded bg-surface-low border border-surface-border text-emerald-400 whitespace-nowrap">
+                  Ready in 3s
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- CONNECTOR 1 -> 2 -->
+          <!-- In grid layout, rendered as an overlay badge or absolute chevron on desktop -->
+          <!-- STAGE 2: CONVERSION -->
+          <div class="rounded-xl border border-surface-border bg-surface-card p-4 flex flex-col justify-between hover:border-surface-border/80 transition-all relative">
+            
+            <!-- Inflow Caption Badge (Top Connector) -->
+            <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-surface-low border border-mint/40 text-[10px] mono text-mint font-medium whitespace-nowrap shadow-sm z-10 flex items-center gap-1">
+              <span>→</span>
+              <span>10 Water + 10 Nutrients</span>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-2 pt-1">
+                <span class="text-xs font-mono font-semibold text-emerald-400/60 uppercase tracking-wider">02 // CONVERSION</span>
+                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-amber/15 text-amber border border-amber/30 font-semibold">Active</span>
+              </div>
+              <h2 class="text-base font-bold text-white tracking-tight">Cellular Synthesis</h2>
+              <p class="text-[11px] text-emerald-400/70 mt-1 leading-normal">Condenses raw osmotic fluid into structural fungal matter.</p>
+
+              <!-- Large Amber Biomass Figure -->
+              <div class="mt-5 p-3 rounded-lg bg-surface-low border border-amber/30">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs text-amber font-medium flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber shadow-[0_0_6px_#f59e0b]"></span>
+                    Biomass
+                  </span>
+                  <span class="text-[10px] mono px-1.5 py-0.2 rounded bg-mint/15 text-mint border border-mint/30 font-bold">+75% yield</span>
+                </div>
+                <div class="flex items-baseline gap-1 mt-1">
+                  <span class="text-3xl font-bold mono text-amber">31</span>
+                  <span class="text-xs mono text-amber/50 font-normal">/ 100 MAX</span>
+                </div>
+                <!-- Biomass Bar -->
+                <div class="h-2 w-full bg-surface rounded-full overflow-hidden p-0.5 border border-surface-border mt-2">
+                  <div class="h-full bg-amber rounded-full shadow-[0_0_8px_#f59e0b]" style="width: 31%"></div>
+                </div>
+              </div>
+
+              <!-- Conversion Efficiency Note -->
+              <div class="mt-4 p-2.5 rounded-lg bg-surface-low/60 border border-surface-border/60 text-[11px] text-emerald-400/80 space-y-1">
+                <div class="flex justify-between text-[10px] mono">
+                  <span class="text-emerald-500">Synthesis Cost:</span>
+                  <span class="text-emerald-300">10 Wtr + 10 Nut</span>
+                </div>
+                <div class="flex justify-between text-[10px] mono">
+                  <span class="text-emerald-500">Output Multiplier:</span>
+                  <span class="text-mint">1.75x Base</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Synthesis CTA Button -->
+            <div class="mt-6 pt-3 border-t border-surface-border">
+              <button class="w-full py-2.5 px-3 rounded-lg bg-amber/15 hover:bg-amber/25 border border-amber/50 hover:border-amber text-amber font-semibold text-xs transition-all flex items-center justify-between group shadow-[0_0_12px_rgba(245,158,11,0.1)]">
+                <span class="group-hover:translate-x-0.5 transition-transform">Synthesize Biomass</span>
+                <span class="mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-black/40 border border-amber/40">→ 1 Biomass</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- STAGE 3: AUTOMATION -->
+          <div class="rounded-xl border border-surface-border bg-surface-card p-4 flex flex-col justify-between hover:border-surface-border/80 transition-all relative">
+            
+            <!-- Inflow Caption Badge -->
+            <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-surface-low border border-mint/40 text-[10px] mono text-mint font-medium whitespace-nowrap shadow-sm z-10 flex items-center gap-1">
+              <span>→</span>
+              <span>Biomass funds growth</span>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-2 pt-1">
+                <span class="text-xs font-mono font-semibold text-emerald-400/60 uppercase tracking-wider">03 // AUTOMATION</span>
+                <span class="text-[10px] mono text-mint font-semibold">2 Active</span>
+              </div>
+              <h2 class="text-base font-bold text-white tracking-tight">Passive Pumps</h2>
+              <p class="text-[11px] text-emerald-400/70 mt-1 leading-normal">Self-sustaining fungal organs feeding back into Intake.</p>
+
+              <!-- Generators List -->
+              <div class="mt-4 space-y-3">
+                
+                <!-- Generator 1: Osmotic Pump -->
+                <div class="p-2.5 rounded-lg bg-surface-low border border-surface-border hover:border-cyan/30 transition-colors">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <div class="text-xs font-semibold text-emerald-100 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan"></span>
+                        Osmotic Pump
+                      </div>
+                      <div class="text-[10px] mono text-emerald-500 mt-0.5">Lv.2 · Interval ~18s</div>
+                    </div>
+                    <span class="text-[10px] mono text-cyan bg-cyan/10 px-1.5 py-0.5 rounded border border-cyan/20">
+                      +2 Wtr/s → +3
+                    </span>
+                  </div>
+                  <button class="w-full mt-2 py-1 px-2 rounded bg-surface hover:bg-surface-hover border border-surface-border hover:border-amber/40 text-[10px] mono text-amber flex justify-between items-center transition-colors">
+                    <span>Upgrade</span>
+                    <span class="font-bold">20 Biomass</span>
+                  </button>
+                </div>
+
+                <!-- Generator 2: Enzymatic Exudates -->
+                <div class="p-2.5 rounded-lg bg-surface-low border border-surface-border hover:border-mint/30 transition-colors">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <div class="text-xs font-semibold text-emerald-100 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-mint"></span>
+                        Enzymatic Exudates
+                      </div>
+                      <div class="text-[10px] mono text-emerald-500 mt-0.5">Lv.1 · Continuous</div>
+                    </div>
+                    <span class="text-[10px] mono text-mint bg-mint/10 px-1.5 py-0.5 rounded border border-mint/20">
+                      +1 Nut/s → +2
+                    </span>
+                  </div>
+                  <button class="w-full mt-2 py-1 px-2 rounded bg-surface hover:bg-surface-hover border border-surface-border hover:border-amber/40 text-[10px] mono text-amber flex justify-between items-center transition-colors">
+                    <span>Upgrade</span>
+                    <span class="font-bold">10 Biomass</span>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Loopback Indicator Note -->
+            <div class="mt-6 pt-3 border-t border-surface-border">
+              <div class="flex items-center justify-between text-[11px] mono text-emerald-500">
+                <span>Output destination:</span>
+                <span class="text-mint font-medium">Stage 1 (Intake)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STAGE 4: FIELD WORK -->
+          <div class="rounded-xl border border-surface-border bg-surface-card p-4 flex flex-col justify-between hover:border-surface-border/80 transition-all relative">
+            
+            <!-- Inflow Caption Badge -->
+            <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-surface-low border border-mint/40 text-[10px] mono text-mint font-medium whitespace-nowrap shadow-sm z-10 flex items-center gap-1">
+              <span>→</span>
+              <span>Water fuels sweeps</span>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-2 pt-1">
+                <span class="text-xs font-mono font-semibold text-emerald-400/60 uppercase tracking-wider">04 // FIELD WORK</span>
+                <span class="text-[10px] mono text-cyan font-semibold">Active Sector</span>
+              </div>
+              <h2 class="text-base font-bold text-white tracking-tight">Signal Radar</h2>
+              <p class="text-[11px] text-emerald-400/70 mt-1 leading-normal">Ping surrounding substrate to reveal hostile spore hosts.</p>
+
+              <!-- Prominent Mint CTA -->
+              <div class="mt-4">
+                <button class="w-full py-3.5 px-4 rounded-xl bg-mint hover:bg-emerald-300 text-black font-bold text-sm tracking-wide shadow-[0_0_20px_rgba(79,224,168,0.25)] hover:shadow-[0_0_25px_rgba(79,224,168,0.4)] transition-all flex flex-col items-center justify-center gap-0.5 group">
+                  <span class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-black group-hover:scale-125 transition-transform"></span>
+                    Open the Radar
+                  </span>
+                  <span class="text-[10px] font-mono text-emerald-950 font-semibold tracking-normal">
+                    Ping the substrate · 5 Water
+                  </span>
+                </button>
+              </div>
+
+              <!-- Secondary Expeditions Action -->
+              <div class="mt-3">
+                <button class="w-full py-2 px-3 rounded-lg bg-surface-low hover:bg-surface border border-surface-border hover:border-mint/30 text-emerald-200 text-xs font-medium transition-colors flex items-center justify-between">
+                  <span>Expeditions</span>
+                  <span class="text-[10px] mono text-emerald-500">Autonomous Range</span>
+                </button>
+              </div>
+
+              <!-- Note on Combat Rewards -->
+              <div class="mt-3.5 p-2.5 rounded-lg bg-surface-low/80 border border-surface-border text-[11px] text-emerald-400 leading-snug">
+                <span class="font-medium text-emerald-200">Recon Yield:</span> Combat engagements return high-density <span class="text-amber font-semibold">Biomass</span> and rare <span class="text-mint font-semibold">Lysate</span>.
+              </div>
+            </div>
+
+            <div class="mt-6 pt-3 border-t border-surface-border">
+              <div class="flex items-center justify-between text-[11px] mono text-emerald-500">
+                <span>Signal Status:</span>
+                <span class="text-cyan">1 Contact Tracked</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STAGE 5: EXPANSION -->
+          <div class="rounded-xl border border-surface-border bg-surface-card p-4 flex flex-col justify-between hover:border-surface-border/80 transition-all relative">
+            
+            <!-- Inflow Caption Badge -->
+            <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-surface-low border border-mint/40 text-[10px] mono text-mint font-medium whitespace-nowrap shadow-sm z-10 flex items-center gap-1">
+              <span>→</span>
+              <span>Combat earns Lysate</span>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-2 pt-1">
+                <span class="text-xs font-mono font-semibold text-emerald-400/60 uppercase tracking-wider">05 // EXPANSION</span>
+                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-mint/15 text-mint border border-mint/30 font-semibold">Spendable</span>
+              </div>
+              <h2 class="text-base font-bold text-white tracking-tight">Lysate Bank</h2>
+              <p class="text-[11px] text-emerald-400/70 mt-1 leading-normal">Stabilize enzyme deposits to expand systemic colony capacity.</p>
+
+              <!-- Lysate Figures -->
+              <div class="mt-4 p-3 rounded-lg bg-surface-low border border-mint/30">
+                <div class="flex justify-between items-baseline">
+                  <div>
+                    <div class="text-[10px] uppercase font-mono text-emerald-500 font-semibold">Banked Lysate</div>
+                    <div class="text-2xl font-bold mono text-mint mt-0.5">12</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-[10px] uppercase font-mono text-emerald-500 font-semibold flex items-center justify-end gap-1">
+                      <span>Raw</span>
+                      <span class="w-1.5 h-1.5 rounded-full bg-coral animate-ping"></span>
+                    </div>
+                    <div class="text-lg font-bold mono text-emerald-300 mt-0.5">3.4 <span class="text-[10px] text-coral font-normal">decaying</span></div>
+                  </div>
+                </div>
+                <div class="text-[10px] text-emerald-500 mt-2 border-t border-surface-border pt-1.5">
+                  Raw Lysate stabilises into Banked using Water &amp; Nutrients.
+                </div>
+              </div>
+
+              <!-- Cap Expansion Actions -->
+              <div class="mt-3 space-y-1.5">
+                <div class="text-[10px] uppercase font-mono text-emerald-500/80 font-semibold">Capacity Upgrades</div>
+                <div class="grid grid-cols-2 gap-1.5">
+                  <button class="p-2 rounded bg-surface hover:bg-surface-hover border border-surface-border text-left transition-colors">
+                    <div class="text-[10px] text-cyan font-medium">+10 Water Cap</div>
+                    <div class="text-[10px] mono text-emerald-400 mt-0.5">12 Lysate</div>
+                  </button>
+                  <button class="p-2 rounded bg-surface hover:bg-surface-hover border border-surface-border text-left transition-colors">
+                    <div class="text-[10px] text-mint font-medium">+10 Nutrients Cap</div>
+                    <div class="text-[10px] mono text-emerald-400 mt-0.5">12 Lysate</div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Evolutionary Link -->
+            <div class="mt-6 pt-3 border-t border-surface-border">
+              <a href="#evolution" class="w-full py-2 px-2.5 rounded-lg bg-surface-low hover:bg-surface-hover border border-surface-border hover:border-mint/40 text-[11px] text-emerald-300 flex items-center justify-between group transition-colors">
+                <span class="group-hover:text-mint transition-colors">Growth &amp; Mutations Tree</span>
+                <span class="text-mint font-mono text-xs">→</span>
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- LOWER RETURN LOOP: EXPANSION -> INTAKE -->
+        <div class="mt-4 pt-1 relative hidden xl:block pointer-events-none">
+          <svg class="w-full h-8" preserveAspectRatio="none" viewBox="0 0 1000 32">
+            <defs>
+              <linearGradient id="returnGrad" x1="1" y1="0" x2="0" y2="0">
+                <stop offset="0%" stop-color="#4fe0a8" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.6"/>
+              </linearGradient>
+            </defs>
+            <!-- Stage 5 center (~900) back along bottom to Stage 1 center (~100) -->
+            <path d="M 900 6 C 900 26, 100 26, 100 6" fill="none" stroke="url(#returnGrad)" stroke-width="1.5" stroke-dasharray="4 3" />
+            <polygon points="100,3 96,9 104,9" fill="#38bdf8" />
+          </svg>
+          <div class="absolute top-3 left-1/2 -translate-x-1/2 bg-surface-low px-2.5 py-0.5 rounded border border-surface-border text-[10px] mono text-mint font-medium">
+            ↺ Larger caps → higher intake buffer &amp; compound growth
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM ACTIVITY FEED -->
+      <footer class="mt-4 pt-3 border-t border-surface-border">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-mint animate-pulse"></span>
+            <span class="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">Substrate Activity Feed</span>
+          </div>
+          <span class="text-[10px] mono text-emerald-500/60">Live Stream · 4 events cached</span>
+        </div>
+
+        <div class="space-y-1.5 font-mono text-xs">
+          <!-- Item 1: Mint Level Marker -->
+          <div class="flex items-center gap-3 py-1 px-2.5 rounded bg-surface-card/40 border border-surface-border/40 hover:border-surface-border transition-colors">
+            <span class="text-emerald-500/60 text-[11px]">[14:22:08]</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-mint shadow-[0_0_4px_#4fe0a8]"></span>
+            <span class="text-emerald-200">Substrate colonized at sector 04</span>
+            <span class="text-mint font-semibold text-[11px]">(+1.2 Water/sec)</span>
+          </div>
+
+          <!-- Item 2: Amber Level Marker -->
+          <div class="flex items-center gap-3 py-1 px-2.5 rounded bg-surface-card/40 border border-surface-border/40 hover:border-surface-border transition-colors">
+            <span class="text-emerald-500/60 text-[11px]">[14:21:40]</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-amber shadow-[0_0_4px_#f59e0b]"></span>
+            <span class="text-emerald-300">Nutrient threshold dropping below optimal 50%</span>
+            <span class="text-amber text-[11px] font-medium">[WARNING]</span>
+          </div>
+
+          <!-- Item 3: Coral Level Marker -->
+          <div class="flex items-center gap-3 py-1 px-2.5 rounded bg-coral/5 border border-coral/20 hover:border-coral/40 transition-colors">
+            <span class="text-emerald-500/60 text-[11px]">[14:19:12]</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-coral shadow-[0_0_4px_#f43f5e]"></span>
+            <span class="text-coral">Metabolic shock detected: passive synthesis halted</span>
+            <span class="text-coral/80 text-[11px]">[CRITICAL]</span>
+          </div>
+
+          <!-- Item 4: Cyan Level Marker -->
+          <div class="flex items-center gap-3 py-1 px-2.5 rounded bg-surface-card/40 border border-surface-border/40 hover:border-surface-border transition-colors">
+            <span class="text-emerald-500/60 text-[11px]">[14:18:05]</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan shadow-[0_0_4px_#38bdf8]"></span>
+            <span class="text-emerald-200">Absorb cycle completed:</span>
+            <span class="text-cyan font-semibold text-[11px]">+2 Water, +2 Nutrients</span>
+          </div>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+</body>
+</html>

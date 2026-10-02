@@ -3,21 +3,29 @@
   import { gameStore } from '$lib/stores/game.svelte';
 
   const links = [
-    { href: '/', label: 'OVERVIEW' },
-    { href: '/radar', label: 'RADAR' },
-    { href: '/evolution', label: 'EVOLVE' },
-    { href: '/expeditions', label: 'SCOUT' },
+    { href: '/', label: 'Core' },
+    { href: '/radar', label: 'Radar' },
+    { href: '/evolution', label: 'Evolution' },
+    { href: '/expeditions', label: 'Expeditions' },
   ];
 
   let radarAlert = $derived(gameStore.state.gamePhase === 'tactician');
+
+  function normalize(path: string): string {
+    return path.replace(/\/+$/, '') || '/';
+  }
+
+  function isActive(href: string): boolean {
+    return normalize($page.url.pathname) === normalize(href);
+  }
 </script>
 
 <nav class="nav">
   {#each links as link}
-    <a href={link.href} class="tab" class:active={$page.url.pathname === link.href}>
+    <a href={link.href} class="tab" class:active={isActive(link.href)}>
       {link.label}
       {#if link.href === '/radar' && radarAlert}
-        <span class="alert-badge">[!]</span>
+        <span class="alert-badge" role="status" aria-label="New threat on the Radar">[!]</span>
       {/if}
     </a>
   {/each}
@@ -42,7 +50,7 @@
     justify-content: center;
     gap: var(--space-unit);
     padding: var(--space-panel-padding) var(--space-unit);
-    text-transform: uppercase;
+    font-size: 13px;
     text-decoration: none;
     border-right: 1px solid var(--border);
     color: var(--on-surface-variant);
@@ -64,11 +72,11 @@
 
   .active {
     background: var(--primary);
-    color: var(--background);
+    color: var(--on-primary);
   }
 
   .active:hover {
     background: var(--primary);
-    color: var(--background);
+    color: var(--on-primary);
   }
 </style>

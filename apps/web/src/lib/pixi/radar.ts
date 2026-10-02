@@ -1,26 +1,23 @@
-import { Application, Graphics, Container, Text, TextStyle } from 'pixi.js';
+import { Application, Graphics, Container, Text, TextStyle, Sprite, Texture } from 'pixi.js';
 import { HOSTS } from '@mycosurge/config';
-import type { CombatResult } from '@mycosurge/game-engine';
 import {
   RADAR_BG,
   GRID_COLOR,
   GRID_SPACING,
+  MINT_COLOR,
+  CORAL_COLOR,
   PLAYER_COLOR,
   PLAYER_SPEED,
-  SPORE_COLOR,
+  PLAYER_RADIUS,
   SPORE_SPEED,
   SPORE_FIRE_RATE,
   ANTIBODY_COLOR,
-  NODE_STROKE_COLOR,
-  NODE_FILL_COLOR,
-  NODE_RADIUS,
+  HOST_SIZE,
   HIT_FLASH_DURATION,
   COLLISION_BUMP,
   DIFFICULTY_NODE_COUNT,
   PATTERN_INTERVALS,
-  ANTIBODY_CHARS,
-  PLAYER_CHAR,
-  NODE_CHAR,
+  MONO_FONT,
 } from './constants';
 
 interface ProjectileData {
@@ -33,7 +30,6 @@ interface ProjectileData {
   piercing: boolean;
   alive: boolean;
   life: number;
-  charIdx: number;
 }
 
 interface NodeData {
@@ -76,7 +72,6 @@ function createProjectilePool(): ProjectileData[] {
       piercing: false,
       alive: false,
       life: 0,
-      charIdx: 0,
     });
   }
   return pool;
@@ -106,33 +101,50 @@ function randomBetween(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
 
+function hostGlyph(name: string): string {
+  const clean = name.replace(/\(.*\)/g, '').trim();
+  const words = clean.split(/\s+/);
+  return (words[words.length - 1]?.[0] ?? 'H').toUpperCase();
+}
+
+function makeArenaGlow(size: number): Texture | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const grad = ctx.createRadialGradient(size / 2, size * 0.4, 0, size / 2, size * 0.4, size * 0.62);
+  grad.addColorStop(0, 'rgba(26, 33, 31, 1)');
+  grad.addColorStop(1, 'rgba(14, 21, 19, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  return Texture.from(canvas);
+}
+
+export interface RadarStats {
+  hp: number;
+  maxHp: number;
+  shieldHits: number;
+  hostHp: number;
+  hostMaxHp: number;
+}
+
 export interface RadarCallbacks {
-  onVictory: (result: CombatResult) => void;
+  onVictory: () => void;
   onDefeat: () => void;
+  onStats?: (stats: RadarStats) => void;
 }
 
 export interface RadarInstance {
   destroy: () => void;
 }
 
-const TEXT_STYLE = new TextStyle({
-  fontFamily: 'monospace',
-  fontSize: 14,
-  fill: '#e0e0e0',
-  letterSpacing: 0,
-});
-
-const PLAYER_STYLE = new TextStyle({
-  fontFamily: 'monospace',
-  fontSize: 16,
-  fill: '#ffffff',
+const HOST_STYLE = new TextStyle({
+  fontFamily: MONO_FONT,
+  fontSize: 20,
+  fill: ANTIBODY_COLOR,
   fontWeight: 'bold',
-});
-
-const ALERT_STYLE = new TextStyle({
-  fontFamily: 'monospace',
-  fontSize: 13,
-  fill: '#cc3333',
 });
 
 export function createRadar(
@@ -148,16 +160,23 @@ export function createRadar(
     piercing: boolean;
     shieldHits: number;
     emergencyEvac: boolean;
+    hitboxMultiplier: number;
+    damageResistance: number;
+    hpRegen: number;
+    chainReaction: boolean;
   },
   callbacks: RadarCallbacks,
+  modifiers: { hpMult?: number; speedMult?: number } = {},
 ): RadarInstance {
+  const hpMult = modifiers.hpMult ?? 1;
+  const speedMult = modifiers.speedMult ?? 1;
   const host = HOSTS.find((h) => h.id === hostId)!;
   const difficultyMult = 1 + (host.difficulty - 1) * 0.2;
-  const nodeCount = Math.min(
-    DIFFICULTY_NODE_COUNT[host.difficulty] ??
-      DIFFICULTY_NODE_COUNT[DIFFICULTY_NODE_COUNT.length - 1],
-    8,
-  );
+  const nodeCount =
+    DIFFICULTY_NODE_COUNT[Math.max(0, host.difficulty - 1)] ??
+    DIFFICULTY_NODE_COUNT[DIFFICULTY_NODE_COUNT.length - 1];
+  const playerRadius = PLAYER_RADIUS * (combatStats.hitboxMultiplier || 1);
+  const glyph = hostGlyph(host.name);
 
   const app = new Application();
   let destroyed = false;
@@ -167,24 +186,33 @@ export function createRadar(
   const gridGraphics = new Graphics();
   const nodeContainer = new Container();
   const projectileContainer = new Container();
-  const playerText = new Text({ text: PLAYER_CHAR, style: PLAYER_STYLE });
-  playerText.anchor.set(0.5);
+  const playerGfx = new Graphics();
 
   const stage = new Container();
   stage.addChild(gridGraphics);
+  const glowTexture = makeArenaGlow(size);
+  if (glowTexture) {
+    const glow = new Sprite(glowTexture);
+    glow.width = size;
+    glow.height = size;
+    stage.addChild(glow);
+  }
   stage.addChild(nodeContainer);
-  stage.addChild(playerText);
+  stage.addChild(playerGfx);
   stage.addChild(projectileContainer);
 
-  drawGrid(size);
-  function drawGrid(s: number) {
+  drawGrid();
+  function drawGrid() {
     gridGraphics.clear();
-    for (let x = 0; x < s; x += GRID_SPACING) {
-      for (let y = 0; y < s; y += GRID_SPACING) {
-        gridGraphics.circle(x, y, 1);
-        gridGraphics.fill({ color: GRID_COLOR, alpha: 1 });
-      }
+    for (let x = 0; x <= size; x += GRID_SPACING) {
+      gridGraphics.moveTo(x, 0);
+      gridGraphics.lineTo(x, size);
     }
+    for (let y = 0; y <= size; y += GRID_SPACING) {
+      gridGraphics.moveTo(0, y);
+      gridGraphics.lineTo(size, y);
+    }
+    gridGraphics.stroke({ color: GRID_COLOR, alpha: 0.06, width: 1 });
   }
 
   const keys: Set<string> = new Set();
@@ -214,9 +242,10 @@ export function createRadar(
   function onTouchMove(e: TouchEvent) {
     e.preventDefault();
     const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const scale = rect.width > 0 ? size / rect.width : 1;
     const t = e.touches[0];
-    touchDx = t.clientX - rect.left - touchAnchorX;
-    touchDy = t.clientY - rect.top - touchAnchorY;
+    touchDx = (t.clientX - rect.left - touchAnchorX) * scale;
+    touchDy = (t.clientY - rect.top - touchAnchorY) * scale;
   }
 
   function onTouchEnd() {
@@ -229,13 +258,25 @@ export function createRadar(
   window.addEventListener('keyup', onKeyUp);
 
   const pool = createProjectilePool();
-  const poolTexts: Text[] = [];
+  const poolGfx: Graphics[] = [];
+  const drawnFriendly: (boolean | null)[] = [];
   for (let i = 0; i < POOL_SIZE; i++) {
-    const t = new Text({ text: '.', style: TEXT_STYLE });
-    t.anchor.set(0.5);
-    t.visible = false;
-    projectileContainer.addChild(t);
-    poolTexts.push(t);
+    const g = new Graphics();
+    g.visible = false;
+    projectileContainer.addChild(g);
+    poolGfx.push(g);
+    drawnFriendly.push(null);
+  }
+
+  function drawProjectile(g: Graphics, friendly: boolean) {
+    g.clear();
+    if (friendly) {
+      g.roundRect(-2, -6, 4, 12, 2);
+      g.fill({ color: MINT_COLOR, alpha: 1 });
+    } else {
+      g.circle(0, 0, 4);
+      g.fill({ color: CORAL_COLOR, alpha: 1 });
+    }
   }
 
   const centerX = size / 2,
@@ -253,7 +294,40 @@ export function createRadar(
     facingAngle: -Math.PI / 2,
   };
 
+  function hostTotals() {
+    let hp = 0,
+      maxHp = 0;
+    for (const n of nodes) {
+      if (n.alive) hp += n.hp;
+      maxHp += n.maxHp;
+    }
+    return { hp, maxHp };
+  }
+
+  let last: RadarStats | null = null;
+  function emitStats() {
+    const totals = hostTotals();
+    const next: RadarStats = {
+      hp: player.hp,
+      maxHp: player.maxHp,
+      shieldHits: player.shieldHits,
+      hostHp: Math.max(0, totals.hp),
+      hostMaxHp: totals.maxHp,
+    };
+    if (
+      last &&
+      last.hp === next.hp &&
+      last.shieldHits === next.shieldHits &&
+      last.hostHp === next.hostHp
+    ) {
+      return;
+    }
+    last = next;
+    callbacks.onStats?.(next);
+  }
+
   const nodes: NodeData[] = [];
+  const nodeRadius = HOST_SIZE / 2;
   for (let i = 0; i < nodeCount; i++) {
     const angle = (i / nodeCount) * Math.PI * 2;
     const dist = 120 + Math.random() * 60;
@@ -261,9 +335,9 @@ export function createRadar(
     nodes.push({
       x: centerX + Math.cos(angle) * dist,
       y: centerY + Math.sin(angle) * dist,
-      hp: Math.ceil(10 * difficultyMult),
-      maxHp: Math.ceil(10 * difficultyMult),
-      radius: NODE_RADIUS,
+      hp: Math.ceil(10 * difficultyMult * hpMult),
+      maxHp: Math.ceil(10 * difficultyMult * hpMult),
+      radius: nodeRadius,
       patternName: host.attackPatterns[patternIdx],
       patternTimer: randomBetween(0, 2),
       alive: true,
@@ -272,27 +346,27 @@ export function createRadar(
     });
   }
 
-  const nodeGraphics: { ring: Graphics; label: Text }[] = [];
+  const nodeGraphics: { body: Graphics; label: Text }[] = [];
   for (const n of nodes) {
-    const ring = new Graphics();
-    ring.position.set(n.x, n.y);
-    nodeContainer.addChild(ring);
+    const body = new Graphics();
+    body.position.set(n.x, n.y);
+    nodeContainer.addChild(body);
 
-    const label = new Text({ text: NODE_CHAR, style: TEXT_STYLE });
+    const label = new Text({ text: glyph, style: HOST_STYLE });
     label.anchor.set(0.5);
     label.position.set(n.x, n.y);
     nodeContainer.addChild(label);
 
-    nodeGraphics.push({ ring, label });
-    drawNodeRing(ring, 0x333333, n.radius);
+    nodeGraphics.push({ body, label });
+    drawHost(body, CORAL_COLOR);
   }
 
-  function drawNodeRing(g: Graphics, strokeColor: number, radius: number) {
+  function drawHost(g: Graphics, strokeColor: number) {
     g.clear();
-    g.circle(0, 0, radius);
-    g.fill({ color: NODE_FILL_COLOR, alpha: 1 });
-    g.circle(0, 0, radius - 1);
-    g.stroke({ color: strokeColor, alpha: 1, width: 1 });
+    g.roundRect(-HOST_SIZE / 2, -HOST_SIZE / 2, HOST_SIZE, HOST_SIZE, 10);
+    g.fill({ color: CORAL_COLOR, alpha: 0.16 });
+    g.roundRect(-HOST_SIZE / 2, -HOST_SIZE / 2, HOST_SIZE, HOST_SIZE, 10);
+    g.stroke({ color: strokeColor, width: 2 });
   }
 
   function isOffScreen(x: number, y: number): boolean {
@@ -310,8 +384,8 @@ export function createRadar(
       const p = acquireProjectile(pool);
       if (!p) break;
       const a = baseAngle - startOffset + i * spreadAngle;
-      p.x = player.x + Math.cos(a) * 12;
-      p.y = player.y + Math.sin(a) * 12;
+      p.x = player.x + Math.cos(a) * 14;
+      p.y = player.y + Math.sin(a) * 14;
       p.vx = Math.cos(a) * speed;
       p.vy = Math.sin(a) * speed;
       p.damage = combatStats.damage;
@@ -319,7 +393,6 @@ export function createRadar(
       p.piercing = combatStats.piercing;
       p.alive = true;
       p.life = 3;
-      p.charIdx = 0;
     }
   }
 
@@ -328,14 +401,13 @@ export function createRadar(
     if (!p) return;
     p.x = x;
     p.y = y;
-    p.vx = vx;
-    p.vy = vy;
+    p.vx = vx * speedMult;
+    p.vy = vy * speedMult;
     p.damage = 1;
     p.friendly = false;
     p.piercing = false;
     p.alive = true;
     p.life = 5;
-    p.charIdx = Math.floor(Math.random() * ANTIBODY_CHARS.length);
   }
 
   function runPattern(node: NodeData, dt: number) {
@@ -407,6 +479,79 @@ export function createRadar(
         }
         break;
       }
+      case 'pattern_combo': {
+        node.angle += 1;
+        const speed = 130 * difficultyMult;
+        if (Math.floor(node.angle) % 2 === 0) {
+          for (let i = 0; i < 4; i++) {
+            const a = angleToPlayer + (i - 1.5) * 0.2;
+            spawnAntibody(node.x, node.y, Math.cos(a) * speed, Math.sin(a) * speed);
+          }
+        } else {
+          for (let i = 0; i < 3; i++) {
+            const a = Math.random() * Math.PI * 2;
+            spawnAntibody(node.x, node.y, Math.cos(a) * speed, Math.sin(a) * speed);
+          }
+        }
+        break;
+      }
+      case 'enrage_phase': {
+        const hpRatio = node.maxHp > 0 ? node.hp / node.maxHp : 1;
+        const rage = 1 + (1 - hpRatio) * 1.5;
+        node.angle += 0.6;
+        const speed = 110 * difficultyMult * rage;
+        spawnAntibody(node.x, node.y, Math.cos(node.angle) * speed, Math.sin(node.angle) * speed);
+        spawnAntibody(
+          node.x,
+          node.y,
+          Math.cos(node.angle + Math.PI) * speed,
+          Math.sin(node.angle + Math.PI) * speed,
+        );
+        break;
+      }
+      case 'multi_phase': {
+        node.angle += 1;
+        const phase = Math.floor(node.angle / 3) % 3;
+        const speed = 130 * difficultyMult;
+        if (phase === 0) {
+          for (let i = 0; i < 6; i++) {
+            const a = Math.random() * Math.PI * 2;
+            spawnAntibody(node.x, node.y, Math.cos(a) * speed, Math.sin(a) * speed);
+          }
+        } else if (phase === 1) {
+          spawnAntibody(node.x, node.y, (dx / distToPlayer) * speed, (dy / distToPlayer) * speed);
+        } else {
+          node.angle += 0.4;
+          for (let ring = 0; ring < 2; ring++) {
+            const a = node.angle + ring * Math.PI;
+            spawnAntibody(node.x, node.y, Math.cos(a) * speed, Math.sin(a) * speed);
+          }
+        }
+        break;
+      }
+      case 'geometric_lasers': {
+        node.angle += 0.3;
+        const speed = 260 * difficultyMult;
+        const spokes = [
+          node.angle,
+          node.angle + Math.PI / 2,
+          node.angle + Math.PI,
+          node.angle + (3 * Math.PI) / 2,
+        ];
+        for (const a of spokes) {
+          spawnAntibody(node.x, node.y, Math.cos(a) * speed, Math.sin(a) * speed);
+        }
+        break;
+      }
+      case 'summon': {
+        const speed = 90 * difficultyMult;
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2 + node.angle;
+          spawnAntibody(node.x, node.y, Math.cos(a) * speed, Math.sin(a) * speed);
+        }
+        node.angle += 0.4;
+        break;
+      }
       default: {
         node.angle += 0.5;
         const speed = 100 * difficultyMult;
@@ -422,7 +567,7 @@ export function createRadar(
       player.invincibleTimer = 0.5;
       return;
     }
-    player.hp--;
+    player.hp -= Math.max(0.05, 1 - combatStats.damageResistance);
     player.invincibleTimer = 1;
     player.flashTimer = HIT_FLASH_DURATION;
     if (player.hp <= 0 && combatStats.emergencyEvac) player.hp = 1;
@@ -440,20 +585,17 @@ export function createRadar(
 
     const aliveNodes = nodes.filter((n) => n.alive);
     if (aliveNodes.length === 0) {
-      callbacks.onVictory({
-        victory: true,
-        biomassEarned: 0,
-        assimilationGained: 0,
-        lysateEarned: 0,
-        hostDefeated: false,
-        echoUnlocked: false,
-      });
+      callbacks.onVictory();
       destroyed = true;
       return;
     }
 
     player.flashTimer = Math.max(0, player.flashTimer - dt);
     player.invincibleTimer = Math.max(0, player.invincibleTimer - dt);
+
+    if (combatStats.hpRegen > 0 && player.hp > 0 && player.hp < player.maxHp) {
+      player.hp = Math.min(player.maxHp, player.hp + combatStats.hpRegen * dt);
+    }
 
     let dx = 0,
       dy = 0;
@@ -497,7 +639,6 @@ export function createRadar(
       p.life -= dt;
       if (p.life <= 0 || isOffScreen(p.x, p.y)) {
         p.alive = false;
-        poolTexts[i].visible = false;
         continue;
       }
 
@@ -507,67 +648,79 @@ export function createRadar(
           if (circleCollision(p.x, p.y, 3, node.x, node.y, node.radius)) {
             node.hp -= p.damage;
             node.flashTimer = HIT_FLASH_DURATION;
+            if (combatStats.chainReaction) {
+              for (const other of nodes) {
+                if (other === node || !other.alive) continue;
+                const ddx = other.x - node.x;
+                const ddy = other.y - node.y;
+                if (ddx * ddx + ddy * ddy < 60 * 60) {
+                  other.hp -= p.damage * 0.5;
+                  other.flashTimer = HIT_FLASH_DURATION;
+                  if (other.hp <= 0) other.alive = false;
+                }
+              }
+            }
             if (node.hp <= 0) {
               node.alive = false;
             }
             if (!p.piercing) {
               p.alive = false;
-              poolTexts[i].visible = false;
             }
             break;
           }
         }
       } else {
-        if (circleCollision(p.x, p.y, 4, player.x, player.y, 8)) {
+        if (circleCollision(p.x, p.y, 4, player.x, player.y, playerRadius)) {
           takeDamage();
           p.alive = false;
-          poolTexts[i].visible = false;
         }
       }
     }
 
-    playerText.style =
-      player.flashTimer > 0
-        ? new TextStyle({
-            fontFamily: 'monospace',
-            fontSize: 16,
-            fill: '#cc3333',
-            fontWeight: 'bold',
-          })
-        : PLAYER_STYLE;
-    playerText.position.set(player.x, player.y);
+    drawPlayer();
+    playerGfx.position.set(player.x, player.y);
 
     for (let i = 0; i < nodes.length; i++) {
       const n = nodes[i];
       if (!n.alive) {
-        nodeGraphics[i].ring.visible = false;
+        nodeGraphics[i].body.visible = false;
         nodeGraphics[i].label.visible = false;
         continue;
       }
-      const strokeColor = n.flashTimer > 0 ? 0x888888 : 0x333333;
-      drawNodeRing(nodeGraphics[i].ring, strokeColor, n.radius);
-      nodeGraphics[i].ring.position.set(n.x, n.y);
+      drawHost(nodeGraphics[i].body, n.flashTimer > 0 ? 0xffffff : CORAL_COLOR);
+      nodeGraphics[i].body.position.set(n.x, n.y);
       nodeGraphics[i].label.position.set(n.x, n.y);
       n.flashTimer = Math.max(0, n.flashTimer - dt);
     }
 
     for (let i = 0; i < pool.length; i++) {
       const p = pool[i];
+      const g = poolGfx[i];
       if (!p.alive) {
-        poolTexts[i].visible = false;
+        g.visible = false;
         continue;
       }
-      const t = poolTexts[i];
-      if (p.friendly) {
-        t.text = '.';
-        t.style = TEXT_STYLE;
-      } else {
-        t.text = ANTIBODY_CHARS[p.charIdx % ANTIBODY_CHARS.length];
-        t.style = ALERT_STYLE;
+      if (drawnFriendly[i] !== p.friendly) {
+        drawProjectile(g, p.friendly);
+        drawnFriendly[i] = p.friendly;
       }
-      t.position.set(p.x, p.y);
-      t.visible = true;
+      g.position.set(p.x, p.y);
+      g.rotation = p.friendly ? Math.atan2(p.vy, p.vx) + Math.PI / 2 : 0;
+      g.visible = true;
     }
+
+    emitStats();
+  }
+
+  function drawPlayer() {
+    const color = player.flashTimer > 0 ? CORAL_COLOR : MINT_COLOR;
+    playerGfx.clear();
+    playerGfx.circle(0, 0, PLAYER_RADIUS + 9);
+    playerGfx.fill({ color, alpha: 0.18 });
+    playerGfx.circle(0, 0, PLAYER_RADIUS);
+    playerGfx.fill({ color, alpha: 1 });
+    playerGfx.alpha =
+      player.invincibleTimer > 0 && Math.floor(player.invincibleTimer * 12) % 2 === 0 ? 0.4 : 1;
   }
 
   (async () => {
@@ -583,7 +736,15 @@ export function createRadar(
 
     container.appendChild(app.canvas);
     app.canvas.setAttribute('tabindex', '0');
-    app.canvas.style.outline = 'none';
+    app.canvas.setAttribute('role', 'application');
+    app.canvas.setAttribute(
+      'aria-label',
+      'Combat arena. Use WASD or arrow keys to move; spores fire automatically.',
+    );
+    app.canvas.style.display = 'block';
+    app.canvas.style.width = '100%';
+    app.canvas.style.height = '100%';
+    app.canvas.style.touchAction = 'none';
     app.canvas.addEventListener('keydown', onKeyDown);
     app.canvas.addEventListener('keyup', onKeyUp);
     app.canvas.addEventListener('touchstart', onTouchStart, { passive: true });
@@ -592,6 +753,7 @@ export function createRadar(
     app.canvas.addEventListener('touchcancel', onTouchEnd);
     app.stage.addChild(stage);
     app.ticker.add(tick);
+    emitStats();
   })();
 
   return {

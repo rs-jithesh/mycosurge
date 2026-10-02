@@ -36,7 +36,7 @@ export const UPGRADES: UpgradeDef[] = [
   },
   {
     id: 'osmotic_regulation_v2',
-    name: 'Osmotic Regulation V2',
+    name: 'Osmotic Regulation',
     description:
       'Improves water balance under metabolic stress, reducing Water drain during combat.',
     category: 'mycelial',
@@ -59,7 +59,7 @@ export const UPGRADES: UpgradeDef[] = [
     id: 'exoenzyme_cascade',
     name: 'Exoenzyme Cascade',
     description:
-      'More enzymes yield more extractable material, increasing Nutrient gain per cycle.',
+      'More enzymes yield more extractable material, increasing Nutrients gain per cycle.',
     category: 'mycelial',
     baseCost: 10,
     costScale: 1.5,
@@ -69,7 +69,7 @@ export const UPGRADES: UpgradeDef[] = [
   {
     id: 'chitin_recycling',
     name: 'Chitin Recycling',
-    description: 'Reclaims structural nutrients from old hyphal walls, reducing Nutrient drain.',
+    description: 'Reclaims structural nutrients from old hyphal walls, reducing Nutrients drain.',
     category: 'mycelial',
     baseCost: 15,
     costScale: 1.5,
@@ -89,7 +89,7 @@ export const UPGRADES: UpgradeDef[] = [
   {
     id: 'nitrogen_fixation_symbiosis',
     name: 'Nitrogen Fixation Symbiosis',
-    description: 'Partner with nitrogen-fixing bacteria for a slow passive Nutrient trickle.',
+    description: 'Partner with nitrogen-fixing bacteria for a slow passive Nutrients trickle.',
     category: 'mycelial',
     baseCost: 30,
     costScale: 1.5,
@@ -97,11 +97,11 @@ export const UPGRADES: UpgradeDef[] = [
     prereqs: ['exoenzyme_cascade'],
   },
 
-  // ── INCURSION PROTOCOLS (placeholders — to be designed) ──
+  // ── COMBAT UPGRADES ──
   {
     id: 'spore_veil',
     name: 'Spore Veil',
-    description: '[TO BE DESIGNED] Defensive spore release during incursions.',
+    description: 'Release a defensive cloud of spores when a host attacks.',
     category: 'incursion',
     baseCost: 20,
     costScale: 1.5,
@@ -111,7 +111,7 @@ export const UPGRADES: UpgradeDef[] = [
   {
     id: 'enzymatic_breach',
     name: 'Enzymatic Breach',
-    description: '[TO BE DESIGNED] Digestive enzymes weaken host defenses.',
+    description: 'Digestive enzymes eat through a host’s defenses.',
     category: 'incursion',
     baseCost: 30,
     costScale: 1.5,
@@ -121,7 +121,7 @@ export const UPGRADES: UpgradeDef[] = [
   {
     id: 'hyphal_invasion',
     name: 'Hyphal Invasion',
-    description: '[TO BE DESIGNED] Direct hyphal penetration of host tissue.',
+    description: 'Thread hyphae directly through host tissue to weaken it.',
     category: 'incursion',
     baseCost: 40,
     costScale: 1.5,
@@ -131,7 +131,7 @@ export const UPGRADES: UpgradeDef[] = [
   {
     id: 'neural_override',
     name: 'Neural Override',
-    description: '[TO BE DESIGNED] Subvert host nervous system for tactical advantage.',
+    description: 'Overwhelm a host’s nervous system to gain the upper hand.',
     category: 'incursion',
     baseCost: 50,
     costScale: 1.5,
@@ -181,5 +181,15 @@ export const UPGRADES: UpgradeDef[] = [
     costScale: 1.5,
     maxLevel: 1,
     prereqs: ['hyphal_density_protocol'],
+  },
+  {
+    id: 'extended_range',
+    name: 'Extended Range',
+    description: 'Widen the radar array so it can hold one more contact signal at a time.',
+    category: 'structural',
+    baseCost: 20,
+    costScale: 1.5,
+    maxLevel: 1,
+    prereqs: [],
   },
 ];

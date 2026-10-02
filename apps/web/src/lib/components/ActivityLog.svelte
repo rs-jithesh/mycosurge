@@ -33,8 +33,15 @@
 </script>
 
 <div class="log-panel">
-  <div class="log-header text-label-caps">SYS_LOG // TAIL -F</div>
-  <div class="log-container" bind:this={container} onscroll={handleScroll}>
+  <div class="log-header text-label-caps">Activity</div>
+  <div
+    class="log-container"
+    role="log"
+    aria-live="polite"
+    aria-label="Activity log"
+    bind:this={container}
+    onscroll={handleScroll}
+  >
     {#each logStore.entries as entry (entry.id)}
       <p
         class="line"

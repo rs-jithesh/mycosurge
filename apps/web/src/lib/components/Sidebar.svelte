@@ -3,10 +3,10 @@
   import { gameStore } from '$lib/stores/game.svelte';
 
   const links = [
-    { href: '/', label: '[01] CORE' },
-    { href: '/radar', label: '[02] RADAR' },
-    { href: '/evolution', label: '[03] Evolution' },
-    { href: '/expeditions', label: '[04] LOGS' },
+    { href: '/', label: 'Core' },
+    { href: '/radar', label: 'Radar' },
+    { href: '/evolution', label: 'Evolution' },
+    { href: '/expeditions', label: 'Expeditions' },
   ];
 
   let radarAlert = $derived(gameStore.state.gamePhase === 'tactician');
@@ -16,18 +16,12 @@
     if (href === '/') return path === '/';
     return path.startsWith(href);
   }
-
-  function handlePurge() {
-    if (confirm('PURGE: This will wipe all game data and restart. Continue?')) {
-      gameStore.resetGame();
-    }
-  }
 </script>
 
 <aside class="sidebar">
   <div class="section-header">
-    <div class="sidebar-brand text-headline-md">SECTOR_NAV</div>
-    <div class="sidebar-sub text-data-mono">ID: PRTCL-99</div>
+    <div class="sidebar-brand text-headline-md">Navigation</div>
+    <div class="sidebar-sub text-data-mono">Mycosurge Network</div>
   </div>
 
   <nav class="nav-links">
@@ -40,15 +34,11 @@
       >
         {link.label}
         {#if link.href === '/radar' && radarAlert}
-          <span class="alert-badge">[!]</span>
+          <span class="alert-badge" role="status" aria-label="New threat on the Radar">[!]</span>
         {/if}
       </a>
     {/each}
   </nav>
-
-  <div class="sidebar-footer">
-    <button class="cmd-btn sidebar-btn purge-btn" onclick={handlePurge}>&gt; EXE: PURGE</button>
-  </div>
 </aside>
 
 <style>
@@ -106,7 +96,7 @@
 
   .nav-link.active {
     background: var(--primary);
-    color: var(--background);
+    color: var(--on-primary);
   }
 
   .alert-badge {
@@ -115,27 +105,12 @@
   }
 
   .active .alert-badge {
-    color: var(--background);
+    color: var(--on-primary);
   }
 
-  .sidebar-footer {
-    padding: var(--space-panel-padding);
-    border-top: 1px solid var(--border);
-  }
-
-  .sidebar-btn {
-    width: 100%;
-    text-align: left;
-    padding: var(--space-panel-padding);
-  }
-
-  .purge-btn {
-    border-color: var(--alert);
-    color: var(--alert);
-  }
-
-  .purge-btn:hover {
-    background: var(--alert);
-    color: var(--background);
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .sidebar {
+      width: 200px;
+    }
   }
 </style>

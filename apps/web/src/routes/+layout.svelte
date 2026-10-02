@@ -3,10 +3,10 @@
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import Nav from '$lib/components/Nav.svelte';
-  import TerminalLog from '$lib/components/TerminalLog.svelte';
+  import ActivityLog from '$lib/components/ActivityLog.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
-  import ChatPanel from '$lib/components/ChatPanel.svelte';
 
   let { children } = $props();
 
@@ -14,20 +14,28 @@
 
   onMount(() => {
     gameStore.startTick();
-    logStore.info('Mycelial network boot sequence v0.1.0');
-    logStore.info('Biomass assimilation engine online');
+    logStore.info('Your mycelial network is coming online.');
+    logStore.info('Growing automatically now.');
     return () => {
       gameStore.stopTick();
     };
   });
+
+  function handleReset() {
+    if (confirm('Reset all progress and restart from the tutorial?')) {
+      gameStore.resetGame();
+      goto('/');
+    }
+  }
 </script>
 
 <div class="terminal-frame">
   <!-- Top Bar -->
   <header class="top-bar">
-    <span class="top-bar-brand text-headline-md">MYCOSURGE v0.1.0 [ACTIVE]</span>
+    <span class="top-bar-brand text-headline-md">MYCOSURGE</span>
     <div class="top-bar-actions">
-      <button class="cmd-btn top-btn">&gt; SYS:TERM</button>
+      <span class="top-bar-status text-label-caps">● Online</span>
+      <button class="cmd-btn reset-btn" onclick={handleReset}>Reset</button>
     </div>
   </header>
 
@@ -39,9 +47,6 @@
     <main class="center-content" class:center-full={!isFullGame}>
       {@render children()}
     </main>
-    {#if isFullGame}
-      <ChatPanel />
-    {/if}
   </div>
 
   <!-- Mobile Layout (hidden on desktop) -->
@@ -50,7 +55,7 @@
       {@render children()}
     </main>
     {#if isFullGame}
-      <TerminalLog />
+      <ActivityLog />
       <Nav />
     {/if}
   </div>
@@ -82,11 +87,25 @@
 
   .top-bar-actions {
     display: flex;
+    align-items: center;
     gap: var(--space-gutter);
   }
 
-  .top-btn {
-    padding: var(--space-unit);
+  .top-bar-status {
+    color: var(--primary);
+  }
+
+  .reset-btn {
+    padding: 4px 12px;
+    font-size: var(--font-label-caps);
+    border-color: var(--alert);
+    color: var(--alert);
+  }
+
+  .reset-btn:hover {
+    background: var(--alert);
+    border-color: var(--alert);
+    color: var(--on-error);
   }
 
   .desktop-layout {

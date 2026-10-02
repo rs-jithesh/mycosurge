@@ -1,181 +1,221 @@
 ---
-name: Clinical Brutalist Terminal
+name: Bio-Luminal Lab
 colors:
-  surface: '#131313'
-  surface-dim: '#131313'
-  surface-bright: '#3a3939'
-  surface-container-lowest: '#0e0e0e'
-  surface-container-low: '#1c1b1b'
-  surface-container: '#201f1f'
-  surface-container-high: '#2a2a2a'
-  surface-container-highest: '#353534'
-  on-surface: '#e5e2e1'
-  on-surface-variant: '#c4c7c8'
-  inverse-surface: '#e5e2e1'
-  inverse-on-surface: '#313030'
-  outline: '#8e9192'
-  outline-variant: '#444748'
-  surface-tint: '#c6c6c6'
-  primary: '#fdfdfc'
-  on-primary: '#2f3131'
-  primary-container: '#e0e0e0'
-  on-primary-container: '#626363'
-  inverse-primary: '#5d5f5f'
-  secondary: '#c7c6c6'
-  on-secondary: '#303031'
-  secondary-container: '#464747'
-  on-secondary-container: '#b6b5b5'
-  tertiary: '#fffbff'
-  on-tertiary: '#342f2d'
-  tertiary-container: '#e7deda'
-  on-tertiary-container: '#67615e'
+  background: '#0e1513'
+  surface: '#161d1b'
+  surface-dim: '#0e1513'
+  surface-bright: '#333b38'
+  surface-container-lowest: '#09100e'
+  surface-container-low: '#161d1b'
+  surface-container: '#1a211f'
+  surface-container-high: '#242b29'
+  surface-container-highest: '#2f3634'
+  surface-variant: '#2f3634'
+  on-surface: '#dde4e0'
+  on-surface-variant: '#bbcac0'
+  border: '#3c4a42'
+  outline: '#86948b'
+  outline-variant: '#3c4a42'
+  primary: '#70fdc3'
+  on-primary: '#003826'
+  primary-container: '#4fe0a8'
+  on-primary-container: '#006043'
+  primary-fixed-dim: '#4ddea6'
+  secondary: '#68d6e3'
+  on-secondary: '#00363c'
+  secondary-container: '#1f9fac'
+  tertiary: '#ffe0ac'
+  on-tertiary: '#412d00'
+  tertiary-container: '#f5c055'
+  warning: '#f5c055'
+  success: '#70fdc3'
+  danger: '#ffb4ab'
+  alert: '#ffb4ab'
   error: '#ffb4ab'
-  on-error: '#690005'
-  error-container: '#93000a'
-  on-error-container: '#ffdad6'
-  primary-fixed: '#e2e2e2'
-  primary-fixed-dim: '#c6c6c6'
-  on-primary-fixed: '#1a1c1c'
-  on-primary-fixed-variant: '#454747'
-  secondary-fixed: '#e4e2e2'
-  secondary-fixed-dim: '#c7c6c6'
-  on-secondary-fixed: '#1b1c1c'
-  on-secondary-fixed-variant: '#464747'
-  tertiary-fixed: '#eae1dd'
-  tertiary-fixed-dim: '#cdc5c1'
-  on-tertiary-fixed: '#1f1b19'
-  on-tertiary-fixed-variant: '#4b4643'
-  background: '#131313'
-  on-background: '#e5e2e1'
-  surface-variant: '#353534'
-  alert-critical: '#cc3333'
-  player-core: '#ffffff'
-  structural-border: '#333333'
+  player-core: '#f2fff9'
+  inverse-surface: '#dde4e0'
+  inverse-on-surface: '#2b322f'
 typography:
   headline-lg:
-    fontFamily: JetBrains Mono
-    fontSize: 24px
+    fontFamily: Space Grotesk
+    fontSize: 26px
     fontWeight: '700'
     lineHeight: 32px
-    letterSpacing: 0.05em
+    letterSpacing: 0px
   headline-md:
-    fontFamily: JetBrains Mono
-    fontSize: 18px
-    fontWeight: '700'
-    lineHeight: 24px
-    letterSpacing: 0.05em
+    fontFamily: Space Grotesk
+    fontSize: 19px
+    fontWeight: '600'
+    lineHeight: 26px
+    letterSpacing: 0px
   body-lg:
-    fontFamily: JetBrains Mono
+    fontFamily: Space Grotesk
     fontSize: 16px
     fontWeight: '400'
     lineHeight: 24px
   body-md:
-    fontFamily: JetBrains Mono
+    fontFamily: Space Grotesk
     fontSize: 14px
     fontWeight: '400'
-    lineHeight: 20px
+    lineHeight: 21px
   label-caps:
-    fontFamily: JetBrains Mono
-    fontSize: 12px
-    fontWeight: '700'
+    fontFamily: Space Grotesk
+    fontSize: 11px
+    fontWeight: '600'
     lineHeight: 16px
-    letterSpacing: 0.1em
+    letterSpacing: 0.08em
   data-mono:
     fontFamily: JetBrains Mono
     fontSize: 14px
-    fontWeight: '400'
+    fontWeight: '500'
     lineHeight: 20px
 spacing:
   unit: 4px
   gutter: 16px
   margin: 24px
   panel-padding: 16px
+shape:
+  radius-sm: 6px
+  radius-md: 8px
+  radius-lg: 12px
+  radius-pill: 999px
+motion:
+  duration-fast: 140ms
+  duration-normal: 220ms
+  ease: cubic-bezier(0.22, 1, 0.36, 1)
 ---
 
 ## Brand & Style
 
-The design system is rooted in **Clinical Brutalism**, simulating a raw, high-stakes laboratory terminal interface. The aesthetic is intentionally unrefined and utilitarian, evoking the sensation of interacting with a restricted biological surveillance system.
+**Bio-Luminal Lab** is a friendly scientific-instrument aesthetic for a game about
+a fungal network growing through a substrate. It keeps the original science-fiction
+biology identity — dark, atmospheric, data-dense — but replaces the harsh cryptic
+terminal with something a new player can read at a glance.
 
-The primary design movement is **Brutalism**, characterized by its lack of ornamentation, total absence of curves, and high-contrast monochrome execution. There is no depth, no glow, and no transitions; interactions are instantaneous and binary, reinforcing a cold, systemic atmosphere where efficiency and data accuracy are the only priorities.
+The core tension: the game is about a cold, invasive organism, but the _interface_
+should feel like a well-labelled instrument, not a restricted command line. Flavor
+text still carries the ecological-horror tone; every control the player must use is
+plain-language first.
+
+Three principles drive the visual language:
+
+1. **Legible first.** Every actionable control has a plain verb; flavor is secondary.
+2. **Softened, not softened-to-death.** Rounded corners, gentle motion, and a single
+   accent family replace the hard 0 radius / no motion brutalism — but density and
+   tabular data remain.
+3. **Light is information.** Bioluminescence is meaningful: mint = your growth,
+   cyan = secondary/neutral data, amber = attention/progression, coral = danger.
 
 ## Colors
 
-The color palette is strictly functional and monochromatic.
+The palette is a dark moss field with bioluminescent accents. Color is never
+decorative — each hue has a job.
 
-- **Primary Background:** Nearly pure black (`#050505`) to create a "void" effect that minimizes eye strain during high-density combat.
-- **Primary Text/UI:** Off-white (`#e0e0e0`) is used for primary interactions and active states.
-- **Secondary/Dim:** Mid-gray (`#666666`) is reserved for inactive elements, background data, and passive logs.
-- **Alert:** Red (`#cc3333`) is the only chromatic element, used exclusively for trauma warnings, host immune responses, and incoming threats.
-- **Player Core:** Pure white (`#ffffff`) is reserved strictly for the player's representation on the radar.
-
-Color is never used for aesthetic flair—only for conveying status and immediate danger.
+- **Background / Surfaces:** Deep moss-black (`#0e1513`) through raised container
+  tones (`#2f3634`). Panels sit on `surface` (`#161d1b`) with a `border` hairline
+  (`#3c4a42`); elevation is signalled by surface tone and a soft shadow, not by heavy
+  lines alone.
+- **Primary (Bio-Mint `#70fdc3`):** Your organism, growth, success, primary actions.
+  Filled primary buttons use `on-primary` (`#003826`) text.
+- **Secondary (Cyan `#68d6e3`):** Secondary data, neutral highlights, water/sensor.
+- **Tertiary / Warning (Amber `#f5c055`):** Attention, progression, next-step cues,
+  caution that is not immediate danger.
+- **Alert / Danger (Coral `#ffb4ab`):** Trauma, hostile contact, resource starvation.
+  The only high-urgency chroma.
+- **Text:** `on-surface` (`#dde4e0`) for primary copy, `on-surface-variant`
+  (`#bbcac0`) for supporting and disabled copy.
 
 ## Typography
 
-The typography system relies exclusively on **JetBrains Mono**. As a monospaced typeface, it ensures that numerical data and tabular layouts align perfectly, supporting the "data terminal" aesthetic.
+Two families, each with a clear role.
 
-- **Uppercase Dominance:** All structural UI elements, including buttons, headers, and labels, must be rendered in ALL CAPS.
-- **Tabular Figures:** Monospacing is used to align columns of resources and statistics vertically.
-- **Instant Snap:** There are no weight or size transitions. Changes in hierarchy are conveyed through weight shifts (400 to 700) or color dimming.
+- **Space Grotesk (UI):** Headings, labels, buttons, body copy. Friendly and
+  geometric while still technical.
+- **JetBrains Mono (Data):** All numbers, counters, resource values, timers, and
+  tabular data. Monospacing keeps columns aligned.
+
+Rules:
+
+- **Labels** use `.text-label-caps` (11px / 600 / 0.08em / uppercase) for section
+  headers and status tags.
+- **Numbers** use `.text-data-mono` with `font-variant-numeric: tabular-nums`.
+- Hierarchy is conveyed through size and weight; motion is subtle, never flashy.
 
 ## Layout & Spacing
 
-The layout follows a **Fixed Grid** model that simulates a physical terminal screen. Content is contained within strict panels and sectors rather than a fluid web-flow.
+A responsive, panel-based layout. Mobile is the primary target (bullet-hell combat is
+touch-driven); desktop adds a persistent sidebar.
 
-- **Grid:** A 12-column grid is used for desktop, while mobile uses a single-column stack. Both versions maintain identical styling and density.
-- **Gutters:** 16px solid gaps separate data panels.
-- **Rhythm:** Spacing is strictly based on a 4px increment system.
-- **Radar Canvas:** The central gameplay area is a fixed aspect-ratio canvas that remains centered, surrounded by data panels.
+- **Grid:** Single-column stack on mobile (< 768px); two columns on desktop (sidebar
+  navigation | content), with content capped to a readable width.
+- **Spacing:** Strict 4px base scale. Panel padding 16px, gutters 16px, margins 24px.
+- **Combat:** the arena opens as a full-screen overlay above the page — a centred,
+  fixed-aspect Pixi canvas with an objective banner, host and player HP bars, and a
+  control hint. The Radar page itself is a list of scannable hosts.
 
 ## Elevation & Depth
 
-This design system uses **zero depth**. There are no shadows, no gradients, and no semi-transparent layers.
+Depth is present but restrained.
 
-- **Flat Hierarchy:** Hierarchy is established through **Bold Borders** (1px solid lines) and tonal contrast between the background and primary/secondary text.
-- **Inversion:** Elevation/Interaction is signaled by inverting the colors. On hover or selection, the background and foreground colors swap instantly.
-- **Grid Lines:** A subtle dotted or 1px intersection grid (`#111111`) may be used in the background of the radar canvas to provide a sense of scale without adding depth.
+- **Panels:** 1px `border` stroke, `surface` fill, `--radius-md` (8px) corners.
+  Raised/active panels may add `--shadow-sm`.
+- **Inversion & fill:** Interaction is signalled by filling a control with the
+  primary color and switching text to `on-primary`, with a 140ms ease-out transition.
+- **Allowed:** soft shadows, rounded corners, subtle grid lines in the arena,
+  gentle motion. **Avoid:** gradients used as decoration, glassmorphism, glow baths.
 
 ## Shapes
 
-The shape language is strictly **Sharp**.
-
-- **Border Radius:** All elements must have a `0px` border-radius.
-- **Dividers:** Use 1px solid lines to separate content within panels.
-- **Icons:** Icons should be avoided in favor of ASCII characters or simple geometric shapes (e.g., `[+]`, `[x]`, `>`).
+- **Radius:** `radius-sm` 6px (buttons, inputs), `radius-md` 8px (panels, cards),
+  `radius-lg` 12px (modals, large containers), `radius-pill` for status tags/badges.
+- **Dividers:** 1px solid `border` lines separate content within panels.
+- **Icons:** Prefer simple geometric marks and a small set of glyphs (`≋`, `✦`, `◆`,
+  `▶`, `◎`). Glyphs are flavour only — never the sole carrier of meaning; pair them
+  with a text label.
 
 ## Components
 
 ### Buttons
 
-Buttons are designed to look like command-line executions.
-
-- **Style:** 1px solid border, transparent background, uppercase text.
-- **Prefixes:** Every button must include a functional prefix: `> EXE:`, `SYS:`, or `SUDO:`.
-- **States:** Hover and Active states must **snap** instantly to an inverted color scheme (Background: `#e0e0e0`, Text: `#050505`).
+- **Primary:** Filled `primary` with `on-primary` text; used for the single most
+  important action on a screen (e.g. the current onboarding objective or the Core
+  "Scan for hosts" CTA). A primary button may stack a small caption (e.g. cost).
+- **Secondary:** `surface-container` fill, 1px `border`, `on-surface` text; hover
+  fills primary.
+- **`.cmd-btn`** is the shared control pattern for both variants.
+- **Labels:** plain verbs only — no `> EXE:` / `SYS:` command prefixes.
+- **States:** Hover / active fill with primary; disabled drops to 45% opacity with a
+  not-allowed cursor. Transitions are 140ms ease-out.
 
 ### Progress Bars
 
-Avoid all standard HTML progress elements. Progress must be represented using ASCII blocks.
-
-- **Format:** `[██████░░░░░░░░]`
-- **Filled Segment:** `█` (U+2588 Full Block)
-- **Empty Segment:** `░` (U+2591 Light Shade)
+- Graphical bars with `radius-pill` ends. Track uses `surface-container-high`; fill
+  uses the semantic color (primary / warning / danger). Mono numerals render the
+  value beside the bar (e.g. `72 / 100`).
 
 ### Panels
 
-Containers for data and controls.
+- Containers for data and controls: 1px `border`, `surface` fill, `radius-md`.
+- Headers sit flush at the top, separated by a 1px divider; header text uses
+  `.text-label-caps` in `on-surface-variant` or `primary`.
 
-- **Border:** 1px solid `#333333`.
-- **Header:** Titles sit flush at the top of the panel, separated by a 1px divider or a slightly lighter background (`#0a0a0a`).
+### Status Tags & Badges
+
+- Pill-shaped, small, uppercase. Mint = positive/owned, amber = attention/locked
+  info, coral = danger.
 
 ### Input Fields & Controls
 
-- **Inputs:** Simple text underlines or 1px boxes with a blinking cursor `_`.
-- **Checkboxes/Radios:** Use `[X]` for selected and `[ ]` for unselected states.
+- 1px `border`, `surface-container` fill, `radius-sm`, `on-surface` text.
+- All interactive controls have a `:focus-visible` ring in `primary`.
 
 ### Scrollbars
 
-Browser-native scrollbars are hidden or replaced with a minimal custom track.
+- Track `background`, thumb `border` with pill radius, hover `secondary`.
 
-- **Track:** `#050505`
-- **Thumb:** `#333333` (sharp corners, no radius).
+## Motion
+
+- Micro-interactions: 140ms ease-out. Panel/step reveals: 220ms ease-out.
+- Motion communicates state change (a value ticked, a step completed, a panel
+  revealed), never decoration.
+- **Accessibility:** All motion is disabled under `prefers-reduced-motion: reduce`.

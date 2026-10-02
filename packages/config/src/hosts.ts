@@ -3,8 +3,9 @@ export interface HostDef {
   name: string;
   description: string;
   difficulty: number;
+  tier: number;
+  isBoss?: boolean;
   biomassReward: number;
-  alertThreshold: number;
   attackPatterns: string[];
   echoes: {
     id: string;
@@ -20,8 +21,8 @@ export const HOSTS: HostDef[] = [
     description:
       'A microscopic roundworm grazing on the outer hyphae. A simple, defenceless first prey.',
     difficulty: 1,
+    tier: 0,
     biomassReward: 15,
-    alertThreshold: 10,
     attackPatterns: ['slow_spiral'],
     echoes: {
       id: 'echo_nematode',
@@ -34,8 +35,8 @@ export const HOSTS: HostDef[] = [
     name: 'Fallen Leaf',
     description: 'A decaying leaf on the forest floor. Minimal immune response.',
     difficulty: 1,
+    tier: 1,
     biomassReward: 25,
-    alertThreshold: 20,
     attackPatterns: ['slow_spiral'],
     echoes: {
       id: 'echo_leaf',
@@ -48,8 +49,8 @@ export const HOSTS: HostDef[] = [
     name: 'Garden Beetle',
     description: 'A common beetle. Its hemolymph carries mild toxins.',
     difficulty: 2,
+    tier: 2,
     biomassReward: 50,
-    alertThreshold: 35,
     attackPatterns: ['burst', 'scatter'],
     echoes: {
       id: 'echo_beetle',
@@ -62,8 +63,8 @@ export const HOSTS: HostDef[] = [
     name: 'Field Mouse',
     description: 'A small mammal with a warm, nutrient-rich bloodstream.',
     difficulty: 3,
+    tier: 2,
     biomassReward: 100,
-    alertThreshold: 50,
     attackPatterns: ['erratic_swarm', 'wave'],
     echoes: {
       id: 'echo_mouse',
@@ -76,8 +77,8 @@ export const HOSTS: HostDef[] = [
     name: 'Urban Pigeon',
     description: 'Adapted to city life. Its immune system is surprisingly robust.',
     difficulty: 4,
+    tier: 3,
     biomassReward: 180,
-    alertThreshold: 60,
     attackPatterns: ['homing', 'spiral_nova'],
     echoes: {
       id: 'echo_pigeon',
@@ -90,8 +91,8 @@ export const HOSTS: HostDef[] = [
     name: 'Stray Cat',
     description: 'A formidable host. Feline immune responses are notoriously aggressive.',
     difficulty: 5,
+    tier: 4,
     biomassReward: 300,
-    alertThreshold: 75,
     attackPatterns: ['pattern_combo', 'enrage_phase'],
     echoes: {
       id: 'echo_cat',
@@ -104,8 +105,9 @@ export const HOSTS: HostDef[] = [
     name: 'Laboratory Rat (Boss)',
     description: 'An enhanced specimen. Heavy immunosuppressants create unpredictable defenses.',
     difficulty: 7,
+    tier: 5,
+    isBoss: true,
     biomassReward: 600,
-    alertThreshold: 90,
     attackPatterns: ['multi_phase', 'geometric_lasers', 'summon'],
     echoes: {
       id: 'echo_lab',
@@ -118,8 +120,8 @@ export const HOSTS: HostDef[] = [
     name: 'Compost Worm',
     description: 'Dense microbial colonies. Slow but tenacious regeneration.',
     difficulty: 1,
+    tier: 1,
     biomassReward: 35,
-    alertThreshold: 25,
     attackPatterns: ['slow_spiral', 'wave'],
     echoes: {
       id: 'echo_worm',
@@ -132,8 +134,8 @@ export const HOSTS: HostDef[] = [
     name: 'Pond Frog',
     description: 'Amphibian host. Moist mucosal barriers resist spore adhesion.',
     difficulty: 3,
+    tier: 2,
     biomassReward: 130,
-    alertThreshold: 45,
     attackPatterns: ['burst', 'homing', 'scatter'],
     echoes: {
       id: 'echo_frog',
@@ -146,8 +148,8 @@ export const HOSTS: HostDef[] = [
     name: 'Backyard Squirrel',
     description: 'Erratic movements make it a difficult target. High metabolic rate.',
     difficulty: 4,
+    tier: 3,
     biomassReward: 220,
-    alertThreshold: 55,
     attackPatterns: ['erratic_swarm', 'scatter', 'wave'],
     echoes: {
       id: 'echo_squirrel',
@@ -160,8 +162,8 @@ export const HOSTS: HostDef[] = [
     name: 'Feral Raccoon',
     description: 'Omnivorous immune system. Adapts rapidly to spore patterns.',
     difficulty: 6,
+    tier: 4,
     biomassReward: 450,
-    alertThreshold: 80,
     attackPatterns: ['pattern_combo', 'homing', 'spiral_nova', 'enrage_phase'],
     echoes: {
       id: 'echo_raccoon',
@@ -170,3 +172,16 @@ export const HOSTS: HostDef[] = [
     },
   },
 ];
+
+/** Number of distinct echoes required before each tier enters the sonar pool. */
+export const HOST_TIER_UNLOCK: Record<number, number> = {
+  1: 0,
+  2: 2,
+  3: 4,
+  4: 6,
+  5: 9,
+};
+
+export function isHostUnlocked(host: HostDef, echoCount: number): boolean {
+  return echoCount >= (HOST_TIER_UNLOCK[host.tier] ?? 0);
+}

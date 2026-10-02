@@ -3,6 +3,8 @@ import {
   BASE_BIOMASS_PER_SEC,
   MAX_WATER_BASE,
   MAX_NUTRIENT_BASE,
+  SONAR_INITIAL_DELAY,
+  NORMAL_STRAIN_ID,
 } from '@mycosurge/config';
 
 export type GamePhase = 'awakening' | 'manager' | 'explorer' | 'tactician' | 'active';
@@ -37,11 +39,26 @@ export interface Expedition {
   rewardCollected: boolean;
 }
 
+export interface RadarContact {
+  id: string;
+  hostId: string;
+  strainId: string;
+  revealed: boolean;
+  timeRemaining: number;
+  totalTime: number;
+}
+
 export interface GameState {
   biomass: number;
   maxBiomass: number;
   baseBiomassPerSec: number;
   currentHostId: string | null;
+  currentContactId: string | null;
+  contacts: RadarContact[];
+  sonarTimer: number;
+  lastContactHostId: string | null;
+  activeStrainId: string;
+  hostAssimilation: Record<string, number>;
   assimilationPercent: number;
   alertLevel: number;
   traumaTimer: number;
@@ -62,6 +79,7 @@ export interface GameState {
   waterCap: number;
   nutrients: number;
   nutrientsCap: number;
+  manualCooldown: number;
   mycelialNetwork: number;
   tutorialUpgrades: TutorialUpgrades;
   tutorialShockTimer: number;
@@ -73,6 +91,12 @@ export function createInitialState(): GameState {
     maxBiomass: MAX_BIOMASS_BASE,
     baseBiomassPerSec: BASE_BIOMASS_PER_SEC,
     currentHostId: null,
+    currentContactId: null,
+    contacts: [],
+    sonarTimer: SONAR_INITIAL_DELAY,
+    lastContactHostId: null,
+    activeStrainId: NORMAL_STRAIN_ID,
+    hostAssimilation: {},
     assimilationPercent: 0,
     alertLevel: 0,
     traumaTimer: 0,
@@ -108,6 +132,7 @@ export function createInitialState(): GameState {
     waterCap: MAX_WATER_BASE,
     nutrients: 0,
     nutrientsCap: MAX_NUTRIENT_BASE,
+    manualCooldown: 0,
     mycelialNetwork: 0,
     tutorialUpgrades: { osmoticPump: false, enzymaticExudates: false },
     tutorialShockTimer: 0,

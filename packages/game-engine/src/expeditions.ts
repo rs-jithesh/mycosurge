@@ -54,7 +54,7 @@ export function collectExpedition(state: GameState, index: number): number {
   return reward;
 }
 
-export function cleanCompletedExpeditions(state: GameState): void {
+export function removeCollectedExpeditions(state: GameState): void {
   state.expeditions = state.expeditions.filter((e) => !e.rewardCollected);
 }
 

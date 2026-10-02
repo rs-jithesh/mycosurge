@@ -8,9 +8,14 @@ import {
   canAffordSkill,
   getEffectiveMaxBiomass,
   getEffectiveBiomassPerSec,
+  isStarving,
   tickIdle,
   enterTrauma,
+  expandBiomassCap,
+  getCapExpandCost,
+  expandCap,
 } from './math';
+import { getGeneratorCost } from '@mycosurge/config';
 import { createInitialState, type GameState } from './state';
 
 describe('getAlertMultiplier', () => {
@@ -89,6 +94,34 @@ describe('getEffectiveMaxBiomass', () => {
     state.skillAllocations['mycelial_expansion'] = 1;
     expect(getEffectiveMaxBiomass(state)).toBe(175);
   });
+
+  it('grows when the biomass cap is expanded with Lysate', () => {
+    const state = createInitialState();
+    state.lysateBanked = 100;
+    expect(expandBiomassCap(state)).toBe(true);
+    expect(state.maxBiomass).toBe(110);
+    expect(getEffectiveMaxBiomass(state)).toBe(110);
+  });
+
+  it('combines Lysate expansions with the expansion skill', () => {
+    const state = createInitialState();
+    state.lysateBanked = 100;
+    expandBiomassCap(state);
+    state.skillAllocations['mycelial_expansion'] = 1;
+    expect(getEffectiveMaxBiomass(state)).toBeCloseTo(192.5);
+  });
+});
+
+describe('getGeneratorCost', () => {
+  it('uses the provided cost scale', () => {
+    expect(getGeneratorCost(5, 0, 2)).toBe(5);
+    expect(getGeneratorCost(5, 1, 2)).toBe(10);
+    expect(getGeneratorCost(5, 2, 2)).toBe(20);
+  });
+
+  it('defaults to a 1.5 scale', () => {
+    expect(getGeneratorCost(5, 1)).toBe(7);
+  });
 });
 
 describe('getEffectiveBiomassPerSec', () => {
@@ -110,6 +143,53 @@ describe('getEffectiveBiomassPerSec', () => {
   });
 });
 
+describe('isStarving', () => {
+  it('is true when either reserve is below the starvation-state threshold', () => {
+    const state = createInitialState();
+    state.water = 4;
+    state.nutrients = 100;
+    expect(isStarving(state)).toBe(true);
+  });
+
+  it('is false just above the threshold', () => {
+    const state = createInitialState();
+    state.water = 5;
+    state.nutrients = 100;
+    expect(isStarving(state)).toBe(false);
+  });
+
+  it('is false with healthy reserves', () => {
+    const state = createInitialState();
+    state.water = 100;
+    state.nutrients = 100;
+    expect(isStarving(state)).toBe(false);
+  });
+});
+
+describe('starvation and passive growth', () => {
+  it('halts passive growth in the full game while starving', () => {
+    const state = createInitialState();
+    state.gamePhase = 'active';
+    state.water = 0;
+    state.nutrients = 0;
+    expect(getEffectiveBiomassPerSec(state)).toBe(0);
+  });
+
+  it('ignores starvation during the tutorial', () => {
+    const state = createInitialState();
+    expect(state.gamePhase).toBe('awakening');
+    expect(getEffectiveBiomassPerSec(state)).toBe(0.5);
+  });
+
+  it('resumes once reserves recover', () => {
+    const state = createInitialState();
+    state.gamePhase = 'active';
+    state.water = 100;
+    state.nutrients = 100;
+    expect(getEffectiveBiomassPerSec(state)).toBe(0.5);
+  });
+});
+
 describe('tickIdle', () => {
   it('adds biomass over time', () => {
     const state = createInitialState();
@@ -121,6 +201,13 @@ describe('tickIdle', () => {
     const state = createInitialState();
     tickIdle(state, 1000);
     expect(state.biomass).toBeLessThanOrEqual(100);
+  });
+
+  it('preserves rewards that arrived above the cap', () => {
+    const state = createInitialState();
+    state.biomass = 137;
+    tickIdle(state, 1);
+    expect(state.biomass).toBe(137);
   });
 
   it('counts trauma timer down', () => {
@@ -147,6 +234,20 @@ describe('tickIdle', () => {
     state.isInTrauma = true;
     tickIdle(state, 10);
     expect(state.biomass).toBe(0);
+  });
+});
+
+describe('expandCap', () => {
+  it('expands each resource through the shared helper', () => {
+    const state = createInitialState();
+    state.lysateBanked = 100;
+    expect(getCapExpandCost(state, 'water')).toBe(10);
+    expect(expandCap(state, 'water')).toBe(true);
+    expect(state.waterCap).toBe(110);
+    expect(expandCap(state, 'nutrients')).toBe(true);
+    expect(state.nutrientsCap).toBe(110);
+    expect(expandCap(state, 'biomass')).toBe(true);
+    expect(state.maxBiomass).toBe(110);
   });
 });
 

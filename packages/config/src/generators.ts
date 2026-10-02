@@ -32,8 +32,8 @@ export const GENERATORS: GeneratorDef[] = [
   },
 ];
 
-export function getGeneratorCost(baseCost: number, currentLevel: number): number {
-  return Math.floor(baseCost * Math.pow(1.5, currentLevel));
+export function getGeneratorCost(baseCost: number, currentLevel: number, costScale = 1.5): number {
+  return Math.floor(baseCost * Math.pow(costScale, currentLevel));
 }
 
 export const LYSATE_CAP_EXPAND_COST_BASE = 10;

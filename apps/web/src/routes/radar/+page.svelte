@@ -2,7 +2,8 @@
   import { onMount, onDestroy } from 'svelte';
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
-  import { HOSTS } from '@mycosurge/config';
+  import { previewCombatReward } from '@mycosurge/game-engine';
+  import { HOSTS, getStrain, isHostUnlocked, SCAN_WATER_COST } from '@mycosurge/config';
   import CombatModal from '$lib/components/CombatModal.svelte';
 
   let selectedHostId = $state<string | null>(null);
@@ -22,6 +23,16 @@
 
   let tutorialHost = $derived(HOSTS.find((h) => h.id === 'soil_nematode'));
   let canAffordScan = $derived(water >= 5);
+  let contacts = $derived(gameStore.contacts);
+  let canPing = $derived(water >= SCAN_WATER_COST && contacts.length < gameStore.radarSlots);
+  let lockedCount = $derived(
+    HOSTS.filter((h) => h.id !== 'soil_nematode' && !isHostUnlocked(h, gs.acquiredEchoes.length))
+      .length,
+  );
+
+  function hostFor(id: string) {
+    return HOSTS.find((h) => h.id === id);
+  }
 
   onMount(() => {
     scanState = 'idle';
@@ -35,11 +46,11 @@
   function startScan() {
     if (!canAffordScan || scanState !== 'idle') return;
     gs.water -= 5;
-    logStore.info('Scanning substrate for hostile organisms...');
+    logStore.info('Scanning the substrate for signs of life...');
     scanState = 'scanning';
     scanTimeout = setTimeout(() => {
       scanState = 'complete';
-      logStore.info('Threat identified: Soil Nematode.');
+      logStore.info("It's a Soil Nematode — and it's feeding on your hyphae.");
       blinkHandle = setInterval(() => {
         blinkOn = !blinkOn;
       }, 600);
@@ -68,14 +79,25 @@
     return 'var(--primary)';
   }
 
-  function selectHost(hostId: string) {
-    gameStore.engageHost(hostId);
-    selectedHostId = hostId;
+  function engage(contactId: string) {
+    const contact = gameStore.contacts.find((c) => c.id === contactId);
+    if (!contact) return;
+    if (gameStore.engageContact(contactId)) {
+      selectedHostId = contact.hostId;
+    }
   }
 
   function closeModal() {
     selectedHostId = null;
   }
+
+  // Open the arena whenever a host is engaged (e.g. from the Core cycle panel).
+  $effect(() => {
+    const host = gameStore.currentHost;
+    if (host && !selectedHostId) {
+      selectedHostId = host;
+    }
+  });
 </script>
 
 <div class="radar-view">
@@ -84,9 +106,8 @@
     <div class="panel offline-panel">
       <div class="offline-content">
         <span class="offline-icon">[~]</span>
-        <span class="text-label-caps">RADAR OFFLINE</span>
-        <span class="text-data-mono offline-sub"
-          >Continue expanding the mycelial network to activate.</span
+        <span class="text-label-caps">Radar offline</span>
+        <span class="offline-sub">Your network is too small to detect hosts yet. Keep growing.</span
         >
       </div>
     </div>
@@ -94,41 +115,41 @@
     <!-- Tutorial — 3-phase scan flow -->
     {#if shock > 0}
       <div class="shock-banner text-label-caps">
-        ⚠ SHOCK: WATER/NUTRIENT GEN AT 50% — {Math.ceil(shock)}s
+        ⚠ Production halved for {Math.ceil(shock)}s while you recover
       </div>
     {/if}
 
     {#if scanState === 'idle'}
       <!-- IDLE: Show scan prompt -->
       <div class="panel">
-        <div class="panel-header text-label-caps">> SYS:THREAT_PROTOCOL</div>
+        <div class="panel-header text-label-caps">Threat detected</div>
         <div class="scan-body">
           <div class="scan-text">
-            <p>CRITICAL: HOSTILE CONTACT DETECTED ON THE OUTER HYPHAE PERIMETER.</p>
-            <p>DEPLOY SCANNING SPORES TO IDENTIFY THE THREAT.</p>
+            <p>Something is grazing on your outer hyphae.</p>
+            <p>Scan the substrate to identify it.</p>
           </div>
           <button
             class="cmd-btn scan-btn"
             class:scan-btn-disabled={!canAffordScan}
             onclick={startScan}
           >
-            > EXE:SCAN_SUBSTRATE
-            <span class="cost-label">[5W]</span>
+            Scan substrate
+            <span class="cost-label">[5 Water]</span>
           </button>
           {#if !canAffordScan}
-            <div class="scan-insufficient-text text-label-caps">INSUFFICIENT WATER</div>
+            <div class="scan-insufficient-text text-label-caps">You need 5 Water to scan</div>
           {/if}
         </div>
       </div>
     {:else if scanState === 'scanning'}
       <!-- SCANNING: Pulse animation -->
       <div class="panel">
-        <div class="panel-header text-label-caps">> SYS:THREAT_PROTOCOL</div>
+        <div class="panel-header text-label-caps">Scanning</div>
         <div class="scan-body scanning-body">
           <div class="pulse-icon">[~]</div>
           <div class="scanning-text">
-            <p>SCANNING SUBSTRATE...</p>
-            <p>ANALYZING VIBRATIONS...</p>
+            <p>Scanning the substrate...</p>
+            <p>Reading the vibrations...</p>
           </div>
           <div class="sweep-bar">
             <span class="sweep-track">{'\u2591'.repeat(12)}</span>
@@ -138,12 +159,12 @@
       </div>
     {:else if scanState === 'complete'}
       <!-- COMPLETE: Show nematode with directive -->
-      <div class="directive text-label-caps">> DIRECTIVE: ENGAGE HOST TO NEUTRALIZE THREAT</div>
+      <div class="directive text-label-caps">Engage the host to drive it off</div>
       <div class="panel">
         <div class="table-header">
           <span class="text-label-caps th-badge"></span>
-          <span class="text-label-caps th-name">TARGET HOST</span>
-          <span class="text-label-caps th-lvl">HOST LVL</span>
+          <span class="text-label-caps th-name">Host</span>
+          <span class="text-label-caps th-lvl">Level</span>
         </div>
         <div class="host-list">
           {#if tutorialHost}
@@ -160,35 +181,105 @@
   {:else if isInTrauma && !hasActiveHost}
     <!-- Trauma lock (full game) -->
     <div class="panel trauma-panel">
-      <h2 class="panel-title text-label-caps">&gt; TRAUMA LOCK</h2>
-      <p class="status-msg">{Math.ceil(gameStore.state.traumaTimer)}s REMAINING</p>
-      <p class="sub-msg text-data-mono">SYS: Immune response suppression in progress.</p>
+      <h2 class="panel-title text-label-caps">Recovering</h2>
+      <p class="status-msg">{Math.ceil(gameStore.state.traumaTimer)}s left</p>
+      <p class="sub-msg text-data-mono">Your network is recovering. Give it a moment.</p>
     </div>
   {:else}
-    <!-- Full game — all hosts -->
+    <!-- Full game — sonar contacts -->
     <div class="panel">
-      <div class="table-header">
-        <span class="text-label-caps th-badge"></span>
-        <span class="text-label-caps th-name">TARGET HOST</span>
-        <span class="text-label-caps th-lvl">HOST LVL</span>
+      <div class="panel-header">
+        <span class="text-label-caps">Radar</span>
+        <span class="text-data-mono badge-filter"
+          >{contacts.length} / {gameStore.radarSlots} signals</span
+        >
       </div>
-      <div class="host-list">
-        {#each HOSTS as host}
-          {@const lvl = hostLvl(host.difficulty)}
-          <button class="host-row" onclick={() => selectHost(host.id)}>
-            <span class="host-badge" style="color: {badgeColor(lvl)}">[{badgeChar(lvl)}]</span>
-            <span class="host-name">{host.name}</span>
-            <span class="host-lvl">
-              {#if host.name.includes('(Boss)')}
-                <span class="boss-tag">BOSS</span>
+      <div class="scan-body">
+        <p class="radar-help">
+          Signals drift in over time. Scan one to identify it, then engage at your discretion.
+        </p>
+        <button
+          class="cmd-btn scan-btn"
+          disabled={!canPing}
+          onclick={() => gameStore.pingSubstrate()}
+        >
+          Ping substrate
+          <span class="cost-label">[{SCAN_WATER_COST} Water]</span>
+        </button>
+      </div>
+
+      {#if contacts.length === 0}
+        <div class="empty-radar">
+          <span class="offline-icon">[~]</span>
+          <p class="empty-title">No signals right now</p>
+          <p class="offline-sub">Wait for one to drift in, or ping the substrate.</p>
+        </div>
+      {:else}
+        <div class="contact-list">
+          {#each contacts as contact (contact.id)}
+            {@const chost = hostFor(contact.hostId)}
+            {@const cstrain = getStrain(contact.strainId)}
+            {@const lvl = chost ? hostLvl(chost.difficulty) : 1}
+            {@const assim = gs.hostAssimilation[contact.hostId] ?? 0}
+            {@const preview = previewCombatReward(gs, contact.hostId, contact.strainId)}
+            <div class="contact-card">
+              <div class="contact-top">
+                <span class="host-badge" style="color: {badgeColor(lvl)}">
+                  {contact.revealed ? `[${badgeChar(lvl)}]` : '[?]'}
+                </span>
+                <span class="host-name">
+                  {contact.revealed ? (chost?.name ?? contact.hostId) : 'Unidentified signal'}
+                </span>
+                <span class="contact-timer text-data-mono">{Math.ceil(contact.timeRemaining)}s</span
+                >
+              </div>
+
+              {#if !contact.revealed}
+                <button
+                  class="cmd-btn contact-btn"
+                  disabled={water < SCAN_WATER_COST}
+                  onclick={() => gameStore.scanContact(contact.id)}
+                >
+                  Scan · {SCAN_WATER_COST} Water
+                </button>
               {:else}
-                {lvl}
+                <div class="contact-meta">
+                  {#if chost?.isBoss}
+                    <span class="boss-tag text-label-caps">Boss</span>
+                  {:else}
+                    <span class="text-data-mono">Level {lvl}</span>
+                  {/if}
+                  {#if cstrain.id !== 'normal'}
+                    <span class="strain-tag text-label-caps">{cstrain.name}</span>
+                  {/if}
+                  <span class="text-data-mono contact-assim">Assimilated {Math.floor(assim)}%</span>
+                </div>
+                <div class="contact-reward text-data-mono">
+                  +{preview.biomassEarned} Biomass · +{preview.lysateEarned} Lysate
+                </div>
+                {#if cstrain.id !== 'normal'}
+                  <div class="contact-desc">{cstrain.description}</div>
+                {/if}
+                <div class="contact-actions">
+                  <button class="cmd-btn engage-btn" onclick={() => engage(contact.id)}>
+                    Engage
+                  </button>
+                  <button class="cmd-btn" onclick={() => gameStore.dismissContact(contact.id)}>
+                    Dismiss
+                  </button>
+                </div>
               {/if}
-            </span>
-          </button>
-        {/each}
-      </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
     </div>
+
+    {#if lockedCount > 0}
+      <div class="locked-teaser text-label-caps">
+        {lockedCount} fainter signal{lockedCount === 1 ? '' : 's'} beyond your network's reach
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -205,7 +296,10 @@
 
   .panel {
     border: 1px solid var(--border);
-    background: var(--surface);
+    background: var(--surface-container);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
     padding: 0;
   }
 
@@ -259,7 +353,7 @@
     grid-template-columns: 32px 1fr 64px;
     gap: var(--space-unit);
     align-items: center;
-    padding: var(--space-unit) var(--space-panel-padding);
+    padding: 12px var(--space-panel-padding);
     border-bottom: 1px solid var(--border);
     text-align: left;
     border-radius: 0;
@@ -330,10 +424,11 @@
   /* ── Shock banner ── */
   .shock-banner {
     border: 1px solid var(--alert);
-    color: var(--alert);
-    padding: var(--space-unit) var(--space-panel-padding);
+    background: var(--error-container);
+    color: var(--on-error-container);
+    border-radius: var(--radius-md);
+    padding: 10px var(--space-panel-padding);
     text-align: center;
-    text-transform: uppercase;
   }
 
   /* ── Scan panel ── */
@@ -441,9 +536,120 @@
 
   /* ── Complete state ── */
   .directive {
-    color: var(--primary);
+    color: var(--on-primary-container);
+    background: var(--primary-container);
     border: 1px solid var(--primary);
-    padding: var(--space-unit) var(--space-panel-padding);
+    border-radius: var(--radius-md);
+    padding: 10px var(--space-panel-padding);
     text-align: center;
+  }
+
+  /* ── Full game: sonar contacts ── */
+  .radar-help {
+    margin: 0;
+    color: var(--on-surface-variant);
+    font-size: var(--font-body-md);
+    line-height: 1.5;
+    max-width: 340px;
+  }
+
+  .empty-radar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-unit);
+    padding: var(--space-margin) var(--space-panel-padding);
+    text-align: center;
+  }
+
+  .empty-title {
+    margin: 0;
+    font-weight: 600;
+    color: var(--on-surface);
+  }
+
+  .contact-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-unit);
+    padding: var(--space-panel-padding);
+    border-top: 1px solid var(--border);
+  }
+
+  .contact-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-high);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+  }
+
+  .contact-top {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: var(--space-unit);
+    align-items: center;
+  }
+
+  .contact-timer {
+    color: var(--on-surface-variant);
+    font-size: 12px;
+  }
+
+  .contact-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    color: var(--on-surface-variant);
+  }
+
+  .strain-tag {
+    color: var(--warning);
+    border: 1px solid var(--warning);
+    border-radius: var(--radius-pill);
+    padding: 2px 8px;
+  }
+
+  .contact-assim {
+    margin-left: auto;
+  }
+
+  .contact-reward {
+    color: var(--primary);
+  }
+
+  .contact-desc {
+    color: var(--on-surface-variant);
+    font-size: 13px;
+  }
+
+  .contact-actions {
+    display: flex;
+    gap: var(--space-unit);
+  }
+
+  .contact-btn {
+    align-self: flex-start;
+  }
+
+  .engage-btn {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--on-primary);
+    font-weight: 600;
+  }
+
+  .engage-btn:hover {
+    background: var(--primary-fixed-dim);
+    border-color: var(--primary-fixed-dim);
+  }
+
+  .locked-teaser {
+    color: var(--on-surface-variant);
+    text-align: center;
+    padding: var(--space-unit);
   }
 </style>
