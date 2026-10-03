@@ -99,6 +99,27 @@ export { applyOfflineProgress, getOfflineRate } from './offline';
 export type { OfflineReport } from './offline';
 export type { CombatResult } from './combat';
 export {
+  resolveAiProfile,
+  createAgent,
+  updateAiState,
+  steer,
+  computeDodgeForce,
+  stepAgent,
+  leadAim,
+  shouldFire,
+} from './combat-ai';
+export type {
+  AiProfile,
+  AiState,
+  AiModifiers,
+  Agent,
+  SteeringWorld,
+  ProjectileThreat,
+  Rng,
+  Vec2,
+  Mobility,
+} from './combat-ai';
+export {
   absorbResources,
   synthesizeBiomass,
   purchaseTutorialUpgrade,

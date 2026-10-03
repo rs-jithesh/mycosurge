@@ -1,3 +1,18 @@
+export type Mobility = 'static' | 'drift' | 'orbit' | 'chase';
+
+/**
+ * Optional per-host AI overrides. The game engine derives sensible defaults
+ * from `difficulty`; a host only needs this block to deviate from them.
+ */
+export interface HostAiDef {
+  mobility?: Mobility;
+  preferredRange?: number;
+  moveSpeed?: number;
+  turnRate?: number;
+  aggression?: number;
+  dodgeSkill?: number;
+}
+
 export interface HostDef {
   id: string;
   name: string;
@@ -7,6 +22,7 @@ export interface HostDef {
   isBoss?: boolean;
   biomassReward: number;
   attackPatterns: string[];
+  ai?: HostAiDef;
   echoes: {
     id: string;
     name: string;

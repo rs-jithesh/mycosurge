@@ -40,15 +40,41 @@ A fixed 500×500 logical canvas, scaled to fit its container (`aspect-ratio: 1`)
 
 ## Entities
 
-| Entity      | Visual                            | Behaviour                                                          |
-| ----------- | --------------------------------- | ------------------------------------------------------------------ |
-| Player core | Mint circle + glow                | Moves on input; flashes coral when hit; blinks while invulnerable. |
-| Host node   | Coral rounded square + name glyph | Has HP; fires pattern projectiles; flashes white when hit.         |
-| Spore       | Mint pill                         | Auto-fired; damages host nodes; can pierce.                        |
-| Pellet      | Coral dot                         | Host projectile; damages the player.                               |
+| Entity      | Visual                            | Behaviour                                                                  |
+| ----------- | --------------------------------- | -------------------------------------------------------------------------- |
+| Player core | Mint circle + glow                | Moves on input; flashes coral when hit; blinks while invulnerable.         |
+| Host node   | Coral rounded square + name glyph | Has HP; steers around the arena; fires pattern projectiles; flashes white. |
+| Spore       | Mint pill                         | Auto-fired; damages host nodes; can pierce.                                |
+| Pellet      | Coral dot                         | Host projectile; damages the player.                                       |
 
 Node count and HP scale with host difficulty (`DIFFICULTY_NODE_COUNT`, per-difficulty HP
 multiplier). The arena is a win only when **all** nodes are destroyed.
+
+## Host movement & targeting
+
+Node behaviour is driven by a small, pure AI in `packages/game-engine/src/combat-ai.ts`
+(no rendering): a finite state machine plus weighted steering behaviours and lead-aim.
+
+- **Intent FSM** — `idle → reposition → engage`. Static hosts never leave `idle`; mobile
+  hosts dwell, reposition (pick a new strafe direction/range), then engage, looping.
+- **Steering** — a weighted sum of arrival (hold a preferred range), orbit/strafe,
+  wander (idle drift), separation (don't stack), and containment (stay in-bounds),
+  truncated to the host's move speed and smoothed by its turn rate.
+- **Lead-aim** — aimed patterns fire at the player's predicted position (exact intercept
+  solve), not their current one. Patterns only fire while the host is engaged and in
+  range (`shouldFire`), so they don't spew mid-reposition.
+- **Dodging** — difficulty 3+ hosts scan incoming spores for their closest point of
+  approach and, when a shot will pass within their danger radius, sidestep perpendicular
+  to it. A `dodgeTimer` commits each sidestep and a `dodgeCooldown` paces them, so evasions
+  read as deliberate rather than twitchy. Dodge strength scales with `dodgeSkill`.
+- **Profiles** — `resolveAiProfile(difficulty)` derives mobility, preferred range, move
+  speed, turn rate, aggression, and dodge skill; a host may override any of them via the
+  optional `ai` block on `HostDef`. Difficulty 1 hosts are static, difficulty 2 drift,
+  difficulty 3+ orbit and dodge.
+
+The movement speed of orbiting hosts also scales with the encounter strain's
+`speedMult` (Swift hosts move faster, Bloated slower), passed through the arena
+`moveSpeedMult` modifier.
 
 ## Attack patterns
 
@@ -87,7 +113,8 @@ Contacts from the Radar may carry a **strain** (see `GAME-DESIGN.md`). When a co
 engaged, its strain is stored on the state (`activeStrainId`) and read by:
 
 - `createRadar(…, modifiers)` — `hpMult` scales node HP, `speedMult` scales every host
-  projectile. The in-arena objective banner shows the strain name.
+  projectile, and `moveSpeedMult` scales mobile host movement. The in-arena objective
+  banner shows the strain name.
 - `applyVictory` — `rewardMult` scales Biomass, `lysateMult` scales Lysate.
 
 The active strain resets to `normal` when the encounter ends (victory, defeat, or
@@ -110,8 +137,8 @@ halved briefly).
 
 ## Implementation notes
 
-- `createRadar(container, hostId, combatStats, callbacks)` builds the app and returns
-  `{ destroy }`. Callers **must** call `destroy()` when closing the overlay.
+- `createRadar(container, hostId, combatStats, callbacks, modifiers)` builds the app and
+  returns `{ destroy }`. Callers **must** call `destroy()` when closing the overlay.
 - Callbacks: `onVictory()` (the arena reports the win; the **store** computes the real
   reward), `onDefeat()`, and `onStats({ hp, maxHp, shieldHits, hostHp, hostMaxHp })` for
   the HUD.

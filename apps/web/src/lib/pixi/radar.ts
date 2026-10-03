@@ -1,6 +1,14 @@
 import { Application, Graphics, Container, Text, TextStyle, Sprite, Texture } from 'pixi.js';
 import { HOSTS } from '@mycosurge/config';
 import {
+  stepAgent,
+  createAgent,
+  resolveAiProfile,
+  leadAim,
+  shouldFire,
+} from '@mycosurge/game-engine';
+import type { Agent, AiProfile, ProjectileThreat, Vec2 } from '@mycosurge/game-engine';
+import {
   RADAR_BG,
   GRID_COLOR,
   GRID_SPACING,
@@ -32,7 +40,7 @@ interface ProjectileData {
   life: number;
 }
 
-interface NodeData {
+interface NodeData extends Agent {
   x: number;
   y: number;
   hp: number;
@@ -45,11 +53,14 @@ interface NodeData {
   flashTimer: number;
   poisonDps: number;
   poisonTimer: number;
+  ai: AiProfile;
 }
 
 interface PlayerData {
   x: number;
   y: number;
+  vx: number;
+  vy: number;
   hp: number;
   maxHp: number;
   shieldHits: number;
@@ -172,10 +183,11 @@ export function createRadar(
     evadeChance: number;
   },
   callbacks: RadarCallbacks,
-  modifiers: { hpMult?: number; speedMult?: number } = {},
+  modifiers: { hpMult?: number; speedMult?: number; moveSpeedMult?: number } = {},
 ): RadarInstance {
   const hpMult = modifiers.hpMult ?? 1;
   const speedMult = modifiers.speedMult ?? 1;
+  const moveSpeedMult = modifiers.moveSpeedMult ?? 1;
   const host = HOSTS.find((h) => h.id === hostId)!;
   const difficultyMult = 1 + (host.difficulty - 1) * 0.2;
   const nodeCount =
@@ -291,6 +303,8 @@ export function createRadar(
   const player: PlayerData = {
     x: centerX,
     y: centerY,
+    vx: 0,
+    vy: 0,
     hp: combatStats.hp,
     maxHp: combatStats.maxHp,
     shieldHits: combatStats.shieldHits,
@@ -334,13 +348,18 @@ export function createRadar(
 
   const nodes: NodeData[] = [];
   const nodeRadius = HOST_SIZE / 2;
+  const ai = resolveAiProfile(host.difficulty, { moveSpeedMult }, host.ai);
   for (let i = 0; i < nodeCount; i++) {
     const angle = (i / nodeCount) * Math.PI * 2;
     const dist = 120 + Math.random() * 60;
     const patternIdx = i % host.attackPatterns.length;
+    const agent = createAgent(
+      centerX + Math.cos(angle) * dist,
+      centerY + Math.sin(angle) * dist,
+      Math.random,
+    );
     nodes.push({
-      x: centerX + Math.cos(angle) * dist,
-      y: centerY + Math.sin(angle) * dist,
+      ...agent,
       hp: Math.ceil(10 * difficultyMult * hpMult),
       maxHp: Math.ceil(10 * difficultyMult * hpMult),
       radius: nodeRadius,
@@ -351,6 +370,7 @@ export function createRadar(
       flashTimer: 0,
       poisonDps: 0,
       poisonTimer: 0,
+      ai,
     });
   }
 
@@ -422,12 +442,21 @@ export function createRadar(
     const interval = PATTERN_INTERVALS[node.patternName] ?? 2;
     node.patternTimer += dt;
     if (node.patternTimer < interval) return;
-    node.patternTimer = 0;
 
     const dx = player.x - node.x,
       dy = player.y - node.y;
-    const angleToPlayer = Math.atan2(dy, dx);
     const distToPlayer = Math.sqrt(dx * dx + dy * dy);
+
+    if (!shouldFire(node, node.ai, distToPlayer)) {
+      // Hold the pattern loaded so it fires the moment the node is engaged.
+      node.patternTimer = Math.min(node.patternTimer, interval);
+      return;
+    }
+    node.patternTimer = 0;
+
+    // Lead the player using a nominal antibody speed for this difficulty.
+    const aim = leadAim(node, player, player.vx, player.vy, 130 * difficultyMult);
+    const angleToPlayer = aim.angle;
 
     switch (node.patternName) {
       case 'slow_spiral': {
@@ -467,7 +496,12 @@ export function createRadar(
       }
       case 'homing': {
         const speed = 100 * difficultyMult;
-        spawnAntibody(node.x, node.y, (dx / distToPlayer) * speed, (dy / distToPlayer) * speed);
+        spawnAntibody(
+          node.x,
+          node.y,
+          Math.cos(angleToPlayer) * speed,
+          Math.sin(angleToPlayer) * speed,
+        );
         break;
       }
       case 'erratic_swarm': {
@@ -527,7 +561,12 @@ export function createRadar(
             spawnAntibody(node.x, node.y, Math.cos(a) * speed, Math.sin(a) * speed);
           }
         } else if (phase === 1) {
-          spawnAntibody(node.x, node.y, (dx / distToPlayer) * speed, (dy / distToPlayer) * speed);
+          spawnAntibody(
+            node.x,
+            node.y,
+            Math.cos(angleToPlayer) * speed,
+            Math.sin(angleToPlayer) * speed,
+          );
         } else {
           node.angle += 0.4;
           for (let ring = 0; ring < 2; ring++) {
@@ -569,6 +608,8 @@ export function createRadar(
   }
 
   const dodgeWindow = 1 * (combatStats.dodgeWindowMult || 1);
+  const neighborScratch: Vec2[] = [];
+  const threatScratch: ProjectileThreat[] = [];
 
   function takeDamage() {
     if (player.invincibleTimer > 0) return;
@@ -622,6 +663,9 @@ export function createRadar(
       dy = touchDy / len;
     }
 
+    const prevPlayerX = player.x;
+    const prevPlayerY = player.y;
+
     if (dx !== 0 || dy !== 0) {
       const len = Math.sqrt(dx * dx + dy * dy);
       const speed = PLAYER_SPEED * (combatStats.moveSpeedMult || 1);
@@ -633,10 +677,44 @@ export function createRadar(
     player.x = Math.max(10, Math.min(size - 10, player.x));
     player.y = Math.max(10, Math.min(size - 10, player.y));
 
+    if (dt > 0) {
+      player.vx = (player.x - prevPlayerX) / dt;
+      player.vy = (player.y - prevPlayerY) / dt;
+    }
+
     player.fireTimer -= dt;
     if (player.fireTimer <= 0) {
       player.fireTimer = 1 / (SPORE_FIRE_RATE * combatStats.fireRate);
       spawnSpore();
+    }
+
+    neighborScratch.length = 0;
+    for (const node of nodes) {
+      if (node.alive) neighborScratch.push({ x: node.x, y: node.y });
+    }
+
+    threatScratch.length = 0;
+    if (ai.dodgeSkill > 0) {
+      for (const p of pool) {
+        if (p.alive && p.friendly) {
+          threatScratch.push({ x: p.x, y: p.y, vx: p.vx, vy: p.vy, radius: 3 });
+        }
+      }
+    }
+
+    const steeringWorld = {
+      player: { x: player.x, y: player.y },
+      playerVx: player.vx,
+      playerVy: player.vy,
+      arenaSize: size,
+      neighbors: neighborScratch,
+      threats: threatScratch,
+      dt,
+    };
+
+    for (const node of nodes) {
+      if (!node.alive) continue;
+      stepAgent(node, node.ai, steeringWorld, Math.random);
     }
 
     for (const node of nodes) {

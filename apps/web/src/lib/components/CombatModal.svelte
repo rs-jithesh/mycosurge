@@ -113,6 +113,7 @@
       {
         hpMult: strain.hpMult,
         speedMult: strain.speedMult,
+        moveSpeedMult: strain.speedMult,
       },
     );
   }

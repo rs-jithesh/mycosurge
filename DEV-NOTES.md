@@ -62,6 +62,28 @@ are unified, this function can be removed.
 the component rather than routed through `gameStore`. Consider wrapping them for
 consistency with the rest of the store API.
 
+### Host combat AI
+
+**Files:** `packages/game-engine/src/combat-ai.ts`, `apps/web/src/lib/pixi/radar.ts`.
+
+Host nodes steer and fire through a pure AI module: an intent FSM (`idle → reposition →
+engage`), weighted steering (arrival, orbit, wander, separation, containment), lead-aim,
+and fire discipline. Profiles derive from `difficulty` and can be overridden per host via
+`HostDef.ai` (`packages/config/src/hosts.ts`). Movement scales with the encounter strain's
+`speedMult` through the arena `moveSpeedMult` modifier.
+
+Tuning knobs (preferred range, move speed, turn rate, aggression, orbit ratio, fire range,
+dodge lookahead/commit/cooldown/speed) live as constants in `combat-ai.ts` and are covered
+by `combat-ai.test.ts`. Re-run `pnpm --filter @mycosurge/game-engine test` after any
+balance change.
+
+**Dodge phase.** Difficulty 3+ hosts (`dodgeSkill > 0`) scan incoming friendly spores for
+their closest point of approach and apply a lateral avoidance force perpendicular to the
+shot, blended in at priority over the base steering. A `dodgeTimer` (commit) and
+`dodgeCooldown` (recovery) gate it so evasions are telegraphed sidesteps rather than
+twitch. The arena passes the live spore pool as `SteeringWorld.threats` (only when
+`dodgeSkill > 0`), reusing a scratch array to avoid per-frame allocation.
+
 ### Economy & upkeep
 
 **Files:** `packages/game-engine/src/math.ts`, `economy.balance.test.ts`,
