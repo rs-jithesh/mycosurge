@@ -29,12 +29,14 @@ mycosurge/
 │   └── src/
 │       ├── app.css           # font import + @import '@mycosurge/design-system'
 │       ├── lib/
-│       │   ├── components/   # Sidebar, Nav, CombatModal, TutorialIntro, ActivityLog,
+│       │   ├── components/   # Overlay, CombatModal, TutorialIntro, ActivityLog,
 │       │   │                 #   GrowthCycleWheel, ColonyNucleus, PhaseDetailPanel, …
+│       │   │   ├── hunt/      # HuntSection — sonar contacts + tutorial scan flow
+│       │   │   └── panels/    # EvolutionPanel, ExpeditionsPanel (drawers)
 │       │   ├── content/      # onboarding.ts (tutorial steps), phases.ts (growth-cycle meta)
 │       │   ├── pixi/         # Pixi.js v8 arena engine (radar.ts, constants.ts)
-│       │   └── stores/       # game.svelte.ts (game store), log.svelte.ts (activity log)
-│       └── routes/           # / (Core), /radar, /evolution, /expeditions
+│       │   └── stores/       # game.svelte.ts, log.svelte.ts, ui.svelte.ts (overlay stack)
+│       └── routes/           # / (Core) only — systems open as overlays, not routes
 ├── packages/
 │   ├── config/               # pure TS: constants, hosts, generators, upgrades, strains, skills
 │   ├── game-engine/          # pure TS: combat, expeditions, math, radar, manual, phase, skills
@@ -182,14 +184,22 @@ T4 (6), Boss T5 (9). See `GAME-DESIGN.md` for the full table.
 
 ## 6. UI structure
 
-- **Shell** (`+layout.svelte`): top bar (brand, Online, Reset). Desktop = left `Sidebar` +
-  scrollable center. Mobile = stacked content + bottom `ActivityLog` + `Nav`. Breakpoint 768px.
-- **Routes**: `/` (Core), `/radar`, `/evolution`, `/expeditions`. Evolution/Expeditions
-  redirect home until `gamePhase === 'active'` **and** their system is unlocked (see §8
-  progressive disclosure). Sidebar/mobile-nav links are hidden until unlocked.
+- **Shell** (`+layout.svelte`): top bar (brand, launcher buttons, Online, Reset). Single view +
+  scrollable center; mobile = stacked content + bottom `ActivityLog`. Breakpoint 768px.
+- **Navigation**: only `/` (Core) is a route. **Evolution / Expeditions open as overlays**
+  (right drawer ≥768px, full-screen sheet <768px), driven by `stores/ui.svelte.ts` (an overlay
+  stack). Top-bar launcher buttons are hidden until `gamePhase === 'active'` and their system
+  is unlocked (see §8). Browser Back closes the top overlay; when nothing is open it confirms
+  before leaving.
 - **Core** (`+page.svelte`): Growth Cycle wheel + detail panel + desktop Activity panel.
-- **Combat**: `CombatModal.svelte` is owned by the Radar route; a `$effect` auto-opens it
-  whenever `gameStore.currentHost` is set (so engaging from Core works).
+- **Hunt**: there is no separate Radar UI. The Hunt phase in `PhaseDetailPanel` renders
+  `HuntSection` (`mode="full"`), the single home for sonar contacts / combat entry. The
+  tutorial handoff renders the same component (`mode="tutorial"`) inline with its scan flow.
+- **Overlays**: `Overlay.svelte` is the shared drawer/sheet (Back button, scrim, focus not
+  stolen — `autofocus` off); panels live in `components/panels/`. **Combat**
+  (`CombatModal.svelte`) layers on top of the single Core view via `uiStore.openCombat(hostId)`;
+  tutorial completion (`onReturn` → `closeAll`) closes the stack. Any close path disengages
+  the host.
 
 ---
 
@@ -200,12 +210,12 @@ with a contextual detail panel. It is **navigation/teaching only**; it never act
 
 ### Phases & panel contents
 
-| Phase      | Panel shows                                                              |
-| ---------- | ------------------------------------------------------------------------ |
-| **Gather** | Water/Nutrients meters, **Absorb**, passive-income summary               |
-| **Grow**   | Biomass meter + rate, **Synthesize**, generator upgrade cards            |
-| **Hunt**   | Banked/Raw Lysate, radar contacts (Scan/Ping/Engage/Dismiss), Open Radar |
-| **Expand** | Lysate bank, three `+10 cap` rows, **Evolution** link                    |
+| Phase      | Panel shows                                                                                                 |
+| ---------- | ----------------------------------------------------------------------------------------------------------- |
+| **Gather** | Water/Nutrients meters, **Absorb**, passive-income summary                                                  |
+| **Grow**   | Biomass meter + rate, **Synthesize**, generator upgrade cards                                               |
+| **Hunt**   | Banked/Raw Lysate, sonar contacts (badge/level/strain/Echo, Scan/Ping/Engage/Dismiss), locked-signal teaser |
+| **Expand** | Lysate bank, three `+10 cap` rows, **Evolution** link                                                       |
 
 ### How the suggestion works
 
@@ -224,20 +234,20 @@ evaluated top-to-bottom every tick; first match wins:
 10. Otherwise → **Grow**
 
 Constants: `LOW_RESERVE_RATIO 0.4`, `FULL_RESERVE_RATIO 0.9`. The result marks the suggested
-arc (dashed) and drives the "Next step" text (`phaseMeta(phase).objective`).
+arc (dashed) and, when it differs from the active stage, the focus strip's **Suggested** text.
 
 ### Current interaction model
 
-**The engine advises; the player chooses.** The wheel labels and the mobile stepper are
-controls. Until the player selects a phase the detail panel follows the recommendation; after
-the first pick it stays where they put it (sticky). While the player is looking at a different
-phase, the focus strip reads **"Recommended: X"** with a **Follow** button that clears the
-manual pick. The selected arc is lit; the suggested (when different) is dashed.
+**The engine suggests; the player chooses — and it never auto-switches.** The active stage is
+seeded from the recommendation on load and only changes when the player clicks a wheel label /
+mobile step. While the active stage differs from the recommendation the suggested arc is dashed
+with a "Next" flag and the focus strip reads **"Suggested: X"** with a **Switch** button; when
+the player is already on it, no suggestion shows. The selected arc stays lit.
 
 ### Files
 
 - `packages/game-engine/src/phase.ts` (+ `phase.test.ts`) — heuristic, cost helpers.
-- `apps/web/src/routes/+page.svelte` — `manualPhase` selection state (auto-follow → sticky).
+- `apps/web/src/routes/+page.svelte` — active-stage `$state` (seeded once, never auto-switches).
 - `apps/web/src/lib/content/phases.ts` — `PHASES` metadata, `phaseMeta()`.
 - `apps/web/src/lib/components/GrowthCycleWheel.svelte` — SVG arcs + labels + nucleus slot.
 - `apps/web/src/lib/components/ColonyNucleus.svelte` — Biomass/rate/starving (full + compact).
@@ -248,6 +258,14 @@ manual pick. The selected arc is lit; the suggested (when different) is dashed.
 
 ## 8. Recent changes (this session)
 
+- **Navigation → overlays → Hunt**: removed the desktop `Sidebar`, mobile `Nav`, the
+  `/radar`/`/evolution`/`/expeditions` routes, **and the `RadarPanel` drawer**. The Hunt phase
+  now owns all sonar/contact/combat UI via the shared `components/hunt/HuntSection.svelte`
+  (`mode="full"` in the phase panel, `mode="tutorial"` inline in the tutorial handoff);
+  `Overlay.svelte` drawers remain for Evolution/Expeditions. `+layout.svelte` shows top-bar
+  launcher buttons (unlock-gated, "New" badges). Browser Back closes the top overlay
+  (confirm-on-exit when none is open); `autofocus` is off. The Growth Cycle wheel was enlarged
+  (`min(700px, 74vh)`). Copy: user-facing "Radar" → "Hunt"; `SYSTEM_META.route` dropped.
 - **Icon assets (Tier 0 + Tier 1)**: 13 Gemini-generated icons (Water, Nutrients, Biomass,
   Lysate, Echo, Core + Radar, Evolution, Expeditions, Gather, Grow, Hunt, Expand) live as 256px
   PNGs in `apps/web/static/assets/icons/`. A registry (`content/icons.ts` → `ICON_META`) and

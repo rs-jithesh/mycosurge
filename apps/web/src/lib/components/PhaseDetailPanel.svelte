@@ -1,21 +1,13 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
-  import { previewCombatReward, type GrowthPhase } from '@mycosurge/game-engine';
-  import {
-    GENERATORS,
-    getGeneratorCost,
-    HOSTS,
-    getStrain,
-    LYSATE_CAP_EXPAND_AMOUNT,
-    SCAN_WATER_COST,
-  } from '@mycosurge/config';
+  import { type GrowthPhase } from '@mycosurge/game-engine';
+  import { GENERATORS, getGeneratorCost, LYSATE_CAP_EXPAND_AMOUNT } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
-  import { logStore } from '$lib/stores/log.svelte';
+  import { uiStore } from '$lib/stores/ui.svelte';
   import { phaseMeta } from '$lib/content/phases';
   import CountUp from './CountUp.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
+  import HuntSection from '$lib/components/hunt/HuntSection.svelte';
 
   let { phase }: { phase: GrowthPhase } = $props();
 
@@ -51,29 +43,6 @@
   let canAbsorb = $derived(manualCooldown <= 0);
   let canSynthesize = $derived(gs.water >= 10 && gs.nutrients >= 10);
   let synthYield = $derived(gameStore.synthesisYield());
-
-  // ── Hunt ──
-  let contacts = $derived(gameStore.contacts);
-  let canPing = $derived(gs.water >= SCAN_WATER_COST && contacts.length < gameStore.radarSlots);
-  let hasActiveHost = $derived(gameStore.currentHost !== null);
-  let activeHost = $derived(HOSTS.find((h) => h.id === gameStore.currentHost));
-  let isInTrauma = $derived(gameStore.isInTrauma);
-
-  function hostFor(id: string | null) {
-    return HOSTS.find((h) => h.id === id);
-  }
-
-  function hostLvl(difficulty: number): number {
-    return Math.min(5, Math.ceil(difficulty / 1.4));
-  }
-
-  function engage(contactId: string) {
-    if (gameStore.engageContact(contactId)) {
-      goto(resolve('/radar'));
-    } else {
-      logStore.warn("You can't engage right now — you may be recovering.");
-    }
-  }
 
   // ── Expand ──
   let capRows = $derived([
@@ -290,111 +259,7 @@
         </div>
       </div>
     {:else if phase === 'hunt'}
-      <!-- ── HUNT ── -->
-      {#if hasActiveHost}
-        <div class="active-fight">
-          <span class="text-label-caps fight-tag">In combat</span>
-          <p class="fight-name">{activeHost?.name ?? 'A host'}</p>
-          <button class="cmd-btn action-btn" onclick={() => goto(resolve('/radar'))}>
-            <span class="action-verb">Return to the fight</span>
-          </button>
-        </div>
-      {:else}
-        <div class="lysate-strip">
-          <div class="lysate-cell">
-            <span class="text-label-caps lysate-label">Banked Lysate</span>
-            <span class="text-data-mono lysate-val banked">{Math.floor(gs.lysateBanked)}</span>
-          </div>
-          <div class="lysate-cell">
-            <span class="text-label-caps lysate-label">Raw Lysate</span>
-            <span class="text-data-mono lysate-val">
-              {Math.floor(gs.lysateRaw * 10) / 10}
-              {#if gs.lysateRaw > 0}<span class="raw-dot" title="Stabilising">*</span>{/if}
-            </span>
-          </div>
-        </div>
-
-        {#if contacts.length === 0}
-          <div class="empty-hunt">
-            <p class="empty-title">No signals right now</p>
-            <p class="empty-sub">Wait for one to drift in, or ping the substrate.</p>
-            {#if contacts.length < gameStore.radarSlots}
-              <span class="text-data-mono sweep"
-                >Next sweep ~{Math.max(1, Math.ceil(gs.sonarTimer))}s</span
-              >
-            {/if}
-          </div>
-        {:else}
-          <div class="contact-list">
-            {#each contacts as contact (contact.id)}
-              {@const chost = hostFor(contact.hostId)}
-              {@const cstrain = getStrain(contact.strainId)}
-              {@const lvl = chost ? hostLvl(chost.difficulty) : 1}
-              {@const preview = previewCombatReward(gs, contact.hostId, contact.strainId)}
-              <div class="contact-card">
-                <div class="contact-top">
-                  <span class="host-name">
-                    {contact.revealed ? (chost?.name ?? contact.hostId) : 'Unidentified signal'}
-                  </span>
-                  <span class="text-data-mono contact-timer"
-                    >{Math.ceil(contact.timeRemaining)}s</span
-                  >
-                </div>
-                {#if !contact.revealed}
-                  <button
-                    class="cmd-btn contact-btn"
-                    disabled={gs.water < SCAN_WATER_COST}
-                    onclick={() => gameStore.scanContact(contact.id)}
-                  >
-                    Scan · {SCAN_WATER_COST} Water
-                  </button>
-                {:else}
-                  <div class="contact-meta">
-                    {#if chost?.isBoss}
-                      <span class="boss-tag text-label-caps">Boss</span>
-                    {:else}
-                      <span class="text-data-mono">Level {lvl}</span>
-                    {/if}
-                    {#if cstrain.id !== 'normal'}
-                      <span class="strain-tag text-label-caps">{cstrain.name}</span>
-                    {/if}
-                    <span class="text-data-mono contact-reward">
-                      +{preview.biomassEarned} Biomass · +{preview.lysateEarned} Lysate
-                    </span>
-                  </div>
-                  <div class="contact-actions">
-                    <button
-                      class="cmd-btn engage-btn"
-                      disabled={isInTrauma}
-                      onclick={() => engage(contact.id)}>Engage</button
-                    >
-                    <button
-                      class="cmd-btn secondary"
-                      onclick={() => gameStore.dismissContact(contact.id)}
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                  {#if isInTrauma}
-                    <p class="recovery-note text-label-caps">
-                      Recovering — engage once the network stabilises.
-                    </p>
-                  {/if}
-                {/if}
-              </div>
-            {/each}
-          </div>
-        {/if}
-
-        <div class="hunt-actions">
-          <button class="cmd-btn" disabled={!canPing} onclick={() => gameStore.pingSubstrate()}>
-            Ping substrate · {SCAN_WATER_COST} Water
-          </button>
-          <button class="cmd-btn secondary" onclick={() => goto(resolve('/radar'))}>
-            Open Radar
-          </button>
-        </div>
-      {/if}
+      <HuntSection mode="full" />
     {:else}
       <!-- ── EXPAND ── -->
       <div class="lysate-strip">
@@ -432,7 +297,7 @@
       </div>
 
       {#if gameStore.unlockedSystems.evolution}
-        <button class="cmd-btn evolution-cta" onclick={() => goto(resolve('/evolution'))}>
+        <button class="cmd-btn evolution-cta" onclick={() => uiStore.openPanel('evolution')}>
           <span class="action-verb">Evolution</span>
           <span class="action-sub">Spend Biomass on permanent mutations</span>
         </button>
@@ -777,25 +642,7 @@
     color: var(--secondary);
   }
 
-  /* ── Hunt ── */
-  .active-fight {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
-  }
-
-  .fight-tag {
-    color: var(--alert);
-  }
-
-  .fight-name {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--on-surface);
-  }
-
+  /* ── Lysate ── */
   .lysate-strip {
     display: flex;
     gap: 10px;
@@ -824,126 +671,6 @@
 
   .lysate-val.banked {
     color: var(--primary);
-  }
-
-  .raw-dot {
-    color: var(--secondary);
-  }
-
-  .empty-hunt {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    text-align: center;
-    padding: 8px 0;
-  }
-
-  .empty-title {
-    margin: 0;
-    font-weight: 600;
-    color: var(--on-surface);
-  }
-
-  .empty-sub {
-    margin: 0;
-    font-size: 12px;
-    color: var(--on-surface-variant);
-  }
-
-  .sweep {
-    color: var(--secondary);
-    font-size: 12px;
-  }
-
-  .contact-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .contact-card {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border: 1px solid var(--outline-variant);
-    background: var(--surface-container-high);
-    border-radius: var(--radius-md);
-    padding: 10px 12px;
-  }
-
-  .contact-top {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-unit);
-  }
-
-  .host-name {
-    font-weight: 600;
-    color: var(--on-surface);
-  }
-
-  .contact-timer {
-    color: var(--on-surface-variant);
-    font-size: 11px;
-  }
-
-  .contact-btn {
-    align-self: flex-start;
-  }
-
-  .contact-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    color: var(--on-surface-variant);
-  }
-
-  .boss-tag {
-    color: var(--alert);
-  }
-
-  .strain-tag {
-    color: var(--warning);
-    border: 1px solid var(--warning);
-    border-radius: var(--radius-pill);
-    padding: 1px 7px;
-    font-size: 9px;
-  }
-
-  .contact-reward {
-    color: var(--primary);
-    font-size: 12px;
-  }
-
-  .contact-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .engage-btn {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: var(--on-primary);
-    font-weight: 600;
-  }
-
-  .engage-btn:hover:not(:disabled) {
-    background: var(--primary-fixed-dim);
-    border-color: var(--primary-fixed-dim);
-  }
-
-  .hunt-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .hunt-actions .cmd-btn {
-    flex: 1;
-    font-size: 12px;
-    padding: 8px 10px;
   }
 
   /* ── Expand ── */
@@ -988,11 +715,6 @@
     padding: 6px 10px;
     min-height: 40px;
     flex-shrink: 0;
-  }
-
-  .recovery-note {
-    color: var(--alert);
-    font-size: 10px;
   }
 
   .evolution-cta {

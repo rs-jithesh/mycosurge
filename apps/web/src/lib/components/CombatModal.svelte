@@ -1,7 +1,5 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from 'svelte';
-  import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { gameStore } from '$lib/stores/game.svelte';
   import { HOSTS } from '@mycosurge/config';
   import { createRadar } from '$lib/pixi/radar';
@@ -12,9 +10,11 @@
   let {
     hostId,
     onClose,
+    onReturn,
   }: {
     hostId: string;
     onClose: () => void;
+    onReturn?: () => void;
   } = $props();
 
   let container = $state<HTMLDivElement>();
@@ -60,7 +60,6 @@
   onMount(async () => {
     wasTutorial = gameStore.state.gamePhase === 'tactician';
     await tick();
-    dialogEl?.querySelector('button')?.focus();
     if (!container || !hostId) return;
     startRadar();
   });
@@ -70,6 +69,8 @@
       radarInstance.destroy();
       radarInstance = null;
     }
+    // Any close path (retreat, Back, Esc) abandons the fight cleanly.
+    gameStore.disengageHost();
   });
 
   function startRadar() {
@@ -132,9 +133,10 @@
     }
     gameStore.disengageHost();
     result = null;
-    onClose();
     if (wasTutorial) {
-      goto(resolve('/'));
+      onReturn?.();
+    } else {
+      onClose();
     }
   }
 </script>

@@ -66,7 +66,7 @@ export const HANDOFF_STEP: TutorialStep = {
   total: TUTORIAL_TOTAL_STEPS,
   tag: 'Threat detected',
   title: 'Confront the nematode on your outer hyphae',
-  description: "It's grazing on your network. Head to the Radar to scan and engage.",
+  description: "It's grazing on your network. Scan the substrate and engage.",
   tone: 'coral',
   hint: 'Combat is real-time — dodge what it throws at you.',
 };
@@ -133,7 +133,6 @@ export const ONBOARDING_COPY = {
   synthesize: { label: 'Synthesize Biomass', effect: '10 Water + 10 Nutrients → 1 Biomass' },
   extend: { label: 'Extend Hyphae', effect: '5 Biomass → +1mm network' },
   install: { label: 'Install', cost: (cost: number) => `Cost: ${cost} Biomass` },
-  proceed: { label: 'Proceed to Radar', effect: 'Scan for the nematode' },
   shock: (seconds: number) => `Recovering from shock — production halved for ${seconds}s`,
 };
 
@@ -152,9 +151,9 @@ export const UNLOCKED_SYSTEMS: UnlockCard[] = [
     blurb: 'Manage Water, Nutrients and Biomass. Install and upgrade generators.',
   },
   {
-    glyph: '◎',
-    icon: 'radar',
-    name: 'Radar',
+    glyph: '◈',
+    icon: 'hunt',
+    name: 'Hunt',
     blurb: 'Scan the substrate, engage hosts, and earn Lysate from combat.',
   },
 ];

@@ -1,19 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { gameStore } from '$lib/stores/game.svelte';
   import { SKILL_NODES, UPGRADES, getGeneratorCost } from '@mycosurge/config';
   import type { UpgradeCategory } from '@mycosurge/config';
   import { getSkillLevelCost, arePrerequisitesMet } from '@mycosurge/game-engine';
+  import Overlay from '$lib/components/Overlay.svelte';
 
-  onMount(() => {
-    if (gameStore.state.gamePhase !== 'active' || !gameStore.unlockedSystems.evolution) {
-      goto(resolve('/'));
-      return;
-    }
-    gameStore.markSystemSeen('evolution');
-  });
+  let { onClose }: { onClose: () => void } = $props();
 
   let openCategory = $state<UpgradeCategory | null>(null);
 
@@ -94,143 +86,148 @@
   });
 </script>
 
-<div class="evolution-view">
-  <!-- ── NEURAL MUTATIONS (Skills) ── -->
-  <section class="panel">
-    <h2 class="panel-title text-label-caps">Mutations</h2>
-    {#if SKILL_NODES.length === 0}
-      <p class="empty-text text-data-mono">No mutations available right now.</p>
-    {:else}
-      <div class="skill-grid">
-        {#each SKILL_NODES as skill}
-          {@const level = gameStore.state.skillAllocations[skill.id] ?? 0}
-          {@const cost = skillCost(skill.id)}
-          {@const canAfford = gameStore.biomass >= cost}
-          {@const maxed = level >= skill.maxLevel}
-          {@const meetsPrereqs = arePrerequisitesMet(gameStore.state, skill.id)}
-          <div class="upgrade-item" class:upgrade-locked={!meetsPrereqs && !maxed}>
-            <div class="upgrade-header">
-              <span class="text-label-caps upgrade-name">{skill.name}</span>
-              <span class="text-data-mono upgrade-level">Level {level}/{skill.maxLevel}</span>
-            </div>
-            <div class="upgrade-desc text-data-mono">{skill.description}</div>
-            <div class="upgrade-footer">
-              {#if maxed}
-                <span class="text-label-caps upgrade-max">Maxed</span>
-              {:else if !meetsPrereqs}
-                <span class="text-data-mono upgrade-prereqs"
-                  >{prereqLabel(skill.prerequisites)}</span
-                >
-              {:else}
-                <span class="text-data-mono upgrade-cost">{cost} Biomass</span>
-                <button
-                  class="cmd-btn upgrade-btn"
-                  disabled={!canAfford}
-                  onclick={() => gameStore.purchaseSkill(skill.id)}
-                >
-                  Upgrade
-                </button>
-              {/if}
-            </div>
-          </div>
-        {/each}
-      </div>
-    {/if}
-  </section>
-
-  <!-- ── ECONOMY UPGRADES ── -->
-  <section class="panel">
-    <h2 class="panel-title text-label-caps">Growth upgrades</h2>
-
-    {#each ['mycelial', 'incursion', 'structural'] as cat}
-      {@const upgrades = categoryUpgrades(cat as UpgradeCategory)}
-      <div class="category-section">
-        <button
-          class="category-header text-label-caps"
-          onclick={() => toggleCategory(cat as UpgradeCategory)}
-        >
-          <span>{categoryLabel(cat as UpgradeCategory)} ({upgrades.length})</span>
-          <span class="collapse-arrow">{openCategory === cat ? '−' : '+'}</span>
-        </button>
-
-        {#if openCategory === cat}
-          <div class="upgrade-grid">
-            {#each upgrades as upgrade}
-              {@const level = gameStore.state.upgradeLevels[upgrade.id] ?? 0}
-              {@const cost = upgradeCost(upgrade.id)}
-              {@const maxed = level >= upgrade.maxLevel}
-              {@const canBuy = canPurchaseUpgrade(upgrade.id)}
-              {@const meetsPrereqs = upgrade.prereqs.every(
-                (p) => (gameStore.state.upgradeLevels[p] ?? 0) >= 1,
-              )}
-              <div class="upgrade-item" class:upgrade-locked={!meetsPrereqs && !maxed}>
-                <div class="upgrade-header">
-                  <span class="text-label-caps upgrade-name">{upgrade.name}</span>
-                  <span class="text-data-mono upgrade-level">Level {level}/{upgrade.maxLevel}</span>
-                </div>
-                <div class="upgrade-desc text-data-mono">{upgrade.description}</div>
-                <div class="upgrade-footer">
-                  {#if maxed}
-                    <span class="text-label-caps upgrade-max">Maxed</span>
-                  {:else if !meetsPrereqs}
-                    <span class="text-data-mono upgrade-prereqs"
-                      >{prereqLabel(upgrade.prereqs)}</span
-                    >
-                  {:else}
-                    <span class="text-data-mono upgrade-cost">{cost} Biomass</span>
-                    <button
-                      class="cmd-btn upgrade-btn"
-                      disabled={!canBuy}
-                      onclick={() => gameStore.purchaseUpgrade(upgrade.id)}
-                    >
-                      Upgrade
-                    </button>
-                  {/if}
-                </div>
+<Overlay title="Evolution" {onClose}>
+  <div class="evolution-view">
+    <!-- ── NEURAL MUTATIONS (Skills) ── -->
+    <section class="panel">
+      <h2 class="panel-title text-label-caps">Mutations</h2>
+      {#if SKILL_NODES.length === 0}
+        <p class="empty-text text-data-mono">No mutations available right now.</p>
+      {:else}
+        <div class="skill-grid">
+          {#each SKILL_NODES as skill}
+            {@const level = gameStore.state.skillAllocations[skill.id] ?? 0}
+            {@const cost = skillCost(skill.id)}
+            {@const canAfford = gameStore.biomass >= cost}
+            {@const maxed = level >= skill.maxLevel}
+            {@const meetsPrereqs = arePrerequisitesMet(gameStore.state, skill.id)}
+            <div class="upgrade-item" class:upgrade-locked={!meetsPrereqs && !maxed}>
+              <div class="upgrade-header">
+                <span class="text-label-caps upgrade-name">{skill.name}</span>
+                <span class="text-data-mono upgrade-level">Level {level}/{skill.maxLevel}</span>
               </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    {/each}
-  </section>
-
-  <!-- ── EVOLUTIONARY ECHOES ── -->
-  <section class="panel">
-    <h2 class="panel-title text-label-caps">Evolutionary echoes</h2>
-    {#if gameStore.acquiredEchoes.length === 0}
-      <p class="empty-text text-data-mono">
-        No echoes yet. Defeat a host on the Radar to inherit its trait.
-      </p>
-    {:else}
-      <div class="echo-list">
-        {#each gameStore.acquiredEchoes as echo}
-          <div class="echo-item">
-            <span class="echo-name">{gameStore.echoName(echo)}</span>
-            <span class="echo-desc text-data-mono">{gameStore.echoDescription(echo)}</span>
-          </div>
-        {/each}
-      </div>
-    {/if}
-
-    {#if activeBonuses.length > 0}
-      <div class="echo-summary">
-        <span class="text-label-caps summary-title">Active bonuses</span>
-        <div class="bonus-grid">
-          {#each activeBonuses as bonus (bonus.label)}
-            <div class="bonus-chip">
-              <span class="bonus-label">{bonus.label}</span>
-              <span class="bonus-value text-data-mono">{bonus.value}</span>
+              <div class="upgrade-desc text-data-mono">{skill.description}</div>
+              <div class="upgrade-footer">
+                {#if maxed}
+                  <span class="text-label-caps upgrade-max">Maxed</span>
+                {:else if !meetsPrereqs}
+                  <span class="text-data-mono upgrade-prereqs"
+                    >{prereqLabel(skill.prerequisites)}</span
+                  >
+                {:else}
+                  <span class="text-data-mono upgrade-cost">{cost} Biomass</span>
+                  <button
+                    class="cmd-btn upgrade-btn"
+                    disabled={!canAfford}
+                    onclick={() => gameStore.purchaseSkill(skill.id)}
+                  >
+                    Upgrade
+                  </button>
+                {/if}
+              </div>
             </div>
           {/each}
         </div>
-        <p class="summary-note">
-          Complexity raises upkeep on Water and Nutrients — but each echo repays it many times over.
+      {/if}
+    </section>
+
+    <!-- ── ECONOMY UPGRADES ── -->
+    <section class="panel">
+      <h2 class="panel-title text-label-caps">Growth upgrades</h2>
+
+      {#each ['mycelial', 'incursion', 'structural'] as cat}
+        {@const upgrades = categoryUpgrades(cat as UpgradeCategory)}
+        <div class="category-section">
+          <button
+            class="category-header text-label-caps"
+            onclick={() => toggleCategory(cat as UpgradeCategory)}
+          >
+            <span>{categoryLabel(cat as UpgradeCategory)} ({upgrades.length})</span>
+            <span class="collapse-arrow">{openCategory === cat ? '−' : '+'}</span>
+          </button>
+
+          {#if openCategory === cat}
+            <div class="upgrade-grid">
+              {#each upgrades as upgrade}
+                {@const level = gameStore.state.upgradeLevels[upgrade.id] ?? 0}
+                {@const cost = upgradeCost(upgrade.id)}
+                {@const maxed = level >= upgrade.maxLevel}
+                {@const canBuy = canPurchaseUpgrade(upgrade.id)}
+                {@const meetsPrereqs = upgrade.prereqs.every(
+                  (p) => (gameStore.state.upgradeLevels[p] ?? 0) >= 1,
+                )}
+                <div class="upgrade-item" class:upgrade-locked={!meetsPrereqs && !maxed}>
+                  <div class="upgrade-header">
+                    <span class="text-label-caps upgrade-name">{upgrade.name}</span>
+                    <span class="text-data-mono upgrade-level"
+                      >Level {level}/{upgrade.maxLevel}</span
+                    >
+                  </div>
+                  <div class="upgrade-desc text-data-mono">{upgrade.description}</div>
+                  <div class="upgrade-footer">
+                    {#if maxed}
+                      <span class="text-label-caps upgrade-max">Maxed</span>
+                    {:else if !meetsPrereqs}
+                      <span class="text-data-mono upgrade-prereqs"
+                        >{prereqLabel(upgrade.prereqs)}</span
+                      >
+                    {:else}
+                      <span class="text-data-mono upgrade-cost">{cost} Biomass</span>
+                      <button
+                        class="cmd-btn upgrade-btn"
+                        disabled={!canBuy}
+                        onclick={() => gameStore.purchaseUpgrade(upgrade.id)}
+                      >
+                        Upgrade
+                      </button>
+                    {/if}
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/each}
+    </section>
+
+    <!-- ── EVOLUTIONARY ECHOES ── -->
+    <section class="panel">
+      <h2 class="panel-title text-label-caps">Evolutionary echoes</h2>
+      {#if gameStore.acquiredEchoes.length === 0}
+        <p class="empty-text text-data-mono">
+          No echoes yet. Defeat a host on the Radar to inherit its trait.
         </p>
-      </div>
-    {/if}
-  </section>
-</div>
+      {:else}
+        <div class="echo-list">
+          {#each gameStore.acquiredEchoes as echo}
+            <div class="echo-item">
+              <span class="echo-name">{gameStore.echoName(echo)}</span>
+              <span class="echo-desc text-data-mono">{gameStore.echoDescription(echo)}</span>
+            </div>
+          {/each}
+        </div>
+      {/if}
+
+      {#if activeBonuses.length > 0}
+        <div class="echo-summary">
+          <span class="text-label-caps summary-title">Active bonuses</span>
+          <div class="bonus-grid">
+            {#each activeBonuses as bonus (bonus.label)}
+              <div class="bonus-chip">
+                <span class="bonus-label">{bonus.label}</span>
+                <span class="bonus-value text-data-mono">{bonus.value}</span>
+              </div>
+            {/each}
+          </div>
+          <p class="summary-note">
+            Complexity raises upkeep on Water and Nutrients — but each echo repays it many times
+            over.
+          </p>
+        </div>
+      {/if}
+    </section>
+  </div>
+</Overlay>
 
 <style>
   .evolution-view {

@@ -103,7 +103,7 @@
 <style>
   .wheel {
     position: relative;
-    width: min(520px, 100%);
+    width: min(700px, 74vh, 100%);
     aspect-ratio: 1;
     margin: 0 auto;
   }
@@ -208,14 +208,14 @@
     transform: translate(-50%, -50%);
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 10px;
+    gap: 6px;
+    padding: 6px 12px;
     border-radius: var(--radius-pill);
     border: 1px solid var(--border);
     background: var(--surface-container);
     color: var(--on-surface-variant);
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
@@ -267,8 +267,8 @@
   }
 
   .dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: currentColor;
     opacity: 0.7;

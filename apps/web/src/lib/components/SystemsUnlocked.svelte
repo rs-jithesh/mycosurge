@@ -1,16 +1,10 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
   import { UNLOCKED_SYSTEMS, UNLOCKED_NOTE } from '$lib/content/onboarding';
   import ResourceIcon from './ResourceIcon.svelte';
 
   let { onClose }: { onClose: () => void } = $props();
 
   let sheetEl = $state<HTMLDivElement>();
-
-  onMount(async () => {
-    await tick();
-    sheetEl?.querySelector('button')?.focus();
-  });
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') onClose();

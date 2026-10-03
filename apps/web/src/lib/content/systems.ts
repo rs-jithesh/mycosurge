@@ -2,7 +2,6 @@ import type { SystemId } from '@mycosurge/game-engine';
 
 export interface SystemMeta {
   id: SystemId;
-  route: string;
   name: string;
   glyph: string;
   blurb: string;
@@ -13,15 +12,13 @@ export interface SystemMeta {
 export const SYSTEM_META: Record<SystemId, SystemMeta> = {
   radar: {
     id: 'radar',
-    route: '/radar',
-    name: 'Radar',
-    glyph: '◎',
+    name: 'Hunt',
+    glyph: '◈',
     blurb: 'Scan the substrate, engage hosts, and earn Lysate from combat.',
-    toast: 'Radar online — scan the substrate for hosts.',
+    toast: 'Hunt unlocked — scan the substrate for hosts.',
   },
   evolution: {
     id: 'evolution',
-    route: '/evolution',
     name: 'Evolution',
     glyph: '❖',
     blurb: 'Spend Biomass on permanent mutations and growth upgrades.',
@@ -29,7 +26,6 @@ export const SYSTEM_META: Record<SystemId, SystemMeta> = {
   },
   expeditions: {
     id: 'expeditions',
-    route: '/expeditions',
     name: 'Expeditions',
     glyph: '➤',
     blurb: 'Send a subdued host to forage for Biomass while you tend the network.',

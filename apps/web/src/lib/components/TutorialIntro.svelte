@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { onDestroy } from 'svelte';
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
+  import { uiStore } from '$lib/stores/ui.svelte';
   import ObjectiveBanner from './ObjectiveBanner.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import CountUp from './CountUp.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
+  import HuntSection from '$lib/components/hunt/HuntSection.svelte';
   import {
     TUTORIAL_STEPS,
     HANDOFF_STEP,
@@ -102,13 +102,9 @@
     gameStore.extendHyphae();
   }
 
-  function goToRadar() {
-    goto(resolve('/radar/'));
-  }
-
   function skipIntro() {
     gameStore.skipIntro();
-    goto(resolve('/'));
+    uiStore.closeAll();
   }
 </script>
 
@@ -185,14 +181,11 @@
     </div>
   </section>
 
-  <section class="panel">
-    <div class="panel-body actions">
-      {#if isHandoff}
-        <button class="action-btn current" onclick={goToRadar}>
-          <span class="action-verb">{ONBOARDING_COPY.proceed.label}</span>
-          <span class="action-sub">{ONBOARDING_COPY.proceed.effect}</span>
-        </button>
-      {:else}
+  {#if isHandoff}
+    <HuntSection mode="tutorial" />
+  {:else}
+    <section class="panel">
+      <div class="panel-body actions">
         <!-- Actions -->
         <div class="group">
           <span class="group-label text-label-caps">Actions</span>
@@ -282,9 +275,9 @@
             </div>
           {/if}
         </div>
-      {/if}
-    </div>
-  </section>
+      </div>
+    </section>
+  {/if}
 
   <section class="panel activity-panel">
     <span class="activity-label text-label-caps">Latest</span>

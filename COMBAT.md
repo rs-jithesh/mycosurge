@@ -6,9 +6,10 @@ moves; spores fire automatically.**
 
 ## Flow
 
-1. **Radar** (`/radar`) lists scannable hosts. During the tutorial, a three-step scan
-   flow (scan → identify → engage) introduces the first nematode.
-2. **Engage** opens the combat overlay: the arena plus HUD.
+1. **Hunt** (the Hunt phase of the Growth Cycle, or the tutorial handoff) lists scannable
+   hosts. During the tutorial, a three-step scan flow (scan → identify → engage) introduces the
+   first nematode.
+2. **Engage** opens the combat overlay on top of the Core view: the arena plus HUD.
 3. **Resolve** — clearing every host node is a victory (rewards); running out of HP or
    retreating is a defeat (trauma). The overlay then shows the result.
 

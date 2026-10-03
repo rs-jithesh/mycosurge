@@ -18,7 +18,7 @@
 <div class="nucleus" class:compact>
   {#if compact}
     <div class="head">
-      <span class="tag text-label-caps">Colony organism</span>
+      <span class="tag text-label-caps">Biomass</span>
       <span class="rate text-data-mono" class:is-halted={starving || rate <= 0}>
         +{rate.toFixed(1)} / s
       </span>
@@ -39,7 +39,7 @@
       <span class="starve text-label-caps">Starving — restore Water &amp; Nutrients</span>
     {/if}
   {:else}
-    <span class="tag text-label-caps">Colony organism</span>
+    <span class="tag text-label-caps">Biomass</span>
     <span class="biomass text-data-mono">
       <CountUp value={gameStore.biomass} format={fmtBiomass} />
       <span class="cap">/ {Math.floor(gameStore.maxBiomass)}</span>

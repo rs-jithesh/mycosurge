@@ -1,17 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { gameStore } from '$lib/stores/game.svelte';
   import { HOSTS } from '@mycosurge/config';
+  import Overlay from '$lib/components/Overlay.svelte';
 
-  onMount(() => {
-    if (gameStore.state.gamePhase !== 'active' || !gameStore.unlockedSystems.expeditions) {
-      goto(resolve('/'));
-      return;
-    }
-    gameStore.markSystemSeen('expeditions');
-  });
+  let { onClose }: { onClose: () => void } = $props();
 
   let slots = $derived(gameStore.state.maxExpeditionSlots);
   let active = $derived(gameStore.expeditions.length);
@@ -27,88 +19,90 @@
   }
 </script>
 
-<div class="expeditions-view">
-  <section class="panel">
-    <div class="panel-head">
-      <span class="text-label-caps">Active expeditions</span>
-      <span class="text-data-mono">{active} / {slots}</span>
-    </div>
-
-    {#if gameStore.expeditions.length === 0}
-      <div class="empty">
-        <span class="empty-glyph">◌</span>
-        <p class="empty-title">No expeditions underway</p>
-        <p class="empty-text">
-          Start an expedition to gather Biomass while you tend the network. It takes real time to
-          return.
-        </p>
+<Overlay title="Expeditions" {onClose}>
+  <div class="expeditions-view">
+    <section class="panel">
+      <div class="panel-head">
+        <span class="text-label-caps">Active expeditions</span>
+        <span class="text-data-mono">{active} / {slots}</span>
       </div>
-    {:else}
-      <div class="expedition-list">
-        {#each gameStore.expeditions as exp, i}
-          <div class="expedition-item">
-            <div class="exp-top">
-              <span class="exp-host">{hostName(exp.hostId)}</span>
+
+      {#if gameStore.expeditions.length === 0}
+        <div class="empty">
+          <span class="empty-glyph">◌</span>
+          <p class="empty-title">No expeditions underway</p>
+          <p class="empty-text">
+            Start an expedition to gather Biomass while you tend the network. It takes real time to
+            return.
+          </p>
+        </div>
+      {:else}
+        <div class="expedition-list">
+          {#each gameStore.expeditions as exp, i}
+            <div class="expedition-item">
+              <div class="exp-top">
+                <span class="exp-host">{hostName(exp.hostId)}</span>
+                {#if exp.completed}
+                  <span class="status-done text-label-caps">Ready</span>
+                {:else}
+                  <span class="status-pending text-data-mono">
+                    {Math.ceil(exp.timeRemaining)}s
+                  </span>
+                {/if}
+              </div>
+              <div
+                class="track"
+                role="progressbar"
+                aria-label="Expedition progress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow={Math.round(progress(exp.timeRemaining, exp.duration))}
+              >
+                <span style="width: {progress(exp.timeRemaining, exp.duration)}%"></span>
+              </div>
               {#if exp.completed}
-                <span class="status-done text-label-caps">Ready</span>
-              {:else}
-                <span class="status-pending text-data-mono">
-                  {Math.ceil(exp.timeRemaining)}s
-                </span>
+                <button
+                  class="cmd-btn collect"
+                  onclick={() => {
+                    gameStore.collectExpedition(i);
+                    gameStore.cleanupExpeditions();
+                  }}
+                >
+                  Collect Biomass
+                </button>
               {/if}
             </div>
-            <div
-              class="track"
-              role="progressbar"
-              aria-label="Expedition progress"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              aria-valuenow={Math.round(progress(exp.timeRemaining, exp.duration))}
-            >
-              <span style="width: {progress(exp.timeRemaining, exp.duration)}%"></span>
-            </div>
-            {#if exp.completed}
-              <button
-                class="cmd-btn collect"
-                onclick={() => {
-                  gameStore.collectExpedition(i);
-                  gameStore.cleanupExpeditions();
-                }}
-              >
-                Collect Biomass
-              </button>
-            {/if}
-          </div>
-        {/each}
-      </div>
-    {/if}
-  </section>
+          {/each}
+        </div>
+      {/if}
+    </section>
 
-  <section class="panel">
-    <div class="panel-head">
-      <span class="text-label-caps">Start an expedition</span>
-    </div>
-    {#if slotsFull}
-      <p class="empty-text notice">
-        All expedition slots are busy. Wait for one to return, or collect a finished one.
-      </p>
-    {:else}
-      <div class="host-list">
-        {#each HOSTS as host (host.id)}
-          <div class="host-row">
-            <div class="host-meta">
-              <span class="host-name">{host.name}</span>
-              <span class="host-reward text-data-mono">+{host.biomassReward} Biomass</span>
-            </div>
-            <button class="cmd-btn" onclick={() => gameStore.startExpedition(host.id)}>
-              Start
-            </button>
-          </div>
-        {/each}
+    <section class="panel">
+      <div class="panel-head">
+        <span class="text-label-caps">Start an expedition</span>
       </div>
-    {/if}
-  </section>
-</div>
+      {#if slotsFull}
+        <p class="empty-text notice">
+          All expedition slots are busy. Wait for one to return, or collect a finished one.
+        </p>
+      {:else}
+        <div class="host-list">
+          {#each HOSTS as host (host.id)}
+            <div class="host-row">
+              <div class="host-meta">
+                <span class="host-name">{host.name}</span>
+                <span class="host-reward text-data-mono">+{host.biomassReward} Biomass</span>
+              </div>
+              <button class="cmd-btn" onclick={() => gameStore.startExpedition(host.id)}>
+                Start
+              </button>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </section>
+  </div>
+</Overlay>
 
 <style>
   .expeditions-view {

@@ -30,11 +30,11 @@ mycosurge/
 ├── apps/web/          # SvelteKit 5 SPA (ssr=false, prerender=true)
 │   └── src/
 │       ├── lib/
-│       │   ├── components/  # Sidebar, Nav, CombatModal, TutorialIntro, ActivityLog, …
+│       │   ├── components/  # Overlay, CombatModal, TutorialIntro, ActivityLog, hunt/, panels/…
 │       │   ├── content/     # Onboarding steps/copy
 │       │   ├── pixi/        # Pixi.js v8 bullet-hell arena engine
-│       │   └── stores/      # Svelte 5 rune-based stores (game, log)
-│       └── routes/          # 4 routes: /, /radar, /evolution, /expeditions
+│       │   └── stores/      # Svelte 5 rune-based stores (game, log, ui)
+│       └── routes/          # / (Core) only — systems open as overlays, not routes
 ├── packages/
 │   ├── config/              # Constants, hosts, generators, upgrades, skill trees (pure TS)
 │   ├── game-engine/         # Combat, expeditions, math, skills (pure TS, depends on config)

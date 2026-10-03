@@ -32,19 +32,16 @@
 
   let isFullGame = $derived(gameStore.state.gamePhase === 'active');
 
-  // The engine suggests a stage, but the player chooses. Until they pick one, the
-  // detail panel follows the suggestion; after that it stays where they put it.
+  // The engine suggests a stage, but never switches for the player. The active stage
+  // is seeded from the suggestion on load and then only changes when the player picks
+  // one. The suggestion is surfaced purely as a hint while it differs from the active
+  // stage, and disappears once the player is on it.
   let recommended = $derived(gameStore.recommendedPhase);
-  let manualPhase = $state<GrowthPhase | null>(null);
-  let phase = $derived(manualPhase ?? recommended);
-  let following = $derived(manualPhase === null);
+  let phase = $state<GrowthPhase>(gameStore.recommendedPhase);
+  let suggested = $derived(recommended === phase ? null : recommended);
 
   function selectPhase(next: GrowthPhase) {
-    manualPhase = next;
-  }
-
-  function followRecommendation() {
-    manualPhase = null;
+    phase = next;
   }
 
   const UNLOCK_SEEN_KEY = 'mycosurge_unlock_seen';
@@ -152,19 +149,21 @@
 
       <!-- Contextual detail -->
       <section class="detail-col">
-        <div class="focus-bar" data-tone={phaseMeta(following ? phase : recommended).tone}>
+        <div class="focus-bar" data-tone={phaseMeta(suggested ?? phase).tone}>
           <span class="focus-label text-label-caps">
-            {following ? 'Next step' : 'Recommended'}
+            {suggested ? 'Suggested' : 'Current goal'}
           </span>
           <span class="focus-text">
-            {#if following}
-              {phaseMeta(phase).objective}
+            {#if suggested}
+              {phaseMeta(suggested).label} — {phaseMeta(suggested).objective}
             {:else}
-              {phaseMeta(recommended).label} — {phaseMeta(recommended).objective}
+              {phaseMeta(phase).objective}
             {/if}
           </span>
-          {#if !following}
-            <button class="follow-btn cmd-btn" onclick={followRecommendation}>Follow</button>
+          {#if suggested}
+            <button class="switch-btn cmd-btn" onclick={() => selectPhase(recommended)}>
+              Switch
+            </button>
           {/if}
         </div>
 
@@ -289,7 +288,7 @@
     min-width: 0;
   }
 
-  .follow-btn {
+  .switch-btn {
     flex-shrink: 0;
     padding: 4px 10px;
     font-size: 11px;
@@ -464,7 +463,7 @@
   /* Two-column cockpit on wide screens */
   @media (min-width: 1100px) {
     .core-grid {
-      grid-template-columns: minmax(380px, 1fr) 460px;
+      grid-template-columns: minmax(480px, 1fr) 460px;
       align-items: start;
     }
 
