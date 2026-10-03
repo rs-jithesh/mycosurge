@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.dev/schema.json",
+  "globalEnv": ["BASE_PATH"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

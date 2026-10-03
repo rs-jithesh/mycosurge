@@ -10,6 +10,10 @@ const config = {
       precompress: false,
       strict: true,
     }),
+    // GitHub Pages serves project sites from /<repo>. Set BASE_PATH in CI; empty locally.
+    paths: {
+      base: process.env.BASE_PATH ?? '',
+    },
   },
 };
 
