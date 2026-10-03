@@ -8,7 +8,13 @@ import {
   getStrain,
 } from '@mycosurge/config';
 import type { GameState } from './state';
-import { enterTrauma, applyDepletion, getCombatYieldMultiplier } from './math';
+import {
+  enterTrauma,
+  applyDepletion,
+  getCombatYieldMultiplier,
+  getEffectiveMaxBiomass,
+  addBiomass,
+} from './math';
 import { clearActiveEncounter } from './radar';
 
 export interface CombatResult {
@@ -83,7 +89,11 @@ export function previewCombatReward(
       strain.rewardMult,
   );
   const lysateEarned = Math.floor(LYSATE_BASE_REWARD * host.difficulty * strain.lysateMult);
-  return { biomassEarned, lysateEarned };
+  const storableBiomass = Math.min(
+    biomassEarned,
+    Math.max(0, getEffectiveMaxBiomass(state) - state.biomass),
+  );
+  return { biomassEarned: storableBiomass, lysateEarned };
 }
 
 export function applyVictory(state: GameState, hostId: string): CombatResult {
@@ -92,7 +102,7 @@ export function applyVictory(state: GameState, hostId: string): CombatResult {
 
   const result = calculateVictoryReward(state, hostId);
 
-  state.biomass += result.biomassEarned;
+  result.biomassEarned = addBiomass(state, result.biomassEarned);
   state.totalBiomassEarned += result.biomassEarned;
   state.lysateRaw += result.lysateEarned;
 

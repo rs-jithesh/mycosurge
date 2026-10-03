@@ -1,6 +1,6 @@
 import { HOSTS, EXPEDITION_BASE_TIME } from '@mycosurge/config';
 import type { GameState, Expedition } from './state';
-import { getExpeditionTimeBonus, getExpeditionRewardBonus } from './math';
+import { getExpeditionTimeBonus, getExpeditionRewardBonus, addBiomass } from './math';
 
 export function startExpedition(state: GameState, hostId: string): boolean {
   if (state.expeditions.length >= state.maxExpeditionSlots) return false;
@@ -48,10 +48,10 @@ export function collectExpedition(state: GameState, index: number): number {
   const reward = Math.floor(host.biomassReward * (1 + rewardBonus));
 
   exp.rewardCollected = true;
-  state.biomass += reward;
-  state.totalBiomassEarned += reward;
+  const stored = addBiomass(state, reward);
+  state.totalBiomassEarned += stored;
 
-  return reward;
+  return stored;
 }
 
 export function removeCollectedExpeditions(state: GameState): void {

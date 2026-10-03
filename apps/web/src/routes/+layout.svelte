@@ -53,6 +53,9 @@
     window.addEventListener('popstate', handlePopState);
     logStore.info('Your mycelial network is coming online.');
     logStore.info('Growing automatically now.');
+    if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register(`${base}/sw.js`).catch(() => {});
+    }
     return () => {
       gameStore.stopTick();
       window.removeEventListener('popstate', handlePopState);

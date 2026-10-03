@@ -7,6 +7,7 @@ import {
   STARVATION_STATE_THRESHOLD,
 } from '@mycosurge/config';
 import type { GameState } from './state';
+import { addBiomass } from './math';
 
 export interface SynthesisResult {
   success: boolean;
@@ -62,7 +63,6 @@ export function manualSynthesize(state: GameState): SynthesisResult {
   const gained = getSynthesisYield(state);
   state.water -= MANUAL_SYNTH_WATER_COST;
   state.nutrients -= MANUAL_SYNTH_NUTRIENT_COST;
-  state.biomass += gained;
-  state.totalBiomassEarned += gained;
+  state.totalBiomassEarned += addBiomass(state, gained);
   return { success: true, yield: gained };
 }

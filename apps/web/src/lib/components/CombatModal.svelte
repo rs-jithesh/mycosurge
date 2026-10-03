@@ -6,6 +6,8 @@
   import type { RadarInstance } from '$lib/pixi/radar';
   import { completeTutorial, applyTutorialDefeat } from '@mycosurge/game-engine';
   import type { CombatResult } from '@mycosurge/game-engine';
+  import ResourceIcon from '$lib/components/ResourceIcon.svelte';
+  import { hostIconKey } from '$lib/content/icons';
 
   let {
     hostId,
@@ -54,6 +56,7 @@
   }
 
   const host = $derived(HOSTS.find((h) => h.id === hostId));
+  const hostIcon = $derived(hostIconKey(hostId));
   const isInTrauma = $derived(gameStore.isInTrauma);
   const strain = $derived(gameStore.activeStrain);
   const ecoDragPct = $derived(Math.round((1 - gameStore.ecologicalEfficiency) * 100));
@@ -259,7 +262,12 @@
       <div class="combat-layout">
         <div class="objective danger">
           <span class="tag-alert text-label-caps">◆ Objective</span>
-          <h2 class="objective-title">Drive off {host?.name ?? hostId}</h2>
+          <div class="objective-head">
+            {#if hostIcon}
+              <ResourceIcon name={hostIcon} size={30} round />
+            {/if}
+            <h2 class="objective-title">Drive off {host?.name ?? hostId}</h2>
+          </div>
           <p class="objective-sub">Spores fire automatically — focus on dodging.</p>
           {#if strain.id !== 'normal'}
             <p class="strain-line text-label-caps">Strain: {strain.name} — {strain.description}</p>
@@ -417,6 +425,12 @@
 
   .objective.danger {
     border-left: 3px solid var(--alert);
+  }
+
+  .objective-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
   .tag-alert {

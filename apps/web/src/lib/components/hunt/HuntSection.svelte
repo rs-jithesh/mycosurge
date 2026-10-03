@@ -5,6 +5,8 @@
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
+  import ResourceIcon from '$lib/components/ResourceIcon.svelte';
+  import { hostIconKey } from '$lib/content/icons';
 
   let { mode }: { mode: 'full' | 'tutorial' } = $props();
 
@@ -17,18 +19,6 @@
 
   function hostLvl(difficulty: number): number {
     return Math.min(5, Math.ceil(difficulty / 1.4));
-  }
-
-  function badgeChar(lvl: number): string {
-    if (lvl >= 4) return '!';
-    if (lvl >= 3) return '*';
-    return '+';
-  }
-
-  function badgeColor(lvl: number): string {
-    if (lvl >= 4) return 'var(--alert)';
-    if (lvl >= 3) return 'var(--secondary)';
-    return 'var(--primary)';
   }
 
   // ── Full game ──
@@ -155,8 +145,11 @@
         <div class="host-list">
           {#if tutorialHost}
             {@const lvl = hostLvl(tutorialHost.difficulty)}
+            {@const tutorialIcon = hostIconKey(tutorialHost.id)}
             <button class="host-row" class:blink-border={blinkOn} onclick={engageTutorial}>
-              <span class="host-badge" style="color: {badgeColor(lvl)}">[{badgeChar(lvl)}]</span>
+              {#if tutorialIcon}
+                <ResourceIcon name={tutorialIcon} size={20} round />
+              {/if}
               <span class="host-name">{tutorialHost.name}</span>
               <span class="host-lvl">{lvl}</span>
             </button>
@@ -188,14 +181,17 @@
         {#each contacts as contact (contact.id)}
           {@const chost = hostFor(contact.hostId)}
           {@const cstrain = getStrain(contact.strainId)}
+          {@const contactIcon = chost ? hostIconKey(chost.id) : null}
           {@const lvl = chost ? hostLvl(chost.difficulty) : 1}
           {@const assim = gs.hostAssimilation[contact.hostId] ?? 0}
           {@const preview = previewCombatReward(gs, contact.hostId, contact.strainId)}
           <div class="contact-card">
             <div class="contact-top">
-              <span class="host-badge" style="color: {badgeColor(lvl)}">
-                {contact.revealed ? `[${badgeChar(lvl)}]` : '[?]'}
-              </span>
+              {#if contact.revealed && contactIcon}
+                <ResourceIcon name={contactIcon} size={50} round />
+              {:else}
+                <span class="host-icon-unknown text-data-mono">?</span>
+              {/if}
               <span class="host-name">
                 {contact.revealed ? (chost?.name ?? contact.hostId) : 'Unidentified signal'}
               </span>
@@ -392,7 +388,7 @@
 
   .table-header {
     display: grid;
-    grid-template-columns: 32px 1fr 64px;
+    grid-template-columns: auto 32px 1fr 64px;
     gap: var(--space-unit);
     align-items: center;
     padding: var(--space-unit) var(--space-panel-padding);
@@ -408,7 +404,7 @@
 
   .host-row {
     display: grid;
-    grid-template-columns: 32px 1fr 64px;
+    grid-template-columns: auto 32px 1fr 64px;
     gap: var(--space-unit);
     align-items: center;
     padding: 12px var(--space-panel-padding);
@@ -434,11 +430,6 @@
   .blink-border {
     outline: 2px solid var(--primary);
     outline-offset: -2px;
-  }
-
-  .host-badge {
-    font-weight: 700;
-    text-align: center;
   }
 
   .host-name {
@@ -524,9 +515,25 @@
 
   .contact-top {
     display: grid;
-    grid-template-columns: 24px 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--space-unit);
-    align-items: baseline;
+    align-items: center;
+  }
+
+  .contact-top .host-name {
+    min-width: 0;
+  }
+
+  .host-icon-unknown {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--outline-variant);
+    border-radius: 50%;
+    color: var(--on-surface-variant);
+    font-size: 11px;
   }
 
   .contact-timer {

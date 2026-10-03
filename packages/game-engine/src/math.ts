@@ -84,6 +84,14 @@ export function getEffectiveMaxBiomass(state: GameState): number {
   return state.maxBiomass * (1 + bonus);
 }
 
+/** Add Biomass without exceeding its effective storage capacity. Returns the amount stored. */
+export function addBiomass(state: GameState, amount: number): number {
+  const cap = getEffectiveMaxBiomass(state);
+  const current = Math.min(state.biomass, cap);
+  state.biomass = Math.min(cap, current + Math.max(0, amount));
+  return state.biomass - current;
+}
+
 /** True when either reserve is below the starvation-state threshold. */
 export function isStarving(state: GameState): boolean {
   const waterRatio = state.waterCap > 0 ? state.water / state.waterCap : 1;
@@ -271,12 +279,10 @@ export function tickIdle(state: GameState, deltaSec: number): void {
   tickGenerators(state, deltaSec);
   tickLysate(state, deltaSec);
 
-  const maxBiomass = getEffectiveMaxBiomass(state);
   const perSec = getEffectiveBiomassPerSec(state);
   const gained = perSec * deltaSec;
 
-  state.biomass = Math.min(state.biomass + gained, Math.max(state.biomass, maxBiomass));
-  state.totalBiomassEarned += gained;
+  state.totalBiomassEarned += addBiomass(state, gained);
 
   if (state.assimilationPercent > 0 && !state.isInTrauma) {
     state.alertLevel = Math.min(100, state.alertLevel + ALERT_INCREASE_RATE * deltaSec);

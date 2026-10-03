@@ -21,6 +21,7 @@ export {
   tickAlertDecay,
   getEffectiveBiomassPerSec,
   getEffectiveMaxBiomass,
+  addBiomass,
   isStarving,
   enterTrauma,
   getWaterPercent,

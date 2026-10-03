@@ -15,6 +15,7 @@ import {
   removeCollectedExpeditions,
   getEffectiveBiomassPerSec,
   getEffectiveMaxBiomass,
+  addBiomass,
   tickAlertDecay,
   applyVictory as engineApplyVictory,
   applyDefeat as engineApplyDefeat,
@@ -155,6 +156,8 @@ function createGameStore() {
 
         // Pre-release: drop mutations that no longer fit the genome-point budget.
         if (migrateSkillAllocations(merged)) didResetSkills = true;
+        // Clamp older saves that may have exceeded the Biomass cap.
+        addBiomass(merged, 0);
 
         const elapsed = merged.lastSavedAt > 0 ? (Date.now() - merged.lastSavedAt) / 1000 : 0;
         if (elapsed > 0) {

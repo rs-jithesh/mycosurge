@@ -1,4 +1,5 @@
 import type { GameState } from './state';
+import { addBiomass } from './math';
 
 export const AWAKENING_MESSAGES = [
   'The substrate is dry. You are a single spore, waiting.',
@@ -39,8 +40,7 @@ export function synthesizeBiomass(state: GameState): { success: boolean; message
   }
   state.water -= 10;
   state.nutrients -= 10;
-  state.biomass += 1;
-  state.totalBiomassEarned += 1;
+  state.totalBiomassEarned += addBiomass(state, 1);
   return { success: true, message: 'Biomass formed — your cell has structural mass now.' };
 }
 

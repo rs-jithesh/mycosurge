@@ -177,7 +177,7 @@ game icon, a backyard squirrel head with a fluffy tail curling behind, flat vect
 game icon, a feral raccoon face with a black mask and pointed ears, flat vector, thick clean outline, bio-luminescent coral (#ffb4ab) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
 ```
 
-## Tier 3 — Depth iconography
+<!-- ## Tier 3 — Depth iconography
 
 ### osmotic_pump — cyan `#68d6e3` → `osmotic_pump.png`
 
@@ -225,7 +225,7 @@ game icon, a shielded spore inside an armored membrane, flat vector, thick clean
 
 ```
 game icon, a rapidly branching spore colony multiplying outward, flat vector, thick clean outline, bio-luminescent violet (#b9a7ff) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
-```
+``` -->
 
 ## Tier 4 — Combat & flourishes
 
@@ -235,37 +235,37 @@ game icon, a rapidly branching spore colony multiplying outward, flat vector, th
 ### spore — mint `#70fdc3` → `spore.png`
 
 ```
-game icon, a single pill-shaped glowing spore projectile, flat vector, thick clean outline, bio-luminescent mint (#70fdc3) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
+game icon png with transparent background, a single pill-shaped glowing spore projectile, flat vector, thick clean outline, bio-luminescent mint (#70fdc3) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
 ```
 
 ### pellet — coral `#ffb4ab` → `pellet.png`
 
 ```
-game icon, a small coral pellet projectile, flat vector, thick clean outline, bio-luminescent coral (#ffb4ab) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
+game icon png with transparent background, a small coral pellet projectile, flat vector, thick clean outline, bio-luminescent coral (#ffb4ab) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
 ```
 
 ### normal — mint `#70fdc3` → `normal.png`
 
 ```
-game icon, a plain circular strain badge with a simple spore glyph, flat vector, thick clean outline, bio-luminescent mint (#70fdc3) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
+game icon png with transparent background, a plain circular strain badge with a simple spore glyph, flat vector, thick clean outline, bio-luminescent mint (#70fdc3) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
 ```
 
 ### swift — cyan `#68d6e3` → `swift.png`
 
 ```
-game icon, a swift strain badge with motion speed streaks, flat vector, thick clean outline, bio-luminescent cyan (#68d6e3) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
+game icon png with transparent background, a swift strain badge with motion speed streaks, flat vector, thick clean outline, bio-luminescent cyan (#68d6e3) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
 ```
 
 ### armored — amber `#f5c055` → `armored.png`
 
 ```
-game icon, an armored strain badge with hexagonal plating, flat vector, thick clean outline, bio-luminescent amber (#f5c055) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
+game icon png with transparent background, an armored strain badge with hexagonal plating, flat vector, thick clean outline, bio-luminescent amber (#f5c055) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
 ```
 
 ### bloated — violet `#b9a7ff` → `bloated.png`
 
 ```
-game icon, a bloated strain badge with an engorged swollen spore, flat vector, thick clean outline, bio-luminescent violet (#b9a7ff) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
+game icon png with transparent background, a bloated strain badge with an engorged swollen spore, flat vector, thick clean outline, bio-luminescent violet (#b9a7ff) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
 ```
 
 ## Extras (no manifest key yet)

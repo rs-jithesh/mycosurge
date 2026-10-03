@@ -113,3 +113,24 @@ export const ICON_META: Record<IconKey, IconMeta> = {
 };
 
 export const ICON_KEYS = Object.keys(ICON_META) as IconKey[];
+
+const HOST_ICON_KEYS = [
+  'soil_nematode',
+  'fallen_leaf',
+  'garden_beetle',
+  'field_mouse',
+  'urban_pigeon',
+  'stray_cat',
+  'lab_rat',
+  'compost_worm',
+  'pond_frog',
+  'backyard_squirrel',
+  'feral_raccoon',
+] as const;
+
+const HOST_ICON_SET: ReadonlySet<string> = new Set(HOST_ICON_KEYS);
+
+/** Resolve a host id to its icon key, or null when it has no raster icon. */
+export function hostIconKey(id: string): IconKey | null {
+  return HOST_ICON_SET.has(id) ? (id as IconKey) : null;
+}
