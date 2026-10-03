@@ -8,6 +8,17 @@
       "headers": {
         "X-Goog-Api-Key": "AQ.Ab8RN6IPxdgvvZbul0jmCD0AMJgdmr9eoMHBwIj_WuU-YMsYIw"
       }
+    },
+    "sprite-game": {
+      "type": "local",
+      "command": [
+        "/Users/rs-jithesh/projects/spritegamegen/backend/.venv/bin/sprite-mcp"
+      ],
+      "enabled": true,
+      "environment": {
+        "SPRITE_ENV_FILE": "/Users/rs-jithesh/projects/spritegamegen/backend/.env",
+        "PROJECTS_DIR": "/Users/rs-jithesh/projects/spritegamegen/projects"
+      }
     }
   }
 }
