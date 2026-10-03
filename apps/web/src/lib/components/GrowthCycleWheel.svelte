@@ -84,7 +84,6 @@
         onclick={() => onselect?.(p.id)}
       >
         <span class="dot" aria-hidden="true"></span>
-        <span class="num">{p.index}.</span>
         <span class="name">{p.label}</span>
         {#if showSuggested && i === suggestedIndex}
           <span class="suggest-flag text-label-caps">Next</span>
@@ -276,10 +275,6 @@
 
   .phase-label.is-active .dot {
     opacity: 1;
-  }
-
-  .num {
-    opacity: 0.7;
   }
 
   .nucleus {

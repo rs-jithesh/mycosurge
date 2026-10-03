@@ -156,7 +156,6 @@
                 aria-selected={phase === p.id}
                 onclick={() => selectPhase(p.id)}
               >
-                <span class="step-num text-data-mono">{p.index}</span>
                 <span>{p.label}</span>
               </button>
             {/each}
@@ -330,15 +329,6 @@
     border-color: var(--tone);
     color: var(--tone);
     background: var(--surface-container-high);
-  }
-
-  .step-num {
-    color: var(--on-surface-variant);
-    font-size: 10px;
-  }
-
-  .step.is-active .step-num {
-    color: var(--tone);
   }
 
   /* Activity (desktop) */
