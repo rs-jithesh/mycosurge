@@ -203,9 +203,12 @@
       </div>
 
       {#if gameStore.unlockedSystems.evolution}
+        <div class="genome-available text-data-mono">
+          Genome: {gameStore.genomePointsAvailable} available
+        </div>
         <button class="cmd-btn evolution-cta" onclick={() => uiStore.openPanel('evolution')}>
           <span class="action-verb">Evolution</span>
-          <span class="action-sub">Spend Biomass on permanent mutations</span>
+          <span class="action-sub">Spend genome points on permanent mutations</span>
         </button>
       {/if}
 
@@ -523,6 +526,11 @@
     flex-direction: column;
     gap: 2px;
     padding: 12px;
+  }
+
+  .genome-available {
+    color: var(--primary);
+    font-size: 12px;
   }
 
   .hint {

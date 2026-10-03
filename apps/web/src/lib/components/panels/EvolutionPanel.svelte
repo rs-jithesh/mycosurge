@@ -20,6 +20,7 @@
 
   let genomeSpent = $derived(gameStore.genomePointsSpent);
   let genomeTotal = $derived(gameStore.genomePointsTotal);
+  let genomeAvailable = $derived(gameStore.genomePointsAvailable);
   let respecCost = $derived(gameStore.respecCost);
   let canRespec = $derived(gameStore.canRespec);
   let respecReason = $derived.by(() => {
@@ -77,10 +78,10 @@
         <div class="genome-meter">
           <ProgressBar
             tone="mint"
-            value={genomeSpent}
+            value={genomeAvailable}
             max={genomeTotal}
             label="Genome"
-            valueText="{genomeSpent} / {genomeTotal}"
+            valueText="{genomeAvailable} available"
           />
         </div>
         <button
