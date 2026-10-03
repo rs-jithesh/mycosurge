@@ -122,8 +122,9 @@ real is both the cheapest bug fix and the strongest answer to #7/#8.
 - Core chain (Core, Hunt) leads after the tutorial; Evolution and Expeditions both reveal at
   the first echo (`systems.ts` `getSystemUnlocks`). An earlier `totalBiomassEarned ≥ 5` gate for
   Evolution was a no-op (the tutorial already exceeds 5), so it was replaced.
-- Until then the top-bar launcher buttons stay hidden and overlays can't be opened; one-time
-  unlock toasts + "New" badges; reactive overlay (also fixes `?skipintro`). See Phase 2 below.
+- Evolution is opened from the Evolve phase panel once unlocked; each reveal logs a one-time
+  unlock toast; reactive overlay (also fixes `?skipintro`). See Phase 2 below. (The top-bar
+  launcher buttons were later removed — Evolution keeps its panel entry.)
 
 ## Phase 1 — Economy tension + assimilation clarity (P1.1 + P1.2) — ✅ shipped
 
@@ -192,6 +193,7 @@ a system never re-locks:
 - **D3** store: `unlockedSystems`, `revealState` (`mycosurge_reveals`), `announceNewSystems`,
   `isSystemNew`, `markSystemSeen`, `skipIntro` reveal-all override, `resetGame` clears reveals.
 - **D4** `+layout.svelte` top-bar launcher buttons filter on unlock and show a "New" badge.
+  (Superseded — the launchers were removed; Evolution opens from the Evolve panel.)
 - **D5** Evolution/Expeditions route guards + `markSystemSeen`.
 - **D6** `PhaseDetailPanel` hides the Evolution CTA until unlocked.
 - **D7** reactive overlay in `+page.svelte` (fixes no-remount + `?skipintro`); reworded copy.

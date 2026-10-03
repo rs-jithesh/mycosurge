@@ -190,14 +190,14 @@ T4 (6), Boss T5 (9). See `GAME-DESIGN.md` for the full table.
 
 ## 6. UI structure
 
-- **Shell** (`+layout.svelte`): top bar (brand, launcher buttons, Online; the **Reset** button
-  is dev-only, behind `mycosurge_dev`). Single view + scrollable center; mobile = stacked
-  content + bottom `ActivityLog`. Breakpoint 768px.
+- **Shell** (`+layout.svelte`): top bar (brand, Online; the **Reset** button is dev-only,
+  behind `mycosurge_dev`). Single view + scrollable center; mobile = stacked content + bottom
+  `ActivityLog`. Breakpoint 768px.
 - **Navigation**: only `/` (Core) is a route. **Evolution / Expeditions open as overlays**
   (right drawer ≥768px, full-screen sheet <768px), driven by `stores/ui.svelte.ts` (an overlay
-  stack). Top-bar launcher buttons are hidden until `gamePhase === 'active'` and their system
-  is unlocked (see §8). Browser Back closes the top overlay; when nothing is open it confirms
-  before leaving.
+  stack). There are **no top-bar launchers**: Evolution opens from the Evolve phase panel
+  (gated on `unlockedSystems.evolution`); Expeditions currently has no in-game entry point.
+  Browser Back closes the top overlay; when nothing is open it confirms before leaving.
 - **Core** (`+page.svelte`): Growth Cycle wheel + detail panel + desktop Activity panel.
 - **Hunt**: there is no separate Radar UI. The Hunt phase in `PhaseDetailPanel` renders
   `HuntSection` (`mode="full"`), the single home for sonar contacts / combat entry. The
@@ -266,6 +266,10 @@ the player is already on it, no suggestion shows. The selected arc stays lit.
 
 ## 8. Recent changes (this session)
 
+- **Top-bar launchers removed**: the Evolution / Expeditions buttons are gone from
+  `+layout.svelte`. Evolution stays reachable from the Evolve phase panel; **Expeditions has no
+  entry point** at present (its panel/overlay code is still there). Reset and the tutorial
+  Skip-intro button are now dev-only (see `DEV-NOTES.md` → Developer flag).
 - **Result clarity + offline dialog**: combat now opens with an unmistakable **Victory** /
   **Defeat** headline (mark + word + one-line outcome) and a tinted frame, so the result is
   never ambiguous; the offline "Welcome back" banner became a centered
@@ -291,10 +295,9 @@ the player is already on it, no suggestion shows. The selected arc stays lit.
   their tiles (uniform 192px) until hand-drawn, free-floating icons replace them.
 - **Phase 2 progressive disclosure**: after the tutorial only the core chain (Core, Hunt)
   shows. **Evolution and Expeditions** both reveal at the **first echo**
-  (`packages/game-engine/src/systems.ts` → `getSystemUnlocks`). Until then the top-bar
-  launcher buttons stay hidden (`+layout.svelte`) and the systems' overlays can't be opened;
-  each reveal logs a one-time toast and shows a "New" badge until visited (`mycosurge_reveals`
-  in localStorage).
+  (`packages/game-engine/src/systems.ts` → `getSystemUnlocks`). Evolution is opened from the
+  Evolve phase panel once unlocked; each reveal logs a one-time toast (`mycosurge_reveals` in
+  localStorage).
   The post-tutorial overlay is now reactive (also fires for `?skipintro`, which reveals all for
   QA).
 - **Phase 1 economy + assimilation**: gentle **metabolic upkeep** (`UPKEEP_PER_LEVEL/ECHO/

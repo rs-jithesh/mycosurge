@@ -7,16 +7,12 @@
   import { logStore } from '$lib/stores/log.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { devStore } from '$lib/stores/dev.svelte';
-  import type { PanelId } from '$lib/stores/ui.svelte';
   import ActivityLog from '$lib/components/ActivityLog.svelte';
   import EvolutionPanel from '$lib/components/panels/EvolutionPanel.svelte';
   import ExpeditionsPanel from '$lib/components/panels/ExpeditionsPanel.svelte';
   import CombatModal from '$lib/components/CombatModal.svelte';
-  import { SYSTEM_META } from '$lib/content/systems';
 
   let { children } = $props();
-
-  const LAUNCHERS: PanelId[] = ['evolution', 'expeditions'];
 
   const EXIT_MESSAGE = 'Leave Mycosurge? Your network keeps growing while you are away.';
   let allowExit = false;
@@ -69,11 +65,6 @@
     gameStore.announceNewSystems();
   });
 
-  function openSystem(id: PanelId) {
-    uiStore.openPanel(id);
-    gameStore.markSystemSeen(id);
-  }
-
   function handleReset() {
     if (confirm('Reset all progress and restart from the tutorial?')) {
       gameStore.resetGame();
@@ -96,21 +87,6 @@
   <!-- Top Bar -->
   <header class="top-bar">
     <span class="top-bar-brand text-headline-md">MYCOSURGE</span>
-
-    {#if isFullGame}
-      <nav class="launchers" aria-label="Systems">
-        {#each LAUNCHERS as id}
-          {#if gameStore.unlockedSystems[id]}
-            <button class="cmd-btn secondary launcher" onclick={() => openSystem(id)}>
-              <span>{SYSTEM_META[id].name}</span>
-              {#if gameStore.isSystemNew(id)}
-                <span class="launch-new text-label-caps">New</span>
-              {/if}
-            </button>
-          {/if}
-        {/each}
-      </nav>
-    {/if}
 
     <div class="top-bar-actions">
       <span class="top-bar-status text-label-caps">● Online</span>
@@ -187,29 +163,6 @@
     flex-shrink: 0;
   }
 
-  .launchers {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .launcher {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    font-size: 11px;
-  }
-
-  .launch-new {
-    color: var(--primary);
-    font-size: 9px;
-  }
-
   .top-bar-actions {
     display: flex;
     align-items: center;
@@ -270,14 +223,6 @@
     .top-bar {
       flex-wrap: wrap;
       row-gap: 6px;
-    }
-
-    .launchers {
-      order: 3;
-      flex-basis: 100%;
-      justify-content: flex-start;
-      overflow-x: auto;
-      flex-wrap: nowrap;
     }
 
     .top-bar-status {
