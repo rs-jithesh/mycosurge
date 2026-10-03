@@ -50,6 +50,13 @@ generator's `costScale`).
 
 The two tutorial generators become permanent at the end of onboarding.
 
+Generators also carry **metabolic upkeep**, a gentle continuous drain on Water and Nutrients
+that scales with network complexity: a small charge per generator level, per acquired echo,
+and per capacity expansion. It is charged only in the full game (the tutorial runs its own
+economy). Upkeep trims a fully grown network to a modest net surplus, so Synthesize stays a
+real decision instead of a free conversion, without ever forcing a well-tended colony to
+starve. The Core's Gather panel shows the net rate (`produced · upkeep · net`).
+
 ### Field actions (manual)
 
 The Core keeps two manual actions so active play has a floor:
@@ -120,7 +127,9 @@ Scouts and Resource Routing mutations.
 
 Defeating a host for the first time grants its permanent **echo** — a passive trait (e.g.
 passive generation, poison damage, fire rate, dodge window). Echoes are listed on the
-Evolution page.
+Evolution page and their effects apply everywhere: passive Biomass, spore fire rate and
+damage, poison over time, HP regen, arena movement speed, the post-hit dodge window,
+projectile evasion, and mutation costs.
 
 ## Hosts & discovery
 
@@ -175,9 +184,14 @@ Any contact can carry a **strain**, a light per-encounter modifier:
 
 Each victory assimilates **that host** by `10 + difficulty × 5`. At 100 the host is fully
 grown over: its echo joins your network, `hostsDefeated` rises once, and it no longer
-grants echoes. Full assimilation is also what unlocks the next host tier. In parallel, a
-global `assimilationPercent` accumulates as ecological strain, slowly reducing passive
-Biomass generation.
+grants echoes. Full assimilation is also what unlocks the next host tier.
+
+Separately, every victory adds a small, fixed amount of **ecological strain** (`2` per win)
+to a global meter, independent of the per-host echo progress. Strain — together with the
+combat **alert level** — slowly reduces raw passive Biomass efficiency. The Core's Grow panel
+shows the strain percentage and its current drag (`passive −N%`); the Evolution page lists the
+aggregated echo bonuses, so the trade is legible: **more complexity means lower raw
+efficiency but greater capability**, and the echoes repay the drag many times over.
 
 ## Onboarding
 
@@ -191,9 +205,16 @@ The first session is a four-step tutorial plus a threat handoff, gated by `gameP
 5. **Threat** — something is grazing on the outer hyphae; scan it on the Radar and fight
    the tutorial nematode. Victory completes the tutorial and unlocks the full game.
 
-Locked actions are shown dimmed with a reason, then flash when they unlock. The full game
-reveals the sidebar, Evolution, and Expeditions; a one-time "systems unlocked" overlay
-summarises what's new.
+Locked actions are shown dimmed with a reason, then flash when they unlock. Finishing the
+tutorial unlocks the **core chain** — Core and Radar — alongside a one-time "systems
+unlocked" overlay.
+
+The remaining systems are **unfolded as the player reaches them** rather than dumped at once:
+**Evolution** appears once enough Biomass has been earned to spend on mutations, and
+**Expeditions** appear once the first host has been grown over (its echo acquired). Locked
+tabs are hidden, each new system announces itself once in the activity log, and its tab
+carries a "New" badge until first visited. Unlocks are based on lifetime totals, so a system
+never re-locks once reached.
 
 ## Tone & voice
 
@@ -210,6 +231,14 @@ summarises what's new.
   overlay flag is `mycosurge_unlock_seen`.
 - `?skipintro` completes the tutorial immediately (QA only).
 - The top-bar **Reset** clears progress and replays the tutorial.
+
+### Offline progression
+
+The colony keeps growing while the tab is closed. On return, the elapsed time (capped at
+**8 hours**) is simulated at a base **50%** rate, raised by **25%** per level of the Dormant
+Spores mutation (up to the full online rate). Expeditions and trauma recovery run in real
+time; contacts that would have drifted away expire. A "Welcome back" banner summarises what
+the network produced.
 
 ## Longevity
 

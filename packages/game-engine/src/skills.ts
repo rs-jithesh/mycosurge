@@ -2,6 +2,11 @@ import { SKILL_NODES } from '@mycosurge/config';
 import type { SkillNodeDef } from '@mycosurge/config';
 import type { GameState } from './state';
 import { getSkillLevelCost } from './math';
+import { getEchoEffects } from './echoes';
+
+function skillCostMultiplier(state: GameState): number {
+  return getEchoEffects(state.acquiredEchoes).skillCostMult;
+}
 
 export function getAllSkills(): SkillNodeDef[] {
   return SKILL_NODES;
@@ -22,7 +27,7 @@ export function getNextCost(state: GameState, skillId: string): number | null {
   const current = getCurrentLevel(state, skillId);
   if (current >= def.maxLevel) return null;
 
-  return getSkillLevelCost(def.baseCost, current);
+  return getSkillLevelCost(def.baseCost, current, skillCostMultiplier(state));
 }
 
 export function arePrerequisitesMet(state: GameState, skillId: string): boolean {
@@ -47,7 +52,7 @@ export function purchaseSkill(state: GameState, skillId: string): boolean {
 
   if (!arePrerequisitesMet(state, skillId)) return false;
 
-  const cost = getSkillLevelCost(def.baseCost, current);
+  const cost = getSkillLevelCost(def.baseCost, current, skillCostMultiplier(state));
   if (state.biomass < cost) return false;
 
   state.biomass -= cost;
@@ -125,6 +130,7 @@ export function getPurchasableSkills(state: GameState): SkillNodeDef[] {
   return getAvailableSkills(state).filter(
     (def) =>
       arePrerequisitesMet(state, def.id) &&
-      state.biomass >= getSkillLevelCost(def.baseCost, getCurrentLevel(state, def.id)),
+      state.biomass >=
+        getSkillLevelCost(def.baseCost, getCurrentLevel(state, def.id), skillCostMultiplier(state)),
   );
 }

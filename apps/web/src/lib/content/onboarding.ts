@@ -1,6 +1,6 @@
 import type { GamePhase } from '@mycosurge/game-engine';
 
-export type Tone = 'mint' | 'amber' | 'coral' | 'cyan';
+export type Tone = 'mint' | 'amber' | 'coral' | 'cyan' | 'violet';
 export type TutorialStepId = 'feed' | 'grow' | 'automate' | 'expand';
 
 export interface TutorialStep {
@@ -152,4 +152,5 @@ export const UNLOCKED_SYSTEMS: UnlockCard[] = [
   },
 ];
 
-export const UNLOCKED_NOTE = 'Evolution unlocks once you have Biomass to spend.';
+export const UNLOCKED_NOTE =
+  'Evolution and Expeditions unfold as your network grows — nothing else to learn right now.';

@@ -79,21 +79,7 @@
     radarInstance = createRadar(
       container,
       hostId,
-      {
-        maxHp: gameStore.combatStats.maxHp,
-        hp: gameStore.combatStats.hp,
-        damage: gameStore.combatStats.damage,
-        fireRate: gameStore.combatStats.fireRate,
-        projectileSpeed: gameStore.combatStats.projectileSpeed,
-        projectileCount: gameStore.combatStats.projectileCount,
-        piercing: gameStore.combatStats.piercing,
-        shieldHits: gameStore.combatStats.shieldHits,
-        emergencyEvac: gameStore.combatStats.emergencyEvac,
-        hitboxMultiplier: gameStore.combatStats.hitboxMultiplier,
-        damageResistance: gameStore.combatStats.damageResistance,
-        hpRegen: gameStore.combatStats.hpRegen,
-        chainReaction: gameStore.combatStats.chainReaction,
-      },
+      { ...gameStore.effectiveCombatStats },
       {
         onVictory: () => {
           if (wasTutorial) {
@@ -210,7 +196,7 @@
             {/each}
           </div>
           <div class="action-row">
-            <button class="cmd-btn" onclick={handleReturn}>Return to Core</button>
+            <button class="cmd-btn secondary" onclick={handleReturn}>Return to Core</button>
           </div>
         </div>
       {:else if result.kind === 'victory'}
@@ -234,7 +220,7 @@
           <div class="result-badge badge-defeat">Forced retreat</div>
           <p class="trauma-msg">Recovering — {Math.ceil(gameStore.state.traumaTimer)}s left</p>
           <div class="action-row">
-            <button class="cmd-btn" onclick={handleReturn}>Return to Core</button>
+            <button class="cmd-btn secondary" onclick={handleReturn}>Return to Core</button>
           </div>
         </div>
       {/if}
@@ -275,7 +261,7 @@
             <span class="text-data-mono shield-count">Shield {shieldHits}</span>
           {/if}
           <span class="text-label-caps">Host: {host?.name ?? hostId}</span>
-          <button class="cmd-btn retreat-btn" onclick={handleRetreat}>Retreat</button>
+          <button class="cmd-btn secondary retreat-btn" onclick={handleRetreat}>Retreat</button>
         </div>
       </div>
     {/if}
@@ -489,7 +475,6 @@
   }
 
   .retreat-btn {
-    color: var(--on-surface-variant);
     padding: var(--space-unit) var(--space-panel-padding);
   }
 
@@ -567,7 +552,7 @@
     font-weight: 600;
   }
 
-  .action-row .cmd-btn.primary:hover {
+  .action-row .cmd-btn.primary:hover:not(:disabled) {
     background: var(--primary-fixed-dim);
     border-color: var(--primary-fixed-dim);
     color: var(--on-primary);

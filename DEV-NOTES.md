@@ -16,6 +16,8 @@ for the arena see `COMBAT.md`.
 - `mycosurge_save` — serialized `GameState`, written every tick.
 - `mycosurge_unlock_seen` — set once the post-tutorial "systems unlocked" overlay is
   dismissed.
+- `mycosurge_reveals` — `{ announced, seen }` system ids, driving one-time unlock toasts and
+  the "New" nav badge. Cleared by Reset. `?skipintro` reveals every system (QA).
 - On load, the save is deep-merged over `createInitialState()` so new nested fields
   (e.g. additions to `combatStats` or `tutorialUpgrades`) survive old saves.
 
@@ -60,13 +62,27 @@ are unified, this function can be removed.
 the component rather than routed through `gameStore`. Consider wrapping them for
 consistency with the rest of the store API.
 
-### Offline progression
+### Economy & upkeep
 
-**File:** `apps/web/src/lib/stores/game.svelte.ts`.
+**Files:** `packages/game-engine/src/math.ts`, `economy.balance.test.ts`,
+`packages/config/src/constants.ts`.
 
-`Dormant Spores` describes offline progress, but the tick loop only runs while the tab is
-open; there is no catch-up on load. Either implement offline accrual or adjust the upgrade
-copy.
+Gentle metabolic upkeep (`UPKEEP_PER_LEVEL`, `UPKEEP_PER_ECHO`, `UPKEEP_PER_EXPANSION`)
+drains Water/Nutrients with network complexity; global ecological strain is a separate
+`GLOBAL_STRAIN_PER_WIN` meter from per-host echo progress. Coefficients are intentionally
+tunable — `economy.balance.test.ts` runs 30-minute idle-only and upgrade-rush simulations and
+asserts the maxed net lands in the target band (`+5.5…+7.5/s`), upkeep is 15–40% of
+production, and the early single generator stays net-positive. Re-run it after any balance
+change.
+
+### Offline progression — implemented
+
+**File:** `packages/game-engine/src/offline.ts`.
+
+The save stamps `lastSavedAt`; on load the elapsed gap (capped at 8h) is simulated at a base
+50% rate, `+25%` per `Dormant Spores` level. Expeditions and trauma use real time; stale
+contacts expire. Tuning lives in `OFFLINE_*` constants and a "Welcome back" banner reports
+the result.
 
 ## Verification
 

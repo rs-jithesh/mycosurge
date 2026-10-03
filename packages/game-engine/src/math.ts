@@ -19,10 +19,15 @@ import {
   LYSATE_CAP_EXPAND_AMOUNT,
   SKILL_COST_SCALE,
   TRAUMA_BASE_DURATION,
+  UPKEEP_PER_LEVEL,
+  UPKEEP_PER_ECHO,
+  UPKEEP_PER_EXPANSION,
+  GENERATORS,
   getLysateCapExpandCost,
 } from '@mycosurge/config';
 import type { GameState } from './state';
 import { tickGenerators } from './generators';
+import { getEchoEffects } from './echoes';
 
 export function getAlertMultiplier(alertLevel: number): number {
   return 1 - (alertLevel / 100) * ALERT_EFFECT_CAP;
@@ -30,6 +35,14 @@ export function getAlertMultiplier(alertLevel: number): number {
 
 export function getDepletionMultiplier(assimilationPercent: number): number {
   return Math.max(0.1, 1 - assimilationPercent * DEPLETION_RATE_PER_ASSIM);
+}
+
+/**
+ * Combined passive-Biomass efficiency from ecological strain and alert level (0–1).
+ * `1` means no drag; lower means the network is running below its raw capacity.
+ */
+export function getEcologicalEfficiency(state: GameState): number {
+  return getAlertMultiplier(state.alertLevel) * getDepletionMultiplier(state.assimilationPercent);
 }
 
 export function getProliferationBonus(allocations: Record<string, number>): number {
@@ -77,8 +90,9 @@ export function getEffectiveBiomassPerSec(state: GameState): number {
   const alertMult = getAlertMultiplier(state.alertLevel);
   const depletionMult = getDepletionMultiplier(state.assimilationPercent);
   const skillBonus = getProliferationBonus(state.skillAllocations);
+  const echoBonus = getEchoEffects(state.acquiredEchoes).biomassMult;
 
-  return state.baseBiomassPerSec * alertMult * depletionMult * (1 + skillBonus);
+  return state.baseBiomassPerSec * alertMult * depletionMult * (1 + skillBonus + echoBonus);
 }
 
 export function getWaterPercent(state: GameState): number {
@@ -116,6 +130,47 @@ export function getNutrientExpandCount(state: GameState): number {
 
 export function getBiomassExpandCount(state: GameState): number {
   return Math.max(0, (state.maxBiomass - MAX_BIOMASS_BASE) / LYSATE_CAP_EXPAND_AMOUNT);
+}
+
+export type PoolResource = 'water' | 'nutrients';
+
+/** Total capacity expansions bought across all three pools. */
+export function getCapExpansionTotal(state: GameState): number {
+  return getWaterExpandCount(state) + getNutrientExpandCount(state) + getBiomassExpandCount(state);
+}
+
+/**
+ * Continuous metabolic drain on a pool, scaling with network complexity. Charged
+ * only in the full game so the tutorial economy is unaffected.
+ */
+export function getUpkeepRate(state: GameState, resource: PoolResource): number {
+  if (state.gamePhase !== 'active') return 0;
+  const def = GENERATORS.find((g) => g.resource === resource);
+  const level = def ? (state.generators[def.id] ?? 0) : 0;
+  return (
+    UPKEEP_PER_LEVEL * level +
+    UPKEEP_PER_ECHO * state.acquiredEchoes.length +
+    UPKEEP_PER_EXPANSION * getCapExpansionTotal(state)
+  );
+}
+
+/** Passive production from a pool's generator, before drain. */
+export function getResourceProduction(state: GameState, resource: PoolResource): number {
+  const def = GENERATORS.find((g) => g.resource === resource);
+  if (!def) return 0;
+  const level = state.generators[def.id] ?? 0;
+  return def.baseRate * level;
+}
+
+/** Total drain on a pool: the baseline depletion plus metabolic upkeep. */
+export function getResourceDrain(state: GameState, resource: PoolResource): number {
+  const base = resource === 'water' ? WATER_DEPLETION_RATE : NUTRIENT_DEPLETION_RATE;
+  return base + getUpkeepRate(state, resource);
+}
+
+/** Net flow for a pool (production − drain); negative means it is being drawn down. */
+export function getNetResourceRate(state: GameState, resource: PoolResource): number {
+  return getResourceProduction(state, resource) - getResourceDrain(state, resource);
 }
 
 export function expandWaterCap(state: GameState): boolean {
@@ -196,8 +251,8 @@ export function tickIdle(state: GameState, deltaSec: number): void {
     return;
   }
 
-  state.water = Math.max(0, state.water - WATER_DEPLETION_RATE * deltaSec);
-  state.nutrients = Math.max(0, state.nutrients - NUTRIENT_DEPLETION_RATE * deltaSec);
+  state.water = Math.max(0, state.water - getResourceDrain(state, 'water') * deltaSec);
+  state.nutrients = Math.max(0, state.nutrients - getResourceDrain(state, 'nutrients') * deltaSec);
 
   tickGenerators(state, deltaSec);
   tickLysate(state, deltaSec);
@@ -233,10 +288,15 @@ export function enterTrauma(state: GameState): void {
   state.combatStats.shieldHits = 0;
 }
 
-export function getSkillLevelCost(baseCost: number, currentLevel: number): number {
-  return Math.floor(baseCost * Math.pow(SKILL_COST_SCALE, currentLevel));
+export function getSkillLevelCost(baseCost: number, currentLevel: number, costMult = 1): number {
+  return Math.floor(baseCost * Math.pow(SKILL_COST_SCALE, currentLevel) * costMult);
 }
 
-export function canAffordSkill(biomass: number, baseCost: number, currentLevel: number): boolean {
-  return biomass >= getSkillLevelCost(baseCost, currentLevel);
+export function canAffordSkill(
+  biomass: number,
+  baseCost: number,
+  currentLevel: number,
+  costMult = 1,
+): boolean {
+  return biomass >= getSkillLevelCost(baseCost, currentLevel, costMult);
 }

@@ -165,7 +165,7 @@ export const SKILL_NODES: SkillNodeDef[] = [
     id: 'dormant_spores',
     tree: 'proliferation',
     name: 'Dormant Spores',
-    description: 'Offline progress rate increased by 50% per level',
+    description: 'Increase offline progress rate by 25% per level (base rate 50%)',
     baseCost: 15,
     prerequisites: ['rapid_scouts', 'resource_routing'],
     maxLevel: 2,

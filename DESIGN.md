@@ -177,21 +177,29 @@ Depth is present but restrained.
 
 ### Buttons
 
-- **Primary:** Filled `primary` with `on-primary` text; used for the single most
-  important action on a screen (e.g. the current onboarding objective or the Core
-  "Scan for hosts" CTA). A primary button may stack a small caption (e.g. cost).
-- **Secondary:** `surface-container` fill, 1px `border`, `on-surface` text; hover
-  fills primary.
-- **`.cmd-btn`** is the shared control pattern for both variants.
+Enabled actions are **filled with their action colour**; disabled controls are
+**strictly greyed out**. The state must be unmistakable at a glance.
+
+- **Primary (default `.cmd-btn`):** Filled `primary` with `on-primary` text; hover /
+  active use `primary-fixed-dim`. Used for actions the player can take.
+- **Secondary (`.cmd-btn.secondary`):** transparent fill, 1px `outline` border,
+  `on-surface` text; hover tints `surface-container-high` with a primary border and
+  text. Used for neutral / navigation actions (Dismiss, Open Radar, Retreat).
+- **Danger (`.cmd-btn.danger`):** transparent fill, `alert` border/text; hover fills
+  `alert`. Used for destructive / cancel actions (Reset).
+- **Disabled (any variant):** `surface-container` fill, `border` border,
+  `on-surface-variant` text, reduced opacity, `not-allowed` cursor, no shadow, and no
+  hover response. Enabled and disabled never share a look.
+- **`.cmd-btn`** is the shared control pattern for all variants.
 - **Labels:** plain verbs only — no `> EXE:` / `SYS:` command prefixes.
-- **States:** Hover / active fill with primary; disabled drops to 45% opacity with a
-  not-allowed cursor. Transitions are 140ms ease-out.
+- Transitions are 140ms ease-out.
 
 ### Progress Bars
 
 - Graphical bars with `radius-pill` ends. Track uses `surface-container-high`; fill
-  uses the semantic color (primary / warning / danger). Mono numerals render the
-  value beside the bar (e.g. `72 / 100`).
+  uses the semantic colour. Water is `secondary` (cyan), Nutrients are `nutrient`
+  (violet), Biomass/progress is `primary` (mint) or `warning` (amber), and danger is
+  `alert` (coral). Mono numerals render the value beside the bar (e.g. `72 / 100`).
 
 ### Panels
 

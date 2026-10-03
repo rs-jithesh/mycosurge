@@ -6,7 +6,11 @@
   import { HOSTS } from '@mycosurge/config';
 
   onMount(() => {
-    if (gameStore.state.gamePhase !== 'active') goto(resolve('/'));
+    if (gameStore.state.gamePhase !== 'active' || !gameStore.unlockedSystems.expeditions) {
+      goto(resolve('/'));
+      return;
+    }
+    gameStore.markSystemSeen('expeditions');
   });
 
   let slots = $derived(gameStore.state.maxExpeditionSlots);

@@ -154,7 +154,7 @@
           valueText={`${Math.floor(s.water)}/${Math.floor(waterMax)}`}
         />
         <ProgressBar
-          tone="mint"
+          tone="violet"
           label="Nutrients"
           value={s.nutrients}
           max={nutrientMax}
@@ -455,6 +455,8 @@
     padding: 0 2px;
   }
 
+  /* Enabled actions are filled with the primary colour; disabled ones are
+     strictly greyed out so it is obvious when you can act. */
   .action-btn {
     display: flex;
     flex-direction: column;
@@ -464,9 +466,9 @@
     width: 100%;
     text-align: center;
     font: inherit;
-    color: var(--on-surface);
-    background: var(--surface-container-high);
-    border: 1px solid var(--outline-variant);
+    color: var(--on-primary);
+    background: var(--primary);
+    border: 1px solid var(--primary);
     border-radius: var(--radius-md);
     padding: 12px 14px;
     box-shadow: var(--shadow-sm);
@@ -486,19 +488,14 @@
   .action-sub {
     font-size: var(--font-label-caps);
     font-weight: 500;
-    color: var(--on-surface-variant);
+    color: var(--on-primary);
+    opacity: 0.82;
   }
 
   button.action-btn:hover:not(:disabled) {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: var(--on-primary);
+    background: var(--primary-fixed-dim);
+    border-color: var(--primary-fixed-dim);
     box-shadow: var(--shadow-md);
-  }
-
-  button.action-btn:hover:not(:disabled) .action-sub {
-    color: var(--on-primary);
-    opacity: 0.8;
   }
 
   button.action-btn:active:not(:disabled) {
@@ -506,16 +503,11 @@
     box-shadow: none;
   }
 
+  /* The step's current call-to-action gets a luminous ring. */
   .action-btn.current {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: var(--on-primary);
-    box-shadow: var(--shadow-md);
-  }
-
-  .action-btn.current .action-sub {
-    color: var(--on-primary);
-    opacity: 0.8;
+    box-shadow:
+      0 0 0 2px var(--primary-glow),
+      var(--shadow-sm);
   }
 
   button.action-btn.current:hover:not(:disabled) {
@@ -524,11 +516,20 @@
   }
 
   .action-btn:disabled {
-    opacity: 0.45;
+    background: var(--surface-container);
+    border-color: var(--border);
+    color: var(--on-surface-variant);
+    opacity: 0.5;
     cursor: not-allowed;
     box-shadow: none;
   }
 
+  .action-btn:disabled .action-sub {
+    color: var(--on-surface-variant);
+    opacity: 1;
+  }
+
+  /* Not yet revealed: dashed and inert, distinct from merely unaffordable. */
   .action-btn.locked {
     background: transparent;
     border-style: dashed;
@@ -536,6 +537,11 @@
     color: var(--on-surface-variant);
     box-shadow: none;
     cursor: not-allowed;
+  }
+
+  .action-btn.locked .action-sub {
+    color: var(--on-surface-variant);
+    opacity: 1;
   }
 
   .action-btn.flash {
@@ -638,7 +644,10 @@
   }
 
   .install-btn:disabled {
-    opacity: 0.45;
+    background: var(--surface-container);
+    border-color: var(--border);
+    color: var(--on-surface-variant);
+    opacity: 0.5;
     cursor: not-allowed;
     box-shadow: none;
   }

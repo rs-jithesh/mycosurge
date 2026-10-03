@@ -31,6 +31,17 @@ export const STARVATION_THRESHOLD = 0.15;
 // Reserve level below which the network is "starving" (passive growth halts).
 export const STARVATION_STATE_THRESHOLD = 0.05;
 
+// ── Metabolic upkeep (full game) ──
+// A gentle continuous drain on Water and Nutrients that scales with network
+// complexity, so automation is a tradeoff rather than a permanent surplus.
+// Applied only while `gamePhase === 'active'` (the tutorial runs its own economy).
+/** Extra drain on a pool per level of its own generator. */
+export const UPKEEP_PER_LEVEL = 0.1;
+/** Extra drain on both pools per acquired echo (complexity tax). */
+export const UPKEEP_PER_ECHO = 0.1;
+/** Extra drain on both pools per capacity expansion. */
+export const UPKEEP_PER_EXPANSION = 0.05;
+
 // ── Lysate ──
 export const LYSATE_BASE_REWARD = 5;
 export const LYSATE_RAW_DECAY_RATE = 1;
@@ -49,9 +60,20 @@ export const MAX_CONTACT_SLOTS = 3;
 
 // ── Assimilation ──
 export const HOST_ASSIMILATION_TARGET = 100;
+// Ecological strain added to `assimilationPercent` per victory. Kept small and
+// separate from the per-host echo progress so the two meters mean different things.
+export const GLOBAL_STRAIN_PER_WIN = 2;
 
 // ── Manual actions (full game) ──
 export const MANUAL_ABSORB_AMOUNT = 2;
 export const MANUAL_ABSORB_COOLDOWN = 5;
 export const MANUAL_SYNTH_WATER_COST = 10;
 export const MANUAL_SYNTH_NUTRIENT_COST = 10;
+
+// ── Offline progression ──
+/** Longest stretch of absence that still accrues progress. */
+export const OFFLINE_MAX_SECONDS = 8 * 60 * 60;
+/** Fraction of the online economy that runs while away. */
+export const OFFLINE_BASE_RATE = 0.5;
+/** Extra offline rate per level of the Dormant Spores mutation. */
+export const OFFLINE_DORMANT_BONUS_PER_LEVEL = 0.25;

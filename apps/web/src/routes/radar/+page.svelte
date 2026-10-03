@@ -128,11 +128,7 @@
             <p>Something is grazing on your outer hyphae.</p>
             <p>Scan the substrate to identify it.</p>
           </div>
-          <button
-            class="cmd-btn scan-btn"
-            class:scan-btn-disabled={!canAffordScan}
-            onclick={startScan}
-          >
+          <button class="cmd-btn scan-btn" disabled={!canAffordScan} onclick={startScan}>
             Scan substrate
             <span class="cost-label">[5 Water]</span>
           </button>
@@ -252,7 +248,7 @@
                   {#if cstrain.id !== 'normal'}
                     <span class="strain-tag text-label-caps">{cstrain.name}</span>
                   {/if}
-                  <span class="text-data-mono contact-assim">Assimilated {Math.floor(assim)}%</span>
+                  <span class="text-data-mono contact-assim">Echo {Math.floor(assim)}/100</span>
                 </div>
                 <div class="contact-reward text-data-mono">
                   +{preview.biomassEarned} Biomass · +{preview.lysateEarned} Lysate
@@ -264,7 +260,10 @@
                   <button class="cmd-btn engage-btn" onclick={() => engage(contact.id)}>
                     Engage
                   </button>
-                  <button class="cmd-btn" onclick={() => gameStore.dismissContact(contact.id)}>
+                  <button
+                    class="cmd-btn secondary"
+                    onclick={() => gameStore.dismissContact(contact.id)}
+                  >
                     Dismiss
                   </button>
                 </div>
@@ -452,18 +451,8 @@
     padding: var(--space-panel-padding) var(--space-gutter);
   }
 
-  .scan-btn-disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-
-  .scan-btn-disabled:hover {
-    background: transparent;
-    color: var(--on-surface);
-  }
-
   .cost-label {
-    color: var(--on-surface-variant);
+    opacity: 0.82;
   }
 
   .scan-insufficient-text {
@@ -642,7 +631,7 @@
     font-weight: 600;
   }
 
-  .engage-btn:hover {
+  .engage-btn:hover:not(:disabled) {
     background: var(--primary-fixed-dim);
     border-color: var(--primary-fixed-dim);
   }

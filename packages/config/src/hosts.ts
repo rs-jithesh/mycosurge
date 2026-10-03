@@ -168,7 +168,7 @@ export const HOSTS: HostDef[] = [
     echoes: {
       id: 'echo_raccoon',
       name: 'Adaptive Cortex',
-      description: 'Damage +15% against previously encountered hosts',
+      description: 'Spores deal +15% damage',
     },
   },
 ];

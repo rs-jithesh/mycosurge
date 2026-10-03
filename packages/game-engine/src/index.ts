@@ -14,6 +14,8 @@ export {
   GROWTH_PHASES,
 } from './phase';
 export type { GrowthPhase } from './phase';
+export { getSystemUnlocks, EVOLUTION_BIOMASS_THRESHOLD } from './systems';
+export type { SystemId, SystemUnlocks } from './systems';
 export {
   tickIdle,
   tickAlertDecay,
@@ -34,8 +36,14 @@ export {
   getWaterExpandCount,
   getNutrientExpandCount,
   getBiomassExpandCount,
+  getCapExpansionTotal,
+  getUpkeepRate,
+  getResourceProduction,
+  getResourceDrain,
+  getNetResourceRate,
+  getEcologicalEfficiency,
 } from './math';
-export type { CapResource } from './math';
+export type { CapResource, PoolResource } from './math';
 export {
   purchaseSkill,
   getAllSkills,
@@ -85,6 +93,10 @@ export {
   previewCombatReward,
   getCombatDifficultyMultiplier,
 } from './combat';
+export { getEchoEffects, getEffectiveCombatStats, getEchoName, getEchoDescription } from './echoes';
+export type { EchoEffects } from './echoes';
+export { applyOfflineProgress, getOfflineRate } from './offline';
+export type { OfflineReport } from './offline';
 export type { CombatResult } from './combat';
 export {
   absorbResources,

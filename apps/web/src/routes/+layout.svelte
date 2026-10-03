@@ -22,6 +22,12 @@
     };
   });
 
+  // Announce each system once as it is reached.
+  $effect(() => {
+    gameStore.unlockedSystems;
+    gameStore.announceNewSystems();
+  });
+
   function handleReset() {
     if (confirm('Reset all progress and restart from the tutorial?')) {
       gameStore.resetGame();
@@ -36,7 +42,7 @@
     <span class="top-bar-brand text-headline-md">MYCOSURGE</span>
     <div class="top-bar-actions">
       <span class="top-bar-status text-label-caps">● Online</span>
-      <button class="cmd-btn reset-btn" onclick={handleReset}>Reset</button>
+      <button class="cmd-btn danger reset-btn" onclick={handleReset}>Reset</button>
     </div>
   </header>
 
@@ -99,14 +105,6 @@
   .reset-btn {
     padding: 4px 12px;
     font-size: var(--font-label-caps);
-    border-color: var(--alert);
-    color: var(--alert);
-  }
-
-  .reset-btn:hover {
-    background: var(--alert);
-    border-color: var(--alert);
-    color: var(--on-error);
   }
 
   .desktop-layout {

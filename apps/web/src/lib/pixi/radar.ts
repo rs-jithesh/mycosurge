@@ -43,6 +43,8 @@ interface NodeData {
   alive: boolean;
   angle: number;
   flashTimer: number;
+  poisonDps: number;
+  poisonTimer: number;
 }
 
 interface PlayerData {
@@ -164,6 +166,10 @@ export function createRadar(
     damageResistance: number;
     hpRegen: number;
     chainReaction: boolean;
+    poisonDamage: number;
+    moveSpeedMult: number;
+    dodgeWindowMult: number;
+    evadeChance: number;
   },
   callbacks: RadarCallbacks,
   modifiers: { hpMult?: number; speedMult?: number } = {},
@@ -343,6 +349,8 @@ export function createRadar(
       alive: true,
       angle: 0,
       flashTimer: 0,
+      poisonDps: 0,
+      poisonTimer: 0,
     });
   }
 
@@ -560,15 +568,18 @@ export function createRadar(
     }
   }
 
+  const dodgeWindow = 1 * (combatStats.dodgeWindowMult || 1);
+
   function takeDamage() {
     if (player.invincibleTimer > 0) return;
+    if (combatStats.evadeChance > 0 && Math.random() < combatStats.evadeChance) return;
     if (player.shieldHits > 0) {
       player.shieldHits--;
-      player.invincibleTimer = 0.5;
+      player.invincibleTimer = 0.5 * (combatStats.dodgeWindowMult || 1);
       return;
     }
     player.hp -= Math.max(0.05, 1 - combatStats.damageResistance);
-    player.invincibleTimer = 1;
+    player.invincibleTimer = dodgeWindow;
     player.flashTimer = HIT_FLASH_DURATION;
     if (player.hp <= 0 && combatStats.emergencyEvac) player.hp = 1;
   }
@@ -613,8 +624,9 @@ export function createRadar(
 
     if (dx !== 0 || dy !== 0) {
       const len = Math.sqrt(dx * dx + dy * dy);
-      player.x += (dx / len) * PLAYER_SPEED * dt;
-      player.y += (dy / len) * PLAYER_SPEED * dt;
+      const speed = PLAYER_SPEED * (combatStats.moveSpeedMult || 1);
+      player.x += (dx / len) * speed * dt;
+      player.y += (dy / len) * speed * dt;
       player.facingAngle = Math.atan2(dy, dx);
     }
 
@@ -648,6 +660,10 @@ export function createRadar(
           if (circleCollision(p.x, p.y, 3, node.x, node.y, node.radius)) {
             node.hp -= p.damage;
             node.flashTimer = HIT_FLASH_DURATION;
+            if (combatStats.poisonDamage > 0) {
+              node.poisonDps = combatStats.poisonDamage;
+              node.poisonTimer = 3;
+            }
             if (combatStats.chainReaction) {
               for (const other of nodes) {
                 if (other === node || !other.alive) continue;
@@ -691,6 +707,11 @@ export function createRadar(
       nodeGraphics[i].body.position.set(n.x, n.y);
       nodeGraphics[i].label.position.set(n.x, n.y);
       n.flashTimer = Math.max(0, n.flashTimer - dt);
+      if (n.poisonTimer > 0) {
+        n.hp -= n.poisonDps * dt;
+        n.poisonTimer = Math.max(0, n.poisonTimer - dt);
+        if (n.hp <= 0) n.alive = false;
+      }
     }
 
     for (let i = 0; i < pool.length; i++) {

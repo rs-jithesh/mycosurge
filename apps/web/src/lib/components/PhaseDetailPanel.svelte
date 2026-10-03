@@ -40,6 +40,11 @@
       0,
     ),
   );
+  let waterNet = $derived(gameStore.netResourceRate('water'));
+  let nutrientNet = $derived(gameStore.netResourceRate('nutrients'));
+  let waterDrain = $derived(waterIncome - waterNet);
+  let nutrientDrain = $derived(nutrientIncome - nutrientNet);
+  let strainEffect = $derived(Math.round((1 - gameStore.ecologicalEfficiency) * 100));
 
   let manualCooldown = $derived(gs.manualCooldown);
   let canAbsorb = $derived(manualCooldown <= 0);
@@ -76,7 +81,7 @@
       resource: 'nutrients' as const,
       label: 'Nutrients',
       cap: gs.nutrientsCap,
-      tone: 'mint' as const,
+      tone: 'violet' as const,
     },
     {
       resource: 'biomass' as const,
@@ -138,7 +143,7 @@
           </span>
         </div>
         <ProgressBar
-          tone={isNutrientCritical ? 'coral' : 'mint'}
+          tone={isNutrientCritical ? 'coral' : 'violet'}
           value={gs.nutrients}
           max={gs.nutrientsCap}
           showValue={false}
@@ -157,11 +162,30 @@
       </button>
 
       <div class="income-strip">
-        <span class="text-label-caps income-label">Passive income</span>
-        <span class="text-data-mono income-val">
-          +{waterIncome.toFixed(1)} Water/s · +{nutrientIncome.toFixed(1)} Nutrients/s
-        </span>
-        <p class="hint">Generators produce this automatically — upgrade them in Grow.</p>
+        <span class="text-label-caps income-label">Net income</span>
+        <div class="income-flow">
+          <div class="flow-cell">
+            <span class="flow-name water">Water</span>
+            <span class="text-data-mono flow-val" class:neg={waterNet < 0}>
+              {waterNet >= 0 ? '+' : ''}{waterNet.toFixed(1)}/s
+            </span>
+            <span class="text-data-mono flow-detail">
+              +{waterIncome.toFixed(1)} · −{waterDrain.toFixed(1)} upkeep
+            </span>
+          </div>
+          <div class="flow-cell">
+            <span class="flow-name nutrients">Nutrients</span>
+            <span class="text-data-mono flow-val" class:neg={nutrientNet < 0}>
+              {nutrientNet >= 0 ? '+' : ''}{nutrientNet.toFixed(1)}/s
+            </span>
+            <span class="text-data-mono flow-detail">
+              +{nutrientIncome.toFixed(1)} · −{nutrientDrain.toFixed(1)} upkeep
+            </span>
+          </div>
+        </div>
+        <p class="hint">
+          Upkeep rises as the network grows — balance production against complexity.
+        </p>
       </div>
     {:else if phase === 'grow'}
       <!-- ── GROW ── -->
@@ -180,6 +204,18 @@
           showValue={false}
         />
         <span class="text-data-mono rate">+{gameStore.biomassPerSec.toFixed(1)} / s</span>
+      </div>
+
+      <div class="strain-chip">
+        <span class="text-label-caps strain-name">Ecological strain</span>
+        <span class="text-data-mono strain-val">{Math.floor(gs.assimilationPercent)}%</span>
+        <span
+          class="text-data-mono strain-effect"
+          class:active={strainEffect > 0}
+          title="Complexity lowers raw efficiency but raises capability — echoes repay the drag."
+        >
+          passive −{strainEffect}%
+        </span>
       </div>
 
       <button
@@ -327,7 +363,10 @@
                       disabled={isInTrauma}
                       onclick={() => engage(contact.id)}>Engage</button
                     >
-                    <button class="cmd-btn" onclick={() => gameStore.dismissContact(contact.id)}>
+                    <button
+                      class="cmd-btn secondary"
+                      onclick={() => gameStore.dismissContact(contact.id)}
+                    >
                       Dismiss
                     </button>
                   </div>
@@ -346,7 +385,9 @@
           <button class="cmd-btn" disabled={!canPing} onclick={() => gameStore.pingSubstrate()}>
             Ping substrate · {SCAN_WATER_COST} Water
           </button>
-          <button class="cmd-btn" onclick={() => goto(resolve('/radar'))}>Open Radar</button>
+          <button class="cmd-btn secondary" onclick={() => goto(resolve('/radar'))}>
+            Open Radar
+          </button>
         </div>
       {/if}
     {:else}
@@ -385,10 +426,12 @@
         {/each}
       </div>
 
-      <button class="cmd-btn evolution-cta" onclick={() => goto(resolve('/evolution'))}>
-        <span class="action-verb">Evolution</span>
-        <span class="action-sub">Spend Biomass on permanent mutations</span>
-      </button>
+      {#if gameStore.unlockedSystems.evolution}
+        <button class="cmd-btn evolution-cta" onclick={() => goto(resolve('/evolution'))}>
+          <span class="action-verb">Evolution</span>
+          <span class="action-sub">Spend Biomass on permanent mutations</span>
+        </button>
+      {/if}
     {/if}
   </div>
 </div>
@@ -488,8 +531,8 @@
   }
 
   .res-name.nutrients,
-  .cap-name[data-tone='mint'] {
-    color: var(--primary);
+  .cap-name[data-tone='violet'] {
+    color: var(--nutrient);
   }
 
   .cap-name[data-tone='amber'] {
@@ -543,8 +586,74 @@
     font-size: 9px;
   }
 
-  .income-val {
+  .income-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .flow-cell {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .flow-name {
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .flow-name.water {
     color: var(--secondary);
+  }
+
+  .flow-name.nutrients {
+    color: var(--nutrient);
+  }
+
+  .flow-val {
+    color: var(--primary);
+    justify-self: end;
+  }
+
+  .flow-val.neg {
+    color: var(--alert);
+  }
+
+  .flow-detail {
+    grid-column: 1 / -1;
+    color: var(--on-surface-variant);
+    font-size: 10px;
+  }
+
+  .strain-chip {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+    background: var(--surface-container-high);
+    padding: 8px 12px;
+  }
+
+  .strain-name {
+    color: var(--on-surface-variant);
+    font-size: 9px;
+  }
+
+  .strain-val {
+    color: var(--warning);
+  }
+
+  .strain-effect {
+    margin-left: auto;
+    color: var(--on-surface-variant);
+    font-size: 11px;
+  }
+
+  .strain-effect.active {
+    color: var(--alert);
   }
 
   /* ── Grow ── */
@@ -816,7 +925,7 @@
     font-weight: 600;
   }
 
-  .engage-btn:hover {
+  .engage-btn:hover:not(:disabled) {
     background: var(--primary-fixed-dim);
     border-color: var(--primary-fixed-dim);
   }

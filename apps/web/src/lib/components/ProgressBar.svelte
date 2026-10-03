@@ -85,4 +85,8 @@
   .fill[data-tone='cyan'] {
     background: var(--secondary);
   }
+
+  .fill[data-tone='violet'] {
+    background: var(--nutrient);
+  }
 </style>

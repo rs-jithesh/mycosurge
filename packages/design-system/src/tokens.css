@@ -51,6 +51,10 @@
   --color-on-tertiary-fixed: #271900;
   --color-on-tertiary-fixed-variant: #5d4200;
 
+  /* Nutrient — bio-luminescent violet (resource identity, distinct from mint) */
+  --color-nutrient: #b9a7ff;
+  --color-on-nutrient: #28194d;
+
   --color-border: #3c4a42;
   --color-outline: #86948b;
   --color-outline-variant: #3c4a42;
@@ -139,6 +143,9 @@
   --tertiary-fixed-dim: var(--color-tertiary-fixed-dim);
   --on-tertiary-fixed: var(--color-on-tertiary-fixed);
   --on-tertiary-fixed-variant: var(--color-on-tertiary-fixed-variant);
+
+  --nutrient: var(--color-nutrient);
+  --on-nutrient: var(--color-on-nutrient);
 
   --border: var(--color-border);
   --outline: var(--color-outline);
@@ -345,18 +352,23 @@ textarea {
 }
 
 /* ── Command Button Pattern ── */
+/* Enabled actions are filled with the primary colour; disabled controls are
+   strictly greyed out so their state is unmistakable at a glance.
+   - `.cmd-btn`           default, primary action
+   - `.cmd-btn.secondary` neutral / navigation action
+   - `.cmd-btn.danger`    destructive / cancel action */
 .cmd-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-unit);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-primary);
   border-radius: var(--radius-sm);
-  background: var(--color-surface-container);
-  color: var(--color-on-surface);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   min-height: 40px;
   padding: 10px var(--spacing-gutter);
-  font-weight: 500;
+  font-weight: 600;
   user-select: none;
   touch-action: manipulation;
   box-shadow: var(--shadow-sm);
@@ -368,32 +380,66 @@ textarea {
     color var(--duration-fast) var(--ease-out-soft);
 }
 
-.cmd-btn:hover {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-on-primary);
+.cmd-btn:hover:not(:disabled) {
+  background: var(--color-primary-fixed-dim);
+  border-color: var(--color-primary-fixed-dim);
   box-shadow: var(--shadow-md);
 }
 
-.cmd-btn:active {
+.cmd-btn:active:not(:disabled) {
   background: var(--color-primary-fixed-dim);
   border-color: var(--color-primary-fixed-dim);
-  color: var(--color-on-primary);
   transform: translateY(1px);
   box-shadow: none;
 }
 
 .cmd-btn:disabled {
-  opacity: 0.45;
+  background: var(--color-surface-container);
+  border-color: var(--color-border);
+  color: var(--color-on-surface-variant);
+  opacity: 0.5;
   cursor: not-allowed;
   box-shadow: none;
 }
 
-.cmd-btn:disabled:hover {
+.cmd-btn.secondary {
+  background: transparent;
+  border-color: var(--color-outline);
+  color: var(--color-on-surface);
+  font-weight: 500;
+}
+
+.cmd-btn.secondary:hover:not(:disabled) {
+  background: var(--color-surface-container-high);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.cmd-btn.secondary:active:not(:disabled) {
+  background: var(--color-surface-container-highest);
+  color: var(--color-primary);
+}
+
+/* Every disabled variant shares one greyed-out look, regardless of its role. */
+.cmd-btn.secondary:disabled,
+.cmd-btn.danger:disabled {
   background: var(--color-surface-container);
   border-color: var(--color-border);
-  color: var(--color-on-surface);
-  box-shadow: none;
+  color: var(--color-on-surface-variant);
+  opacity: 0.5;
+}
+
+.cmd-btn.danger {
+  background: transparent;
+  border-color: var(--color-alert);
+  color: var(--color-alert);
+  font-weight: 500;
+}
+
+.cmd-btn.danger:hover:not(:disabled) {
+  background: var(--color-alert);
+  border-color: var(--color-alert);
+  color: var(--color-on-error);
 }
 
 @media (prefers-reduced-motion: reduce) {

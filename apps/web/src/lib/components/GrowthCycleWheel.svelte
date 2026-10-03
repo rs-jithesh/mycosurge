@@ -3,7 +3,17 @@
   import type { GrowthPhase } from '@mycosurge/game-engine';
   import { PHASES } from '$lib/content/phases';
 
-  let { phase, nucleus }: { phase: GrowthPhase; nucleus?: Snippet } = $props();
+  let {
+    phase,
+    recommended,
+    onselect,
+    nucleus,
+  }: {
+    phase: GrowthPhase;
+    recommended?: GrowthPhase;
+    onselect?: (phase: GrowthPhase) => void;
+    nucleus?: Snippet;
+  } = $props();
 
   const C = 200;
   const R = 150;
@@ -28,13 +38,23 @@
   }
 
   let activeIndex = $derived(PHASES.findIndex((p) => p.id === phase));
+  let suggestedIndex = $derived(
+    recommended ? PHASES.findIndex((p) => p.id === recommended) : activeIndex,
+  );
+  let showSuggested = $derived(suggestedIndex !== activeIndex);
 </script>
 
 <div class="wheel">
   <svg class="dial" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
     <circle class="track" cx={C} cy={C} r={R} />
     {#each PHASES as p, i}
-      <path class="arc" class:is-active={i === activeIndex} data-tone={p.tone} d={arcPath(i)} />
+      <path
+        class="arc"
+        class:is-active={i === activeIndex}
+        class:is-suggested={showSuggested && i === suggestedIndex}
+        data-tone={p.tone}
+        d={arcPath(i)}
+      />
     {/each}
     {#each PHASES as p, i}
       {@const [x, y] = point(-90 + i * 90)}
@@ -51,18 +71,27 @@
 
   <div class="orbit" aria-hidden="true"></div>
 
-  {#each PHASES as p, i}
-    <div
-      class="phase-label"
-      class:is-active={i === activeIndex}
-      data-tone={p.tone}
-      style={labelStyle(i)}
-    >
-      <span class="dot" aria-hidden="true"></span>
-      <span class="num">{p.index}.</span>
-      <span class="name">{p.label}</span>
-    </div>
-  {/each}
+  <div class="phase-labels" role="tablist" aria-label="Growth cycle stages">
+    {#each PHASES as p, i}
+      <button
+        class="phase-label"
+        class:is-active={i === activeIndex}
+        class:is-suggested={showSuggested && i === suggestedIndex}
+        data-tone={p.tone}
+        style={labelStyle(i)}
+        role="tab"
+        aria-selected={i === activeIndex}
+        onclick={() => onselect?.(p.id)}
+      >
+        <span class="dot" aria-hidden="true"></span>
+        <span class="num">{p.index}.</span>
+        <span class="name">{p.label}</span>
+        {#if showSuggested && i === suggestedIndex}
+          <span class="suggest-flag text-label-caps">Next</span>
+        {/if}
+      </button>
+    {/each}
+  </div>
 
   <div class="nucleus">
     {#if nucleus}
@@ -124,6 +153,13 @@
     opacity: 1;
   }
 
+  .arc.is-suggested {
+    stroke: var(--tone);
+    stroke-width: 6;
+    opacity: 0.75;
+    stroke-dasharray: 3 9;
+  }
+
   .node {
     fill: var(--outline-variant);
     transition: fill var(--duration-normal) var(--ease-out-soft);
@@ -162,6 +198,11 @@
     }
   }
 
+  .phase-labels {
+    position: absolute;
+    inset: 0;
+  }
+
   .phase-label {
     position: absolute;
     transform: translate(-50%, -50%);
@@ -177,6 +218,20 @@
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
+    cursor: pointer;
+    transition:
+      border-color var(--duration-normal) var(--ease-out-soft),
+      color var(--duration-normal) var(--ease-out-soft);
+  }
+
+  .phase-label:hover {
+    border-color: var(--tone, var(--primary));
+    color: var(--on-surface);
+  }
+
+  .phase-label:focus-visible {
+    outline: 2px solid var(--tone, var(--primary));
+    outline-offset: 2px;
   }
 
   .phase-label[data-tone='cyan'] {
@@ -197,6 +252,18 @@
     color: var(--tone);
     background: var(--surface-container-high);
     box-shadow: 0 0 14px -2px var(--tone);
+  }
+
+  .phase-label.is-suggested {
+    border-style: dashed;
+    border-color: var(--tone);
+    color: var(--on-surface);
+  }
+
+  .suggest-flag {
+    color: var(--tone);
+    font-size: 8px;
+    margin-left: 2px;
   }
 
   .dot {

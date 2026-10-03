@@ -8,6 +8,7 @@
   import ColonyNucleus from '$lib/components/ColonyNucleus.svelte';
   import PhaseDetailPanel from '$lib/components/PhaseDetailPanel.svelte';
   import { PHASES, phaseMeta } from '$lib/content/phases';
+  import type { GrowthPhase } from '@mycosurge/game-engine';
 
   let logContainer = $state<HTMLDivElement>();
   let logAutoScroll = $state(true);
@@ -31,29 +32,46 @@
 
   let isFullGame = $derived(gameStore.state.gamePhase === 'active');
 
-  // The wheel and detail panel always follow the engine's suggested stage.
-  let phase = $derived(gameStore.recommendedPhase);
+  // The engine suggests a stage, but the player chooses. Until they pick one, the
+  // detail panel follows the suggestion; after that it stays where they put it.
+  let recommended = $derived(gameStore.recommendedPhase);
+  let manualPhase = $state<GrowthPhase | null>(null);
+  let phase = $derived(manualPhase ?? recommended);
+  let following = $derived(manualPhase === null);
+
+  function selectPhase(next: GrowthPhase) {
+    manualPhase = next;
+  }
+
+  function followRecommendation() {
+    manualPhase = null;
+  }
 
   const UNLOCK_SEEN_KEY = 'mycosurge_unlock_seen';
   let showUnlock = $state(false);
+  let unlockSeen = $state(true);
 
   onMount(() => {
+    try {
+      unlockSeen = localStorage.getItem(UNLOCK_SEEN_KEY) === '1';
+    } catch {
+      // storage unavailable — skip the one-time overlay
+      unlockSeen = true;
+    }
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.has('skipintro') && !isFullGame) {
         gameStore.skipIntro();
-        return;
       }
     } catch {
       // no URL access — treat as a normal load
     }
-    try {
-      if (isFullGame && localStorage.getItem(UNLOCK_SEEN_KEY) !== '1') {
-        showUnlock = true;
-      }
-    } catch {
-      // storage unavailable — skip the one-time overlay
-    }
+  });
+
+  // Reactive so the overlay also appears when the tutorial ends without the Core
+  // route remounting (e.g. the tutorial fight, or `?skipintro`).
+  $effect(() => {
+    if (isFullGame && !unlockSeen) showUnlock = true;
   });
 
   function dismissUnlock() {
@@ -73,6 +91,15 @@
     const d = new Date(ts);
     return `[${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}]`;
   }
+
+  function fmtDuration(seconds: number): string {
+    const total = Math.max(0, Math.floor(seconds));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m`;
+    return `${total}s`;
+  }
 </script>
 
 {#if !isFullGame}
@@ -81,6 +108,33 @@
 
 {#if isFullGame}
   <div class="core">
+    {#if gameStore.offlineReport}
+      {@const report = gameStore.offlineReport}
+      <div class="away-banner">
+        <div class="away-text">
+          <span class="text-label-caps away-label">Welcome back</span>
+          <span>
+            Your network kept growing for {fmtDuration(report.elapsedSeconds)} — +{Math.floor(
+              report.biomassGained,
+            )} Biomass.
+            {#if report.expeditionsCompleted > 0}
+              {report.expeditionsCompleted}
+              {report.expeditionsCompleted === 1 ? 'expedition' : 'expeditions'} returned.
+            {/if}
+            {#if report.wasCapped}
+              Offline progress is capped at 8 hours.
+            {/if}
+          </span>
+        </div>
+        <button
+          class="cmd-btn secondary away-dismiss"
+          onclick={() => gameStore.dismissOfflineReport()}
+        >
+          Dismiss
+        </button>
+      </div>
+    {/if}
+
     {#if gameStore.isInTrauma}
       <div class="trauma-banner">
         Recovering — {Math.ceil(gameStore.state.traumaTimer)}s left
@@ -93,26 +147,45 @@
         {#snippet nucleus()}
           <ColonyNucleus />
         {/snippet}
-        <GrowthCycleWheel {phase} {nucleus} />
+        <GrowthCycleWheel {phase} {recommended} onselect={selectPhase} {nucleus} />
       </section>
 
       <!-- Contextual detail -->
       <section class="detail-col">
-        <div class="focus-bar" data-tone={phaseMeta(phase).tone}>
-          <span class="focus-label text-label-caps">Next step</span>
-          <span class="focus-text">{phaseMeta(phase).objective}</span>
+        <div class="focus-bar" data-tone={phaseMeta(following ? phase : recommended).tone}>
+          <span class="focus-label text-label-caps">
+            {following ? 'Next step' : 'Recommended'}
+          </span>
+          <span class="focus-text">
+            {#if following}
+              {phaseMeta(phase).objective}
+            {:else}
+              {phaseMeta(recommended).label} — {phaseMeta(recommended).objective}
+            {/if}
+          </span>
+          {#if !following}
+            <button class="follow-btn cmd-btn" onclick={followRecommendation}>Follow</button>
+          {/if}
         </div>
 
         <div class="mobile-only">
           <ColonyNucleus compact />
-          <ol class="stepper" aria-label="Growth cycle stages">
+          <div class="stepper" role="tablist" aria-label="Growth cycle stages">
             {#each PHASES as p}
-              <li class="step" class:is-active={phase === p.id} data-tone={p.tone}>
+              <button
+                class="step"
+                class:is-active={phase === p.id}
+                class:is-suggested={recommended === p.id && phase !== p.id}
+                data-tone={p.tone}
+                role="tab"
+                aria-selected={phase === p.id}
+                onclick={() => selectPhase(p.id)}
+              >
                 <span class="step-num text-data-mono">{p.index}</span>
                 <span>{p.label}</span>
-              </li>
+              </button>
             {/each}
-          </ol>
+          </div>
         </div>
 
         <PhaseDetailPanel {phase} />
@@ -216,6 +289,12 @@
     min-width: 0;
   }
 
+  .follow-btn {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
   /* Mobile stepper */
   .mobile-only {
     display: none;
@@ -227,7 +306,6 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
-    list-style: none;
     margin: 0;
     padding: 0;
   }
@@ -243,8 +321,21 @@
     border-radius: var(--radius-md);
     background: var(--surface-container);
     color: var(--on-surface-variant);
+    font-family: inherit;
     font-size: 11px;
     font-weight: 600;
+    cursor: pointer;
+  }
+
+  .step:focus-visible {
+    outline: 2px solid var(--tone);
+    outline-offset: 2px;
+  }
+
+  .step.is-suggested {
+    border-style: dashed;
+    border-color: var(--tone);
+    color: var(--on-surface);
   }
 
   .step[data-tone='cyan'] {
@@ -328,6 +419,36 @@
 
   .is-success .log-msg {
     color: var(--primary);
+  }
+
+  .away-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-gutter);
+    border: 1px solid var(--primary);
+    background: var(--surface-container-high);
+    border-radius: var(--radius-md);
+    padding: 10px var(--space-panel-padding);
+  }
+
+  .away-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 13px;
+    color: var(--on-surface);
+    min-width: 0;
+  }
+
+  .away-label {
+    color: var(--primary);
+  }
+
+  .away-dismiss {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    font-size: 11px;
   }
 
   .trauma-banner {

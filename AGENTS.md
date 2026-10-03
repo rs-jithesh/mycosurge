@@ -68,8 +68,10 @@ mycosurge/
   (mint/cyan/amber/coral semantics). Full spec in `DESIGN.md`.
 - **Copy voice**: plain verbs first, flavour second. No `> EXE:` / `SYS:` prefixes; no
   "neutralize"/"assimilate" in player-facing copy.
-- **Buttons**: the shared `.cmd-btn` secondary pattern (design-system); primary CTAs fill with
-  `--primary`.
+- **Buttons**: the shared `.cmd-btn` pattern (design-system) — enabled actions fill with
+  their action colour (`--primary` by default, `.secondary` for neutral/nav, `.danger` for
+  destructive); disabled buttons are strictly greyed out. Never let an enabled control look
+  disabled, or vice versa.
 - **Panel headers**: `text-label-caps`.
 - **Formatted with Prettier**: `semi: true`, `singleQuote: true`, `tabWidth: 2`, `printWidth: 100`.
 - **Responsive breakpoint**: 768px. Mobile is a single-column stack; desktop adds the sidebar.

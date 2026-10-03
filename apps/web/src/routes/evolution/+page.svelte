@@ -8,7 +8,11 @@
   import { getSkillLevelCost, arePrerequisitesMet } from '@mycosurge/game-engine';
 
   onMount(() => {
-    if (gameStore.state.gamePhase !== 'active') goto(resolve('/'));
+    if (gameStore.state.gamePhase !== 'active' || !gameStore.unlockedSystems.evolution) {
+      goto(resolve('/'));
+      return;
+    }
+    gameStore.markSystemSeen('evolution');
   });
 
   let openCategory = $state<UpgradeCategory | null>(null);
@@ -17,7 +21,7 @@
     const current = gameStore.state.skillAllocations[skillId] ?? 0;
     const def = SKILL_NODES.find((s) => s.id === skillId);
     if (!def) return Infinity;
-    return getSkillLevelCost(def.baseCost, current);
+    return getSkillLevelCost(def.baseCost, current, gameStore.echoEffects.skillCostMult);
   }
 
   function upgradeCost(upgradeId: string): number {
@@ -66,6 +70,28 @@
   function prereqLabel(ids: string[]): string {
     return `Requires ${ids.map(nameFor).join(', ')}`;
   }
+
+  let activeBonuses = $derived.by(() => {
+    const e = gameStore.echoEffects;
+    const list: { label: string; value: string }[] = [];
+    if (e.biomassMult)
+      list.push({ label: 'Passive Biomass', value: `+${Math.round(e.biomassMult * 100)}%` });
+    if (e.damageMult)
+      list.push({ label: 'Spore damage', value: `+${Math.round(e.damageMult * 100)}%` });
+    if (e.fireRateMult)
+      list.push({ label: 'Fire rate', value: `+${Math.round(e.fireRateMult * 100)}%` });
+    if (e.poisonDamage) list.push({ label: 'Poison', value: `+${e.poisonDamage}/s` });
+    if (e.hpRegen) list.push({ label: 'HP regen', value: `+${e.hpRegen}/s` });
+    if (e.moveSpeedBonus)
+      list.push({ label: 'Move speed', value: `+${Math.round(e.moveSpeedBonus * 100)}%` });
+    if (e.dodgeWindowBonus)
+      list.push({ label: 'Dodge window', value: `+${Math.round(e.dodgeWindowBonus * 100)}%` });
+    if (e.evadeChance)
+      list.push({ label: 'Evasion', value: `${Math.round(e.evadeChance * 100)}%` });
+    if (e.skillCostMult < 1)
+      list.push({ label: 'Mutation cost', value: `−${Math.round((1 - e.skillCostMult) * 100)}%` });
+    return list;
+  });
 </script>
 
 <div class="evolution-view">
@@ -180,9 +206,27 @@
       <div class="echo-list">
         {#each gameStore.acquiredEchoes as echo}
           <div class="echo-item">
-            <span class="echo-name">{echo}</span>
+            <span class="echo-name">{gameStore.echoName(echo)}</span>
+            <span class="echo-desc text-data-mono">{gameStore.echoDescription(echo)}</span>
           </div>
         {/each}
+      </div>
+    {/if}
+
+    {#if activeBonuses.length > 0}
+      <div class="echo-summary">
+        <span class="text-label-caps summary-title">Active bonuses</span>
+        <div class="bonus-grid">
+          {#each activeBonuses as bonus (bonus.label)}
+            <div class="bonus-chip">
+              <span class="bonus-label">{bonus.label}</span>
+              <span class="bonus-value text-data-mono">{bonus.value}</span>
+            </div>
+          {/each}
+        </div>
+        <p class="summary-note">
+          Complexity raises upkeep on Water and Nutrients — but each echo repays it many times over.
+        </p>
       </div>
     {/if}
   </section>
@@ -278,12 +322,6 @@
     font-size: 10px;
   }
 
-  .upgrade-btn:disabled {
-    opacity: 0.4;
-    cursor: default;
-    pointer-events: none;
-  }
-
   /* ── Category Sections ── */
   .category-section {
     margin-bottom: var(--space-unit);
@@ -322,6 +360,9 @@
   }
 
   .echo-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     padding: var(--space-unit) var(--space-panel-padding);
     border: 1px solid var(--outline-variant);
     background: var(--surface-container-high);
@@ -331,5 +372,59 @@
 
   .echo-name {
     letter-spacing: 0.05em;
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  .echo-desc {
+    color: var(--on-surface-variant);
+    line-height: 1.5;
+  }
+
+  .echo-summary {
+    margin-top: var(--space-panel-padding);
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-panel-padding);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-unit);
+  }
+
+  .summary-title {
+    color: var(--on-surface-variant);
+    font-weight: 400;
+  }
+
+  .bonus-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .bonus-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-high);
+    border-radius: var(--radius-pill);
+    padding: 4px 10px;
+  }
+
+  .bonus-label {
+    color: var(--on-surface-variant);
+    font-size: 11px;
+  }
+
+  .bonus-value {
+    color: var(--primary);
+    font-size: 11px;
+  }
+
+  .summary-note {
+    margin: 0;
+    color: var(--on-surface-variant);
+    font-size: 12px;
+    line-height: 1.5;
   }
 </style>

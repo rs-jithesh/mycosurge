@@ -38,17 +38,93 @@ import {
   tickManualCooldown,
   isStarving as engineIsStarving,
   getRecommendedPhase,
+  getEchoEffects,
+  getEffectiveCombatStats,
+  getEchoName,
+  getEchoDescription,
+  getUpkeepRate,
+  getResourceProduction,
+  getNetResourceRate,
+  getEcologicalEfficiency,
+  getSystemUnlocks,
+  applyOfflineProgress,
 } from '@mycosurge/game-engine';
-import type { GameState, CombatResult, CapResource } from '@mycosurge/game-engine';
+import type {
+  GameState,
+  CombatResult,
+  CapResource,
+  PoolResource,
+  OfflineReport,
+  SystemId,
+  SystemUnlocks,
+} from '@mycosurge/game-engine';
 import { HOSTS, SKILL_NODES, UPGRADES, GENERATORS } from '@mycosurge/config';
+import { SYSTEM_META } from '$lib/content/systems';
 import { logStore } from './log.svelte';
 
 const SAVE_KEY = 'mycosurge_save';
+const REVEAL_KEY = 'mycosurge_reveals';
+const ALL_SYSTEM_IDS: SystemId[] = ['radar', 'evolution', 'expeditions'];
 const TICK_INTERVAL = 1000;
 
+interface RevealState {
+  announced: SystemId[];
+  seen: SystemId[];
+}
+
+function loadReveals(): RevealState {
+  try {
+    const raw = localStorage.getItem(REVEAL_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<RevealState>;
+      return { announced: parsed.announced ?? [], seen: parsed.seen ?? [] };
+    }
+  } catch {
+    // storage unavailable — start with nothing announced
+  }
+  return { announced: [], seen: [] };
+}
+
 function createGameStore() {
+  let offlineReport = $state<OfflineReport | null>(null);
   let state = $state<GameState>(loadState());
   let tickHandle: ReturnType<typeof setInterval> | null = null;
+  let revealState = $state<RevealState>(loadReveals());
+  let allSystemsUnlocked = $state(false);
+
+  function persistReveals() {
+    try {
+      localStorage.setItem(REVEAL_KEY, JSON.stringify(revealState));
+    } catch {
+      // storage unavailable — announcements are simply not remembered
+    }
+  }
+
+  function unlockedSystems(): SystemUnlocks {
+    if (allSystemsUnlocked) return { radar: true, evolution: true, expeditions: true };
+    return getSystemUnlocks(state);
+  }
+
+  /** Emit a one-time activity-log note for each newly reached system. */
+  function announceNewSystems() {
+    const unlocks = unlockedSystems();
+    const fresh = ALL_SYSTEM_IDS.filter((id) => unlocks[id] && !revealState.announced.includes(id));
+    if (fresh.length === 0) return;
+    revealState.announced = [...revealState.announced, ...fresh];
+    persistReveals();
+    for (const id of fresh) logStore.success(SYSTEM_META[id].toast);
+  }
+
+  function isSystemNew(id: SystemId): boolean {
+    if (id === 'radar') return false;
+    return unlockedSystems()[id] && !revealState.seen.includes(id);
+  }
+
+  function markSystemSeen(id: SystemId) {
+    if (revealState.seen.includes(id)) return;
+    revealState.seen = [...revealState.seen, id];
+    persistReveals();
+  }
 
   function loadState(): GameState {
     try {
@@ -56,7 +132,7 @@ function createGameStore() {
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<GameState>;
         const initial = createInitialState();
-        return {
+        const merged: GameState = {
           ...initial,
           ...parsed,
           combatStats: { ...initial.combatStats, ...parsed.combatStats },
@@ -69,6 +145,15 @@ function createGameStore() {
           expeditions: parsed.expeditions ?? [],
           acquiredEchoes: parsed.acquiredEchoes ?? [],
         };
+
+        const elapsed = merged.lastSavedAt > 0 ? (Date.now() - merged.lastSavedAt) / 1000 : 0;
+        if (elapsed > 0) {
+          const report = applyOfflineProgress(merged, elapsed);
+          if (report && (report.biomassGained >= 1 || report.expeditionsCompleted > 0)) {
+            offlineReport = report;
+          }
+        }
+        return merged;
       }
     } catch {
       // corrupted save, start fresh
@@ -77,6 +162,7 @@ function createGameStore() {
   }
 
   function saveState() {
+    state.lastSavedAt = Date.now();
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(state));
     } catch {
@@ -363,7 +449,11 @@ function createGameStore() {
   function resetGame() {
     localStorage.removeItem(SAVE_KEY);
     localStorage.removeItem('mycosurge_unlock_seen');
+    localStorage.removeItem(REVEAL_KEY);
     state = createInitialState();
+    offlineReport = null;
+    revealState = { announced: [], seen: [] };
+    allSystemsUnlocked = false;
     resetAbsorbCount();
     logStore.clear();
     logStore.info('Reset — starting a fresh network.');
@@ -418,6 +508,10 @@ function createGameStore() {
     state.water = state.waterCap;
     state.nutrients = state.nutrientsCap;
     resetAbsorbCount();
+    // QA affordance: reveal every system and mark them seen so no toasts fire.
+    allSystemsUnlocked = true;
+    revealState = { announced: [...ALL_SYSTEM_IDS], seen: [...ALL_SYSTEM_IDS] };
+    persistReveals();
     saveState();
     logStore.info('Skipped the intro — systems online, reserves topped up.');
   }
@@ -425,6 +519,12 @@ function createGameStore() {
   return {
     get state() {
       return state;
+    },
+    get offlineReport() {
+      return offlineReport;
+    },
+    dismissOfflineReport() {
+      offlineReport = null;
     },
     get biomass() {
       return state.biomass;
@@ -434,6 +534,21 @@ function createGameStore() {
     },
     get biomassPerSec() {
       return getEffectiveBiomassPerSec(state);
+    },
+    get ecologicalEfficiency() {
+      return getEcologicalEfficiency(state);
+    },
+    get strainPercent() {
+      return state.assimilationPercent;
+    },
+    resourceUpkeep(resource: PoolResource) {
+      return getUpkeepRate(state, resource);
+    },
+    resourceProduction(resource: PoolResource) {
+      return getResourceProduction(state, resource);
+    },
+    netResourceRate(resource: PoolResource) {
+      return getNetResourceRate(state, resource);
     },
     get isInTrauma() {
       return state.isInTrauma;
@@ -456,6 +571,12 @@ function createGameStore() {
     get recommendedPhase() {
       return getRecommendedPhase(state);
     },
+    get unlockedSystems() {
+      return unlockedSystems();
+    },
+    isSystemNew,
+    markSystemSeen,
+    announceNewSystems,
     synthesisYield() {
       return getSynthesisYield(state);
     },
@@ -465,6 +586,15 @@ function createGameStore() {
     get acquiredEchoes() {
       return state.acquiredEchoes;
     },
+    get echoEffects() {
+      return getEchoEffects(state.acquiredEchoes);
+    },
+    echoName(echoId: string) {
+      return getEchoName(echoId);
+    },
+    echoDescription(echoId: string) {
+      return getEchoDescription(echoId);
+    },
     get expeditions() {
       return state.expeditions;
     },
@@ -473,6 +603,9 @@ function createGameStore() {
     },
     get combatStats() {
       return state.combatStats;
+    },
+    get effectiveCombatStats() {
+      return getEffectiveCombatStats(state);
     },
     get totalBiomassEarned() {
       return state.totalBiomassEarned;

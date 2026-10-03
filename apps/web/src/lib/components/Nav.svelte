@@ -1,16 +1,26 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { resolve } from '$app/paths';
+  import type { SystemId } from '@mycosurge/game-engine';
   import { gameStore } from '$lib/stores/game.svelte';
 
-  const links = [
-    { href: '/', label: 'Core' },
-    { href: '/radar', label: 'Radar' },
-    { href: '/evolution', label: 'Evolution' },
-    { href: '/expeditions', label: 'Expeditions' },
-  ] as const;
+  type NavHref = '/' | '/radar' | '/evolution' | '/expeditions';
+  interface NavLink {
+    href: NavHref;
+    label: string;
+    system?: SystemId;
+  }
 
-  type NavHref = (typeof links)[number]['href'];
+  const links: NavLink[] = [
+    { href: '/', label: 'Core' },
+    { href: '/radar', label: 'Radar', system: 'radar' },
+    { href: '/evolution', label: 'Evolution', system: 'evolution' },
+    { href: '/expeditions', label: 'Expeditions', system: 'expeditions' },
+  ];
+
+  let visibleLinks = $derived(
+    links.filter((link) => link.system === undefined || gameStore.unlockedSystems[link.system]),
+  );
 
   let radarAlert = $derived(gameStore.state.gamePhase === 'tactician');
 
@@ -24,11 +34,13 @@
 </script>
 
 <nav class="nav">
-  {#each links as link}
+  {#each visibleLinks as link}
     <a href={resolve(link.href)} class="tab" class:active={isActive(link.href)}>
       {link.label}
       {#if link.href === '/radar' && radarAlert}
         <span class="alert-badge" role="status" aria-label="New threat on the Radar">[!]</span>
+      {:else if link.system && gameStore.isSystemNew(link.system)}
+        <span class="new-badge">New</span>
       {/if}
     </a>
   {/each}
@@ -62,6 +74,19 @@
   .alert-badge {
     color: var(--alert);
     font-weight: 700;
+  }
+
+  .new-badge {
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-pill);
+    color: var(--primary);
+    padding: 1px 6px;
+    font-size: 9px;
+  }
+
+  .active .new-badge {
+    border-color: var(--on-primary);
+    color: var(--on-primary);
   }
 
   .tab:last-child {

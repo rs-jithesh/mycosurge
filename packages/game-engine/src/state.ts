@@ -29,6 +29,9 @@ export interface CombatStats {
   emergencyEvac: boolean;
   poisonDamage: number;
   chainReaction: boolean;
+  moveSpeedMult: number;
+  dodgeWindowMult: number;
+  evadeChance: number;
 }
 
 export interface Expedition {
@@ -83,6 +86,8 @@ export interface GameState {
   mycelialNetwork: number;
   tutorialUpgrades: TutorialUpgrades;
   tutorialShockTimer: number;
+  /** Epoch ms of the last save; 0 means no save has been written yet. */
+  lastSavedAt: number;
 }
 
 export function createInitialState(): GameState {
@@ -116,6 +121,9 @@ export function createInitialState(): GameState {
       emergencyEvac: false,
       poisonDamage: 0,
       chainReaction: false,
+      moveSpeedMult: 1,
+      dodgeWindowMult: 1,
+      evadeChance: 0,
     },
     skillAllocations: {},
     upgradeLevels: {},
@@ -136,5 +144,6 @@ export function createInitialState(): GameState {
     mycelialNetwork: 0,
     tutorialUpgrades: { osmoticPump: false, enzymaticExudates: false },
     tutorialShockTimer: 0,
+    lastSavedAt: 0,
   };
 }
