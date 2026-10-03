@@ -6,6 +6,7 @@
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
+  import { devStore } from '$lib/stores/dev.svelte';
   import type { PanelId } from '$lib/stores/ui.svelte';
   import ActivityLog from '$lib/components/ActivityLog.svelte';
   import EvolutionPanel from '$lib/components/panels/EvolutionPanel.svelte';
@@ -113,6 +114,15 @@
 
     <div class="top-bar-actions">
       <span class="top-bar-status text-label-caps">● Online</span>
+      {#if devStore.enabled}
+        <button
+          class="cmd-btn secondary dev-btn"
+          title="Developer preview (mycosurge_dev)"
+          onclick={() => devStore.previewWelcomeBack()}
+        >
+          Preview welcome
+        </button>
+      {/if}
       <button class="cmd-btn danger reset-btn" onclick={handleReset}>Reset</button>
     </div>
   </header>
@@ -213,6 +223,11 @@
 
   .reset-btn {
     padding: 4px 12px;
+    font-size: var(--font-label-caps);
+  }
+
+  .dev-btn {
+    padding: 4px 10px;
     font-size: var(--font-label-caps);
   }
 

@@ -8,6 +8,7 @@
   import ColonyNucleus from '$lib/components/ColonyNucleus.svelte';
   import PhaseDetailPanel from '$lib/components/PhaseDetailPanel.svelte';
   import WelcomeBackDialog from '$lib/components/WelcomeBackDialog.svelte';
+  import { devStore } from '$lib/stores/dev.svelte';
   import { PHASES, phaseMeta } from '$lib/content/phases';
   import type { GrowthPhase } from '@mycosurge/game-engine';
 
@@ -95,14 +96,17 @@
   <TutorialIntro />
 {/if}
 
-{#if isFullGame}
-  {#if gameStore.offlineReport}
-    <WelcomeBackDialog
-      report={gameStore.offlineReport}
-      onDismiss={() => gameStore.dismissOfflineReport()}
-    />
-  {/if}
+{#if gameStore.offlineReport || devStore.previewReport}
+  <WelcomeBackDialog
+    report={gameStore.offlineReport ?? devStore.previewReport!}
+    onDismiss={() => {
+      gameStore.dismissOfflineReport();
+      devStore.clearPreview();
+    }}
+  />
+{/if}
 
+{#if isFullGame}
   <div class="core">
     {#if gameStore.isInTrauma}
       <div class="trauma-banner">
