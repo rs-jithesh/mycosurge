@@ -145,6 +145,14 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+{#snippet resultHeadline(outcome: 'victory' | 'defeat', sub: string)}
+  <div class="result-headline" data-outcome={outcome}>
+    <span class="result-mark" aria-hidden="true">{outcome === 'victory' ? '✶' : '✕'}</span>
+    <span class="result-word">{outcome === 'victory' ? 'Victory' : 'Defeat'}</span>
+    <span class="result-sub">{sub}</span>
+  </div>
+{/snippet}
+
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="modal-overlay" role="presentation" onclick={handleRetreat}>
   <div
@@ -153,6 +161,7 @@
     tabindex="-1"
     aria-modal="true"
     aria-labelledby="combat-modal-title"
+    data-outcome={result?.kind ?? 'none'}
     bind:this={dialogEl}
     onclick={(e) => e.stopPropagation()}
     onkeydown={trapFocus}
@@ -163,7 +172,9 @@
       </h2>
       <div class="modal-brand">
         <span class="brand-name">MYCOSURGE</span>
-        <span class="brand-sub text-label-caps">{result !== null ? 'Result' : 'Incursion'}</span>
+        <span class="brand-sub text-label-caps">
+          {result !== null ? (result.kind === 'victory' ? 'Victory' : 'Defeat') : 'Incursion'}
+        </span>
       </div>
       <div class="header-right">
         {#if result === null}
@@ -177,7 +188,7 @@
       {#if wasTutorial && result.kind === 'victory'}
         <!-- Tutorial Victory -->
         <div class="result-view">
-          <div class="result-badge badge-victory">Host driven off</div>
+          {@render resultHeadline('victory', `You drove off ${host?.name ?? 'the host'}`)}
           <div class="reward-panel">
             <div class="reward-header text-label-caps">Rewards</div>
             <div class="reward-line">+{reward?.biomassEarned ?? 0} Biomass</div>
@@ -192,7 +203,7 @@
       {:else if wasTutorial && result.kind === 'defeat'}
         <!-- Tutorial Defeat -->
         <div class="result-view">
-          <div class="result-badge badge-defeat">Network breached</div>
+          {@render resultHeadline('defeat', 'Your network was breached')}
           <div class="reward-panel">
             <div class="reward-header text-label-caps">What it cost you</div>
             {#each penalties as p}
@@ -206,7 +217,7 @@
       {:else if result.kind === 'victory'}
         <!-- Normal Victory -->
         <div class="result-view">
-          <div class="result-badge badge-victory">Host driven off</div>
+          {@render resultHeadline('victory', `You drove off ${host?.name ?? 'the host'}`)}
           <div class="reward-panel">
             <div class="reward-header text-label-caps">Rewards</div>
             <div class="reward-line">+{reward?.biomassEarned ?? 0} Biomass</div>
@@ -232,7 +243,7 @@
       {:else}
         <!-- Normal Defeat -->
         <div class="result-view">
-          <div class="result-badge badge-defeat">Forced retreat</div>
+          {@render resultHeadline('defeat', 'You were forced to retreat')}
           <p class="trauma-msg">Recovering — {Math.ceil(gameStore.state.traumaTimer)}s left</p>
           <div class="action-row">
             <button class="cmd-btn secondary" onclick={handleReturn}>Return to Core</button>
@@ -305,6 +316,14 @@
     flex-direction: column;
     width: min(90vw, 600px);
     overflow: hidden;
+  }
+
+  .modal-frame[data-outcome='victory'] {
+    border-color: color-mix(in srgb, var(--primary) 60%, var(--border));
+  }
+
+  .modal-frame[data-outcome='defeat'] {
+    border-color: color-mix(in srgb, var(--alert) 60%, var(--border));
   }
 
   .modal-header {
@@ -511,16 +530,42 @@
     padding: var(--space-margin) var(--space-panel-padding);
   }
 
-  .result-badge {
-    font-size: var(--font-body-lg);
-    font-weight: 600;
+  .result-headline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
   }
 
-  .badge-victory {
+  .result-mark {
+    font-size: 40px;
+    line-height: 1;
+  }
+
+  .result-word {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .result-sub {
+    font-size: 13px;
+    color: var(--on-surface-variant);
+  }
+
+  .result-headline[data-outcome='victory'] .result-mark,
+  .result-headline[data-outcome='victory'] .result-word {
     color: var(--primary);
   }
 
-  .badge-defeat {
+  .result-headline[data-outcome='victory'] .result-mark {
+    filter: drop-shadow(0 0 12px color-mix(in srgb, var(--primary) 55%, transparent));
+  }
+
+  .result-headline[data-outcome='defeat'] .result-mark,
+  .result-headline[data-outcome='defeat'] .result-word {
     color: var(--alert);
   }
 

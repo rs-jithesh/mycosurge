@@ -168,8 +168,10 @@ poison, HP regen, movement speed, dodge window, evasion, and mutation-cost reduc
 
 The save carries `lastSavedAt`; on load the elapsed gap (capped at 8h) is simulated at a base
 50% rate, `+25%` per **Dormant Spores** level (max 100%). Expeditions and trauma run in real
-time, stale contacts expire, and a dismissible "Welcome back" banner reports Biomass and
-expeditions. See `packages/game-engine/src/offline.ts`.
+time, stale contacts expire, and a dismissible **Welcome back dialog**
+(`WelcomeBackDialog.svelte`) greets the player with the Biomass / Water / Nutrients / Lysate
+change, any expeditions that returned, and the offline rate. See
+`packages/game-engine/src/offline.ts`.
 
 ### Hosts & tiers
 
@@ -263,6 +265,11 @@ the player is already on it, no suggestion shows. The selected arc stays lit.
 
 ## 8. Recent changes (this session)
 
+- **Result clarity + offline dialog**: combat now opens with an unmistakable **Victory** /
+  **Defeat** headline (mark + word + one-line outcome) and a tinted frame, so the result is
+  never ambiguous; the offline "Welcome back" banner became a centered
+  `WelcomeBackDialog.svelte` listing the Biomass / Water / Nutrients / Lysate change and any
+  expeditions that returned.
 - **Navigation → overlays → Hunt**: removed the desktop `Sidebar`, mobile `Nav`, the
   `/radar`/`/evolution`/`/expeditions` routes, **and the `RadarPanel` drawer**. The Hunt phase
   now owns all sonar/contact/combat UI via the shared `components/hunt/HuntSection.svelte`

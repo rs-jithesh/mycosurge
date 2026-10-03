@@ -7,6 +7,7 @@
   import GrowthCycleWheel from '$lib/components/GrowthCycleWheel.svelte';
   import ColonyNucleus from '$lib/components/ColonyNucleus.svelte';
   import PhaseDetailPanel from '$lib/components/PhaseDetailPanel.svelte';
+  import WelcomeBackDialog from '$lib/components/WelcomeBackDialog.svelte';
   import { PHASES, phaseMeta } from '$lib/content/phases';
   import type { GrowthPhase } from '@mycosurge/game-engine';
 
@@ -88,15 +89,6 @@
     const d = new Date(ts);
     return `[${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}]`;
   }
-
-  function fmtDuration(seconds: number): string {
-    const total = Math.max(0, Math.floor(seconds));
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    if (h > 0) return `${h}h ${m}m`;
-    if (m > 0) return `${m}m`;
-    return `${total}s`;
-  }
 </script>
 
 {#if !isFullGame}
@@ -104,34 +96,14 @@
 {/if}
 
 {#if isFullGame}
-  <div class="core">
-    {#if gameStore.offlineReport}
-      {@const report = gameStore.offlineReport}
-      <div class="away-banner">
-        <div class="away-text">
-          <span class="text-label-caps away-label">Welcome back</span>
-          <span>
-            Your network kept growing for {fmtDuration(report.elapsedSeconds)} — +{Math.floor(
-              report.biomassGained,
-            )} Biomass.
-            {#if report.expeditionsCompleted > 0}
-              {report.expeditionsCompleted}
-              {report.expeditionsCompleted === 1 ? 'expedition' : 'expeditions'} returned.
-            {/if}
-            {#if report.wasCapped}
-              Offline progress is capped at 8 hours.
-            {/if}
-          </span>
-        </div>
-        <button
-          class="cmd-btn secondary away-dismiss"
-          onclick={() => gameStore.dismissOfflineReport()}
-        >
-          Dismiss
-        </button>
-      </div>
-    {/if}
+  {#if gameStore.offlineReport}
+    <WelcomeBackDialog
+      report={gameStore.offlineReport}
+      onDismiss={() => gameStore.dismissOfflineReport()}
+    />
+  {/if}
 
+  <div class="core">
     {#if gameStore.isInTrauma}
       <div class="trauma-banner">
         Recovering — {Math.ceil(gameStore.state.traumaTimer)}s left
@@ -418,36 +390,6 @@
 
   .is-success .log-msg {
     color: var(--primary);
-  }
-
-  .away-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-gutter);
-    border: 1px solid var(--primary);
-    background: var(--surface-container-high);
-    border-radius: var(--radius-md);
-    padding: 10px var(--space-panel-padding);
-  }
-
-  .away-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 13px;
-    color: var(--on-surface);
-    min-width: 0;
-  }
-
-  .away-label {
-    color: var(--primary);
-  }
-
-  .away-dismiss {
-    flex-shrink: 0;
-    padding: 4px 10px;
-    font-size: 11px;
   }
 
   .trauma-banner {

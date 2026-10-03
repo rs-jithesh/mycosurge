@@ -103,8 +103,9 @@ change.
 
 The save stamps `lastSavedAt`; on load the elapsed gap (capped at 8h) is simulated at a base
 50% rate, `+25%` per `Dormant Spores` level. Expeditions and trauma use real time; stale
-contacts expire. Tuning lives in `OFFLINE_*` constants and a "Welcome back" banner reports
-the result.
+contacts expire. Tuning lives in `OFFLINE_*` constants. The result is presented by
+`WelcomeBackDialog.svelte` — a centered modal that greets the player and lists the Biomass /
+Water / Nutrients / Lysate change and any expeditions that returned, plus the offline rate.
 
 ## Verification
 
