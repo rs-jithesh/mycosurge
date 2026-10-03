@@ -256,7 +256,8 @@ manual pick. The selected arc is lit; the suggested (when different) is dashed.
   labels, net-income strip, generators), `SystemsUnlocked` (Core/Radar cards) and
   `TutorialIntro` (generator rows). See `ASSET-PLAN.md` (workflow + tiers) and `PROMPTS.md`
   (per-icon prompts). No free Gemini image API tier, so generation is manual via Google AI
-  Studio. Next: Tier 2 host portraits.
+  Studio. Next: Tier 2 host portraits. Interim note: the Gemini badges were cropped to fill
+  their tiles (uniform 192px) until hand-drawn, free-floating icons replace them.
 - **Phase 2 progressive disclosure**: after the tutorial only the core chain (Core, Radar)
   shows. **Evolution** reveals at `totalBiomassEarned ≥ 5`; **Expeditions** at the first echo
   (`packages/game-engine/src/systems.ts` → `getSystemUnlocks`). Locked tabs are hidden
