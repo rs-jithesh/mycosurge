@@ -1,13 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { gameStore } from '$lib/stores/game.svelte';
   import { SKILL_NODES, UPGRADES, getGeneratorCost } from '@mycosurge/config';
   import type { UpgradeCategory } from '@mycosurge/config';
   import { getSkillLevelCost, arePrerequisitesMet } from '@mycosurge/game-engine';
 
   onMount(() => {
-    if (gameStore.state.gamePhase !== 'active') goto('/');
+    if (gameStore.state.gamePhase !== 'active') goto(resolve('/'));
   });
 
   let openCategory = $state<UpgradeCategory | null>(null);

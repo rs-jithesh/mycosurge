@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { previewCombatReward, type GrowthPhase } from '@mycosurge/game-engine';
   import {
     GENERATORS,
@@ -62,7 +63,7 @@
 
   function engage(contactId: string) {
     if (gameStore.engageContact(contactId)) {
-      goto('/radar');
+      goto(resolve('/radar'));
     } else {
       logStore.warn("You can't engage right now — you may be recovering.");
     }
@@ -253,7 +254,7 @@
         <div class="active-fight">
           <span class="text-label-caps fight-tag">In combat</span>
           <p class="fight-name">{activeHost?.name ?? 'A host'}</p>
-          <button class="cmd-btn action-btn" onclick={() => goto('/radar')}>
+          <button class="cmd-btn action-btn" onclick={() => goto(resolve('/radar'))}>
             <span class="action-verb">Return to the fight</span>
           </button>
         </div>
@@ -345,7 +346,7 @@
           <button class="cmd-btn" disabled={!canPing} onclick={() => gameStore.pingSubstrate()}>
             Ping substrate · {SCAN_WATER_COST} Water
           </button>
-          <button class="cmd-btn" onclick={() => goto('/radar')}>Open Radar</button>
+          <button class="cmd-btn" onclick={() => goto(resolve('/radar'))}>Open Radar</button>
         </div>
       {/if}
     {:else}
@@ -384,7 +385,7 @@
         {/each}
       </div>
 
-      <button class="cmd-btn evolution-cta" onclick={() => goto('/evolution')}>
+      <button class="cmd-btn evolution-cta" onclick={() => goto(resolve('/evolution'))}>
         <span class="action-verb">Evolution</span>
         <span class="action-sub">Spend Biomass on permanent mutations</span>
       </button>

@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { gameStore } from '$lib/stores/game.svelte';
   import { HOSTS } from '@mycosurge/config';
 
   onMount(() => {
-    if (gameStore.state.gamePhase !== 'active') goto('/');
+    if (gameStore.state.gamePhase !== 'active') goto(resolve('/'));
   });
 
   let slots = $derived(gameStore.state.maxExpeditionSlots);

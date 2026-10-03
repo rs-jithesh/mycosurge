@@ -4,6 +4,7 @@
   import { logStore } from '$lib/stores/log.svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import Nav from '$lib/components/Nav.svelte';
   import ActivityLog from '$lib/components/ActivityLog.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
@@ -24,7 +25,7 @@
   function handleReset() {
     if (confirm('Reset all progress and restart from the tutorial?')) {
       gameStore.resetGame();
-      goto('/');
+      goto(resolve('/'));
     }
   }
 </script>

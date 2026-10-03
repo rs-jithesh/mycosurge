@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from 'svelte';
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { gameStore } from '$lib/stores/game.svelte';
   import { HOSTS } from '@mycosurge/config';
   import { createRadar } from '$lib/pixi/radar';
@@ -147,7 +148,7 @@
     result = null;
     onClose();
     if (wasTutorial) {
-      goto('/');
+      goto(resolve('/'));
     }
   }
 </script>

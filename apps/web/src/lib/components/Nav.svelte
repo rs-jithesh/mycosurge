@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import { resolve } from '$app/paths';
   import { gameStore } from '$lib/stores/game.svelte';
 
   const links = [
@@ -7,7 +8,9 @@
     { href: '/radar', label: 'Radar' },
     { href: '/evolution', label: 'Evolution' },
     { href: '/expeditions', label: 'Expeditions' },
-  ];
+  ] as const;
+
+  type NavHref = (typeof links)[number]['href'];
 
   let radarAlert = $derived(gameStore.state.gamePhase === 'tactician');
 
@@ -15,14 +18,14 @@
     return path.replace(/\/+$/, '') || '/';
   }
 
-  function isActive(href: string): boolean {
-    return normalize($page.url.pathname) === normalize(href);
+  function isActive(href: NavHref): boolean {
+    return normalize($page.url.pathname) === normalize(resolve(href));
   }
 </script>
 
 <nav class="nav">
   {#each links as link}
-    <a href={link.href} class="tab" class:active={isActive(link.href)}>
+    <a href={resolve(link.href)} class="tab" class:active={isActive(link.href)}>
       {link.label}
       {#if link.href === '/radar' && radarAlert}
         <span class="alert-badge" role="status" aria-label="New threat on the Radar">[!]</span>

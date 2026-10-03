@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { onDestroy } from 'svelte';
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
@@ -101,12 +102,12 @@
   }
 
   function goToRadar() {
-    goto('/radar/');
+    goto(resolve('/radar/'));
   }
 
   function skipIntro() {
     gameStore.skipIntro();
-    goto('/');
+    goto(resolve('/'));
   }
 </script>
 

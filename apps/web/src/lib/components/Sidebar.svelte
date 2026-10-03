@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import { resolve } from '$app/paths';
   import { gameStore } from '$lib/stores/game.svelte';
 
   const links = [
@@ -7,14 +8,22 @@
     { href: '/radar', label: 'Radar' },
     { href: '/evolution', label: 'Evolution' },
     { href: '/expeditions', label: 'Expeditions' },
-  ];
+  ] as const;
+
+  type NavHref = (typeof links)[number]['href'];
 
   let radarAlert = $derived(gameStore.state.gamePhase === 'tactician');
 
-  function isActive(href: string): boolean {
-    const path = $page.url.pathname;
-    if (href === '/') return path === '/';
-    return path.startsWith(href);
+  function normalize(path: string): string {
+    return path.replace(/\/+$/, '') || '/';
+  }
+
+  function isActive(href: NavHref): boolean {
+    const current = normalize($page.url.pathname);
+    const target = normalize(resolve(href));
+    const root = normalize(resolve('/'));
+    if (target === root) return current === root;
+    return current === target || current.startsWith(target + '/');
   }
 </script>
 
@@ -27,7 +36,7 @@
   <nav class="nav-links">
     {#each links as link}
       <a
-        href={link.href}
+        href={resolve(link.href)}
         class="nav-link"
         class:active={isActive(link.href)}
         class:inactive={!isActive(link.href)}
