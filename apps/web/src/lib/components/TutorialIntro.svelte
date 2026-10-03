@@ -7,6 +7,7 @@
   import ObjectiveBanner from './ObjectiveBanner.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import CountUp from './CountUp.svelte';
+  import ResourceIcon from './ResourceIcon.svelte';
   import {
     TUTORIAL_STEPS,
     HANDOFF_STEP,
@@ -255,7 +256,7 @@
             {#each TUTORIAL_GENERATORS as gen (gen.id)}
               {@const owned = gen.id === 'osmoticPump' ? hasPump : hasExudates}
               <div class="gen-row" class:current={stepId === 'automate' && !owned}>
-                <span class="gen-glyph">{gen.glyph}</span>
+                <span class="gen-glyph"><ResourceIcon name={gen.icon} size={34} round /></span>
                 <span class="gen-info">
                   <span class="gen-name">{gen.recommended ? '★ ' : ''}{gen.name}</span>
                   <span class="gen-rate text-data-mono">{gen.effect}</span>
@@ -579,12 +580,10 @@
   }
 
   .gen-glyph {
-    width: 30px;
-    height: 30px;
+    width: 42px;
+    height: 42px;
     display: grid;
     place-items: center;
-    border-radius: var(--radius-sm);
-    background: var(--surface-container-lowest);
     color: var(--primary);
     font-family: var(--font-mono);
     font-size: 15px;

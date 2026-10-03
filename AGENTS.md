@@ -91,4 +91,5 @@ mycosurge/
 - `DEV-NOTES.md` — dev/QA notes and known debt.
 - `UI-REVAMP-PLAN.md` — the UI revamp plan and status.
 - `RADAR-ECONOMY-PLAN.md` — sonar/tier-unlock + economy rework (radar contacts, strains).
+- `ASSET-PLAN.md` — 2D asset priority plan + Google AI Studio workflow (`PROMPTS.md`).
 - `GROWTH-CYCLE-LAYOUT-PLAN.md` — scheduled Core layout revamp (growth-cycle wheel).

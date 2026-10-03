@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import { UNLOCKED_SYSTEMS, UNLOCKED_NOTE } from '$lib/content/onboarding';
+  import ResourceIcon from './ResourceIcon.svelte';
 
   let { onClose }: { onClose: () => void } = $props();
 
@@ -54,7 +55,7 @@
     <div class="cards">
       {#each UNLOCKED_SYSTEMS as system (system.name)}
         <div class="card">
-          <span class="glyph">{system.glyph}</span>
+          <span class="glyph"><ResourceIcon name={system.icon} size={34} round /></span>
           <div>
             <div class="name text-label-caps">{system.name}</div>
             <p class="blurb">{system.blurb}</p>

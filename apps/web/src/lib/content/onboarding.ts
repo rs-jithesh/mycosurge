@@ -1,4 +1,5 @@
 import type { GamePhase } from '@mycosurge/game-engine';
+import type { IconKey } from './icons';
 
 export type Tone = 'mint' | 'amber' | 'coral' | 'cyan' | 'violet';
 export type TutorialStepId = 'feed' | 'grow' | 'automate' | 'expand';
@@ -87,6 +88,7 @@ export interface TutorialGeneratorContent {
   description: string;
   effect: string;
   glyph: string;
+  icon: IconKey;
   recommended?: boolean;
 }
 
@@ -97,6 +99,7 @@ export const TUTORIAL_GENERATORS: TutorialGeneratorContent[] = [
     description: 'Pulls moisture from the surrounding air.',
     effect: '+1 Water / sec',
     glyph: '≋',
+    icon: 'osmotic_pump',
     recommended: true,
   },
   {
@@ -105,6 +108,7 @@ export const TUTORIAL_GENERATORS: TutorialGeneratorContent[] = [
     description: 'Digests organic matter into nutrients.',
     effect: '+1 Nutrients / sec',
     glyph: '✦',
+    icon: 'enzymatic_exudates',
   },
 ];
 
@@ -135,6 +139,7 @@ export const ONBOARDING_COPY = {
 
 export interface UnlockCard {
   glyph: string;
+  icon: IconKey;
   name: string;
   blurb: string;
 }
@@ -142,11 +147,13 @@ export interface UnlockCard {
 export const UNLOCKED_SYSTEMS: UnlockCard[] = [
   {
     glyph: '❋',
+    icon: 'core',
     name: 'Core',
     blurb: 'Manage Water, Nutrients and Biomass. Install and upgrade generators.',
   },
   {
     glyph: '◎',
+    icon: 'radar',
     name: 'Radar',
     blurb: 'Scan the substrate, engage hosts, and earn Lysate from combat.',
   },

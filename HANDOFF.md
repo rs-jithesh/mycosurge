@@ -248,6 +248,15 @@ manual pick. The selected arc is lit; the suggested (when different) is dashed.
 
 ## 8. Recent changes (this session)
 
+- **Icon assets (Tier 0 + Tier 1)**: 13 Gemini-generated icons (Water, Nutrients, Biomass,
+  Lysate, Echo, Core + Radar, Evolution, Expeditions, Gather, Grow, Hunt, Expand) live as 256px
+  PNGs in `apps/web/static/assets/icons/`. A registry (`content/icons.ts` → `ICON_META`) and
+  `<ResourceIcon>` render the PNG when present and fall back to the original Unicode glyph when
+  missing (`round` clips badge icons). Wired into `PhaseDetailPanel` (phase header, resource
+  labels, net-income strip, generators), `SystemsUnlocked` (Core/Radar cards) and
+  `TutorialIntro` (generator rows). See `ASSET-PLAN.md` (workflow + tiers) and `PROMPTS.md`
+  (per-icon prompts). No free Gemini image API tier, so generation is manual via Google AI
+  Studio. Next: Tier 2 host portraits.
 - **Phase 2 progressive disclosure**: after the tutorial only the core chain (Core, Radar)
   shows. **Evolution** reveals at `totalBiomassEarned ≥ 5`; **Expeditions** at the first echo
   (`packages/game-engine/src/systems.ts` → `getSystemUnlocks`). Locked tabs are hidden
@@ -297,7 +306,7 @@ See `DEV-NOTES.md` for the full list. Highlights:
 pnpm check
 pnpm lint
 pnpm --filter @mycosurge/game-engine test   # currently 121 tests
-pnpm --filter web test                      # currently 9 tests
+pnpm --filter web test                      # currently 11 tests
 pnpm build
 ```
 

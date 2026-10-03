@@ -15,6 +15,7 @@
   import { phaseMeta } from '$lib/content/phases';
   import CountUp from './CountUp.svelte';
   import ProgressBar from './ProgressBar.svelte';
+  import ResourceIcon from './ResourceIcon.svelte';
 
   let { phase }: { phase: GrowthPhase } = $props();
 
@@ -110,7 +111,8 @@
 <div class="detail-panel" data-tone={meta.tone}>
   <header class="panel-head">
     <div class="head-left">
-      <span class="head-icon" aria-hidden="true">{meta.icon}</span>
+      <span class="head-icon" aria-hidden="true"><ResourceIcon name={phase} size={34} round /></span
+      >
       <div class="head-text">
         <h2 class="head-title">{meta.label}</h2>
         <p class="head-tagline">{meta.tagline}</p>
@@ -123,7 +125,7 @@
       <!-- ── GATHER ── -->
       <div class="res" class:res-critical={isWaterCritical}>
         <div class="res-top">
-          <span class="res-name water">Water</span>
+          <span class="res-name water"><ResourceIcon name="water" size={22} round /> Water</span>
           <span class="text-data-mono res-val">
             <b>{Math.floor(gs.water)}</b> / {Math.floor(gs.waterCap)}
           </span>
@@ -137,7 +139,9 @@
       </div>
       <div class="res" class:res-critical={isNutrientCritical}>
         <div class="res-top">
-          <span class="res-name nutrients">Nutrients</span>
+          <span class="res-name nutrients"
+            ><ResourceIcon name="nutrients" size={22} round /> Nutrients</span
+          >
           <span class="text-data-mono res-val">
             <b>{Math.floor(gs.nutrients)}</b> / {Math.floor(gs.nutrientsCap)}
           </span>
@@ -165,7 +169,7 @@
         <span class="text-label-caps income-label">Net income</span>
         <div class="income-flow">
           <div class="flow-cell">
-            <span class="flow-name water">Water</span>
+            <span class="flow-name water"><ResourceIcon name="water" size={18} round /> Water</span>
             <span class="text-data-mono flow-val" class:neg={waterNet < 0}>
               {waterNet >= 0 ? '+' : ''}{waterNet.toFixed(1)}/s
             </span>
@@ -174,7 +178,9 @@
             </span>
           </div>
           <div class="flow-cell">
-            <span class="flow-name nutrients">Nutrients</span>
+            <span class="flow-name nutrients"
+              ><ResourceIcon name="nutrients" size={18} round /> Nutrients</span
+            >
             <span class="text-data-mono flow-val" class:neg={nutrientNet < 0}>
               {nutrientNet >= 0 ? '+' : ''}{nutrientNet.toFixed(1)}/s
             </span>
@@ -191,7 +197,7 @@
       <!-- ── GROW ── -->
       <div class="biomass-block">
         <div class="res-top">
-          <span class="res-name">Biomass</span>
+          <span class="res-name"><ResourceIcon name="biomass" size={22} round /> Biomass</span>
           <span class="text-data-mono res-val">
             <b><CountUp value={gameStore.biomass} format={(n) => n.toFixed(n < 10 ? 1 : 0)} /></b>
             / {Math.floor(gameStore.maxBiomass)}
@@ -249,8 +255,7 @@
             {@const canAfford = gameStore.biomass >= cost}
             {@const unit = gen.resource === 'water' ? 'Water' : 'Nutrients'}
             <div class="gen-card">
-              <span class="gen-icon" aria-hidden="true">{gen.resource === 'water' ? '≋' : '✦'}</span
-              >
+              <span class="gen-icon"><ResourceIcon name={gen.resource} size={40} round /></span>
               <div class="gen-meta">
                 <div class="gen-name">
                   {gen.name}
@@ -477,14 +482,11 @@
   }
 
   .head-icon {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     display: grid;
     place-items: center;
-    border-radius: var(--radius-sm);
-    background: var(--surface-container-high);
     color: var(--tone);
-    font-size: 16px;
     flex-shrink: 0;
   }
 
@@ -522,6 +524,9 @@
   }
 
   .res-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-weight: 600;
   }
 
@@ -600,6 +605,9 @@
   }
 
   .flow-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-weight: 600;
     font-size: 12px;
   }
@@ -704,14 +712,11 @@
   }
 
   .gen-icon {
-    width: 34px;
-    height: 34px;
+    width: 48px;
+    height: 48px;
     display: grid;
     place-items: center;
-    border-radius: var(--radius-sm);
-    background: var(--surface-container-highest);
     color: var(--primary);
-    font-size: 15px;
     flex-shrink: 0;
   }
 
