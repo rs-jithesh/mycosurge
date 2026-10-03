@@ -24,7 +24,7 @@ Three verbs, each additive — later systems never replace earlier ones:
 1. **Harvest & grow** — gather Water and Nutrients, synthesise Biomass.
 2. **Automate** — install and upgrade generators; Water and Nutrients tick up passively.
 3. **Fight & evolve** — engage hosts in the arena for Biomass and Lysate; spend Biomass on
-   Mutations and Growth upgrades, and Lysate on larger resource caps.
+   generators, genome points on Mutations, and Lysate on larger resource caps.
 
 ## Resources
 
@@ -32,7 +32,7 @@ Three verbs, each additive — later systems never replace earlier ones:
 | ------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | **Water**     | Passive drain; produced by generators | Gating resource. Below 35% cuts combat yield; below 15% is starvation.                                 |
 | **Nutrients** | Passive drain; produced by generators | Digestion gate. Below 40% cuts combat yield; below 15% is starvation.                                  |
-| **Biomass**   | Accumulates + combat rewards          | Currency for generators, Mutations, and Growth upgrades.                                               |
+| **Biomass**   | Accumulates + combat rewards          | Currency for generators (and respecs).                                                                 |
 | **Lysate**    | Combat only; perishable               | `Raw` Lysate stabilises into `banked` Lysate using Water + Nutrients, or decays. Spent to expand caps. |
 
 Each pool has a cap. Combat and expedition rewards that arrive above a cap are **kept** —
@@ -96,26 +96,20 @@ buys `+10` to the Water, Nutrients, or Biomass cap, at a rising cost per expansi
 
 ### Mutations (skill tree)
 
-Spent with Biomass on the Evolution page. Each node has levels and prerequisites; a
-prerequisite must be **fully levelled** before the next node unlocks. Three trees:
+Bought with a limited budget of **genome points** on the Evolution page — not Biomass — so you
+cannot own every node and builds diverge. The budget is `6 + 2 × echoes collected` (plus `+3` for
+the Experimental DNA echo); most nodes cost `1` point per level and the capstones (Chain Reaction,
+Emergency Evac, Overmind) cost `3`. Each node has levels and prerequisites, and a prerequisite
+only needs **level 1** (not a full level-up) to unlock the next node. A **Respec** (free the first
+time, then 40 Biomass) clears all mutations, but is unavailable during combat or while recovering
+from trauma. Three trees:
 
 - **Aggression** — Spore Speed, Fire Rate, Multi-Shot, Piercing Shot, Overcharge, Chain
   Reaction.
 - **Resilience** — Compact Core, Spore Shield, Trauma Recovery, Regenerative Spores,
   Adaptive Membrane, Emergency Evac.
 - **Proliferation** — Mycelial Expansion, Metabolic Efficiency, Rapid Scouts, Resource
-  Routing, Dormant Spores, Overmind.
-
-### Growth upgrades
-
-Three categories on the Evolution page, each an upgrade line with prerequisites:
-
-- **Network** — Water and Nutrient economy (Hygroscopic Mesh, Vacuolar Expansion, Osmotic
-  Regulation, Aquaporin Channels, Exoenzyme Cascade, Chitin Recycling, Rhizomorphic
-  Networking, Nitrogen Fixation Symbiosis).
-- **Combat** — Spore Veil, Enzymatic Breach, Hyphal Invasion, Neural Override.
-- **Structure** — Biomass cap and resilience (Hyphal Density Protocol, Melanin Shielding,
-  Sporulation Burst, Anastomosis Bridges).
+  Routing, Nitrogen Fixation, Dormant Spores, Overmind, Extended Range.
 
 ### Expeditions
 
@@ -129,7 +123,7 @@ Defeating a host for the first time grants its permanent **echo** — a passive 
 passive generation, poison damage, fire rate, dodge window). Echoes are listed on the
 Evolution page and their effects apply everywhere: passive Biomass, spore fire rate and
 damage, poison over time, HP regen, arena movement speed, the post-hit dodge window,
-projectile evasion, and mutation costs.
+projectile evasion, and bonus genome points.
 
 ## Hosts & discovery
 
@@ -164,7 +158,7 @@ joins the sonar pool only once you have collected enough **echoes** (`acquiredEc
 
 The Radar is a scanning instrument, not a host menu. **Blips** drift in over time (roughly
 every 20s) while you are idle, up to your contact-slot limit (2, or 3 with the **Extended
-Range** growth upgrade). Spend 5 Water to **scan** a blip and reveal the host, or **ping
+Range** mutation). Spend 5 Water to **scan** a blip and reveal the host, or **ping
 the substrate** (5 Water) to force a new blip onto a free slot. Revealed contacts show
 level, strain, reward, and how far that host is from yielding its echo. Contacts drift
 away after two minutes if left alone.
@@ -213,11 +207,10 @@ tutorial unlocks the **core chain** — Core and Radar — alongside a one-time 
 unlocked" overlay.
 
 The remaining systems are **unfolded as the player reaches them** rather than dumped at once:
-**Evolution** appears once enough Biomass has been earned to spend on mutations, and
-**Expeditions** appear once the first host has been grown over (its echo acquired). Locked
-tabs are hidden, each new system announces itself once in the activity log, and its tab
-carries a "New" badge until first visited. Unlocks are based on lifetime totals, so a system
-never re-locks once reached.
+**Evolution** and **Expeditions** both appear once the first host has been grown over (its echo
+acquired). Locked tabs are hidden, each new system announces itself once in the activity log, and
+its tab carries a "New" badge until first visited. Unlocks are based on lifetime totals, so a
+system never re-locks once reached.
 
 ## Tone & voice
 
@@ -245,8 +238,8 @@ the network produced.
 
 ## Longevity
 
-- **Build diversity** — limited Biomass and distinct mutation trees force trade-offs
-  between a glass-cannon spread build and a tiny shielded core.
+- **Build diversity** — a limited genome-point budget and distinct mutation trees force
+  trade-offs between a glass-cannon spread build and a tiny shielded core.
 - **Varied hosts** — each host mixes attack patterns, so later encounters feel different
   from the worm.
 - **Rising caps** — Lysate cap expansion and Biomass rewards keep the numbers climbing

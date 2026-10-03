@@ -15,9 +15,10 @@ network: harvest Water + Nutrients, synthesise Biomass, automate with generators
 hosts in a Pixi.js arena for Lysate, and spend Lysate to raise caps. The UI is a
 "Bio-Luminal Lab" instrument panel.
 
-**Most recent work:** a **Growth Cycle** Core layout (a 4-stage wheel + contextual panel
-with an automatic "what to do next" suggestion), a Stitch palette/theme swap, and a review
-pass that fixed several flow bugs. See §7.
+**Most recent work:** mutations now spend a limited **genome-point budget** (base 6 + 2 per echo,
+`+3` from Experimental DNA) instead of Biomass, prerequisites unlock at level 1, and a **Respec**
+(free once) recomputes derived effects — so builds diverge and no purchasable node is inert. See
+§12.
 
 ---
 
@@ -30,7 +31,7 @@ mycosurge/
 │       ├── app.css           # font import + @import '@mycosurge/design-system'
 │       ├── lib/
 │       │   ├── components/   # Overlay, CombatModal, TutorialIntro, ActivityLog,
-│       │   │                 #   GrowthCycleWheel, ColonyNucleus, PhaseDetailPanel, …
+│       │   │                 #   GrowthCycleWheel, CycleCore, ResourcePanel, PhaseDetailPanel, …
 │       │   │   ├── hunt/      # HuntSection — sonar contacts + tutorial scan flow
 │       │   │   └── panels/    # EvolutionPanel, ExpeditionsPanel (drawers)
 │       │   ├── content/      # onboarding.ts (tutorial steps), phases.ts (growth-cycle meta)
@@ -38,7 +39,7 @@ mycosurge/
 │       │   └── stores/       # game.svelte.ts, log.svelte.ts, ui.svelte.ts (overlay stack)
 │       └── routes/           # / (Core) only — systems open as overlays, not routes
 ├── packages/
-│   ├── config/               # pure TS: constants, hosts, generators, upgrades, strains, skills
+│   ├── config/               # pure TS: constants, hosts, generators, strains, skills
 │   ├── game-engine/          # pure TS: combat, expeditions, math, radar, manual, phase, skills
 │   └── design-system/        # CSS tokens + @theme block (no build step)
 └── docs: AGENTS.md, DESIGN.md, GAME-DESIGN.md, COMBAT.md, DEV-NOTES.md,
@@ -78,8 +79,9 @@ module-level `$state` inside `apps/web/src/lib/stores/game.svelte.ts` and **auto
 `createInitialState()` so new fields survive old saves.
 
 Key fields: `gamePhase`, `water`/`waterCap`, `nutrients`/`nutrientsCap`, `biomass`/`maxBiomass`,
-`baseBiomassPerSec`, `lysateRaw`/`lysateBanked`, `generators{}`, `upgradeLevels{}`,
-`skillAllocations{}`, `hostAssimilation{}`, `assimilationPercent`, `alertLevel`, `isInTrauma`,
+`baseBiomassPerSec`, `lysateRaw`/`lysateBanked`, `generators{}`, `upgradeLevels{}` (legacy, no
+longer read), `skillAllocations{}`, `hostAssimilation{}`, `assimilationPercent`, `alertLevel`,
+`isInTrauma`,
 `traumaTimer`, `combatStats{}`, `contacts[]`, `expeditions[]`, `acquiredEchoes[]`,
 `hostsDefeated`, `totalBiomassEarned`, `manualCooldown`, `tutorialUpgrades{}`.
 
@@ -92,12 +94,12 @@ Evolution, Expeditions, the Growth Cycle) is gated on `gamePhase === 'active'`.
 
 ### Resources
 
-| Resource      | Behaviour                         | Role                                       |
-| ------------- | --------------------------------- | ------------------------------------------ |
-| **Water**     | passive drain; made by generators | gating resource                            |
-| **Nutrients** | passive drain; made by generators | digestion gate                             |
-| **Biomass**   | accumulates + combat rewards      | currency (generators, mutations, upgrades) |
-| **Lysate**    | combat only; perishable           | spent to expand caps                       |
+| Resource      | Behaviour                         | Role                           |
+| ------------- | --------------------------------- | ------------------------------ |
+| **Water**     | passive drain; made by generators | gating resource                |
+| **Nutrients** | passive drain; made by generators | digestion gate                 |
+| **Biomass**   | accumulates + combat rewards      | currency (generators, respecs) |
+| **Lysate**    | combat only; perishable           | spent to expand caps           |
 
 Each pool has a cap. Rewards arriving above a cap are **kept** (never silently deleted).
 
@@ -178,13 +180,13 @@ change, any expeditions that returned, and the offline rate. See
 11 hosts + tutorial `soil_nematode`. Tiers gate by echoes collected: T1 (0), T2 (2), T3 (4),
 T4 (6), Boss T5 (9). See `GAME-DESIGN.md` for the full table.
 
-### Mutations & upgrades
+### Mutations & echoes
 
-- **Mutations** (Biomass, Evolution page): 3 trees — Aggression, Resilience, Proliferation.
-  Prerequisites must be fully levelled.
-- **Growth upgrades** (Biomass): Network / Combat / Structure lines.
-- **Expeditions**: send a host to forage; returns after real time for bonus Biomass. 1 slot
-  (2 with **Overmind**).
+The **Evolution** overlay (opened from the wheel's **Evolve** stage) has two sections:
+**Mutations** (three tree groups: Aggression, Resilience, Proliferation) and **Evolutionary
+echoes**. Mutations are bought with **genome points**; echoes are earned by assimilating hosts. The
+full breakdown — every node, prerequisite, cost and effect — is in **§12**. Expeditions are
+separate (send a host to forage; 1 slot, 2 with the **Overmind** mutation).
 
 ---
 
@@ -224,12 +226,12 @@ with a contextual detail panel. It is **navigation/teaching only**; it never act
 
 ### Phases & panel contents
 
-| Phase      | Panel shows                                                                                                 |
-| ---------- | ----------------------------------------------------------------------------------------------------------- |
-| **Gather** | Water/Nutrients meters, **Absorb**, passive-income summary                                                  |
-| **Grow**   | Biomass meter + rate, **Synthesize**, generator upgrade cards                                               |
-| **Hunt**   | Banked/Raw Lysate, sonar contacts (badge/level/strain/Echo, Scan/Ping/Engage/Dismiss), locked-signal teaser |
-| **Evolve** | Lysate bank, three `+10 cap` rows, **Evolution** link                                                       |
+| Phase      | Panel shows                                                                               |
+| ---------- | ----------------------------------------------------------------------------------------- |
+| **Gather** | **Absorb** + the three `+10 cap` capacity upgrades (spend Lysate)                         |
+| **Grow**   | **Synthesize Biomass** + generator purchase cards                                         |
+| **Hunt**   | Sonar contacts (badge/level/strain/Echo, Scan/Ping/Engage/Dismiss) + locked-signal teaser |
+| **Evolve** | Acquired echoes list + the **Evolution** button (opens the overlay)                       |
 
 ### How the suggestion works
 
@@ -241,14 +243,17 @@ evaluated top-to-bottom every tick; first match wins:
 3. Mid-fight (`currentHostId`) → **Hunt**
 4. A reserve <40% → **Gather** (a low-yield fight isn't worth it)
 5. A revealed contact → **Hunt**
-6. A pool ≥90% full **and** you can afford _that_ pool's expansion → **Evolve**
+6. A pool ≥90% full **and** you can afford _that_ pool's expansion → **Evolve** (`expand`)
 7. Biomass < next generator cost → **Grow**
-8. All generators maxed + Lysate ≥ cheapest expansion → **Evolve**
+8. All generators maxed + Lysate ≥ cheapest expansion → **Evolve** (`expand`)
 9. Lysate (banked+raw) < cheapest expansion → **Hunt**
 10. Otherwise → **Grow**
 
 Constants: `LOW_RESERVE_RATIO 0.4`, `FULL_RESERVE_RATIO 0.9`. The result marks the suggested
-arc (dashed) and, when it differs from the active stage, the focus strip's **Suggested** text.
+arc (dashed) and, when it differs from the active stage, blinks that label's dot and shows the
+"Wants to <stage>" chip in the centre. **Known mismatch:** steps 6/8 still return `expand`, but
+the cap-expansion controls were later moved to the **Gather** panel — so when the engine suggests
+Evolve for a capacity upgrade, the buttons now live one stage earlier. Tracked in §9.
 
 ### Current interaction model
 
@@ -261,13 +266,15 @@ arc stays lit.
 
 ### Files
 
-- `packages/game-engine/src/phase.ts` (+ `phase.test.ts`) — heuristic, cost helpers.
-- `apps/web/src/routes/+page.svelte` — active-stage `$state` (seeded once, never auto-switches).
+- `packages/game-engine/src/phase.ts` (+ `phase.test.ts`) — heuristic + cost helpers.
+- `apps/web/src/routes/+page.svelte` — active-stage `$state` (seeded once, never auto-switches),
+  the three-panel composition, and the mobile stepper.
 - `apps/web/src/lib/content/phases.ts` — `PHASES` metadata, `phaseMeta()`.
 - `apps/web/src/lib/components/GrowthCycleWheel.svelte` — SVG arcs + labels + nucleus slot.
-- `apps/web/src/lib/components/ColonyNucleus.svelte` — Biomass/rate/starving (full + compact).
-- `apps/web/src/lib/components/PhaseDetailPanel.svelte` — per-phase controls.
-- `apps/web/src/routes/+page.svelte` — composition, focus bar, mobile stepper.
+- `apps/web/src/lib/components/CycleCore.svelte` — centre nucleus (stage icon + objective +
+  "Wants to <stage>" chip).
+- `apps/web/src/lib/components/ResourcePanel.svelte` — left resources list + colony vitals.
+- `apps/web/src/lib/components/PhaseDetailPanel.svelte` — per-stage options (right column).
 
 ---
 
@@ -340,10 +347,15 @@ See `DEV-NOTES.md` for the full list. Highlights:
 
 - **Combat wiring ownership**: `CombatModal` imports `completeTutorial`/`applyTutorialDefeat`
   directly from the engine instead of via `gameStore`.
+- **`upgradeLevels` is legacy**: the growth-upgrades system was removed and folded into
+  Proliferation (see §12); `GameState.upgradeLevels` is kept only so old saves still load and is
+  no longer read by any system.
+- **Evolve vs Gather mismatch**: `getRecommendedPhase` still suggests **Evolve** for capacity
+  upgrades (ladder steps 6/8), but the `+10 cap` controls were moved to the **Gather** panel. The
+  suggestion should probably point at Gather (or the controls returned to Evolve). See §7.
 - **Tutorial-only state fields** persist in `GameState` but are unused once `gamePhase==='active'`.
-- **`soil_nematode`** is the tutorial host; decide whether it should ever appear in the pool.
-- **Growth Cycle**: mobile still mounts a hidden non-compact `ColonyNucleus` (off-screen
-  `CountUp`); could gate on a media query.
+- **`soil_nematode`** is the tutorial host; decide whether it should ever appear in the pool (its
+  echo is otherwise unobtainable in the full game — see §12.3).
 - **Reward preview** now uses the real formula; expedition rewards still use `host.biomassReward`.
 
 ---
@@ -353,7 +365,7 @@ See `DEV-NOTES.md` for the full list. Highlights:
 ```sh
 pnpm check
 pnpm lint
-pnpm --filter @mycosurge/game-engine test   # currently 153 tests
+pnpm --filter @mycosurge/game-engine test   # currently 172 tests
 pnpm --filter web test                      # currently 14 tests
 pnpm build
 ```
@@ -379,8 +391,147 @@ app's Reset button clears all three).
 `MANUAL_SYNTH_NUTRIENT_COST 10` · `LYSATE_CAP_EXPAND_COST_BASE 10` ·
 `LYSATE_CAP_EXPAND_AMOUNT 10` · `LYSATE_CAP_COST_SCALE 1.5` · `COMBAT_BIOMASS_BASE 25` ·
 `COMBAT_BIOMASS_PER_DIFFICULTY 15` · `TRAUM_BASE_DURATION 30` · `EXPEDITION_BASE_TIME 300` ·
-`SKILL_COST_SCALE 1.5` · `UPKEEP_PER_LEVEL 0.1` · `UPKEEP_PER_ECHO 0.1` ·
+`GENOME_BASE_POINTS 6` · `GENOME_POINTS_PER_ECHO 2` · `RESPEC_BIOMASS_COST 40` ·
+`UPKEEP_PER_LEVEL 0.1` · `UPKEEP_PER_ECHO 0.1` ·
 `UPKEEP_PER_EXPANSION 0.05` · `GLOBAL_STRAIN_PER_WIN 2` · `ECOLOGICAL_DRAG_CAP 0.5` ·
 `OFFLINE_MAX_SECONDS 28800` · `OFFLINE_BASE_RATE 0.5` ·
 `OFFLINE_DORMANT_BONUS_PER_LEVEL 0.25`. Generator `costScale 1.7` lives in
 `packages/config/src/generators.ts`.
+
+---
+
+## 12. Evolution — mutations & echoes
+
+The **Evolution** overlay (`apps/web/src/lib/components/panels/EvolutionPanel.svelte`, an
+`Overlay` drawer) is the game's permanent-progression surface. It opens from the wheel's
+**Evolve** stage via that stage's **Evolution** button (shown once `unlockedSystems.evolution`,
+which reveals at the **first echo**). It has two sections, in order:
+
+1. **Mutations** — repeatable combat/economy passives (the "skill tree"), grouped under the
+   three tree headings.
+2. **Evolutionary echoes** — one-shot traits inherited from each assimilated host, plus an
+   aggregated "Active bonuses" summary.
+
+Mutations are paid with a limited budget of **genome points** (not Biomass); echoes are earned.
+Capacity (`+10` to a Water / Nutrients / Biomass cap) is **not** in this overlay — it lives in the
+Core's **Gather** stage and costs **Lysate** (see §5 "Lysate & cap expansion" and §12.3).
+
+### 12.1 Mutations (skills)
+
+- **Budget:** `GENOME_BASE_POINTS (6) + GENOME_POINTS_PER_ECHO (2) × acquiredEchoes`, plus `+3`
+  for the **Experimental DNA** echo. `spent` is the sum of each node's `pointCost` over allocated
+  levels, so a player **cannot own every node** and builds diverge. The full tree costs
+  **49 points**; the budget tops out around **31**.
+- **Point cost:** every node costs **1** per level except the capstones **Chain Reaction**,
+  **Emergency Evac** and **Overmind**, which cost **3** (`pointCost` on `SkillNodeDef`,
+  defaulting to 1 when omitted).
+- **Prerequisites:** a mutation unlocks once **every prerequisite has at least level 1**
+  (`level >= 1`), not when it is fully maxed (`arePrerequisitesMet`,
+  `packages/game-engine/src/skills.ts`).
+- **Respec:** clears every allocation and refunds the points. The first respec is **free**; later
+  ones cost **`RESPEC_BIOMASS_COST (40)` Biomass**. Unavailable during combat or trauma. Derived
+  combat stats are fully recomputed from the (now empty) allocations, and Biomass is clamped to
+  the new cap (losing Mycelial Expansion can lower it).
+- **UI/currency:** the panel lists all 20 mutations grouped under **Aggression**, **Resilience**
+  and **Proliferation**, with a `Genome: spent / total` bar and a **Respec** button at the top of
+  the section, and `n pt` + an **Upgrade** button (disabled with a reason when locked or
+  unaffordable) on each row.
+- Effects are applied incrementally in `applySkillEffects`; a few (trauma, expeditions, offline,
+  cap, radar slots, the Nitrogen Fixation trickle) are read lazily by `math.ts` / `offline.ts` /
+  `radar.ts` instead.
+
+**Aggression** — arena offense
+
+| Mutation       | Pts | Max | Prerequisite (≥1)          | Effect                         |
+| -------------- | --- | --- | -------------------------- | ------------------------------ |
+| Spore Speed    | 1   | 3   | —                          | projectile speed +10%/lvl      |
+| Fire Rate      | 1   | 3   | Spore Speed                | fire rate +15%/lvl             |
+| Multi-Shot     | 1   | 2   | Fire Rate                  | +1 projectile per volley/lvl   |
+| Piercing Shot  | 1   | 1   | Multi-Shot                 | spores pierce one enemy        |
+| Overcharge     | 1   | 3   | Spore Speed                | damage +20%/lvl                |
+| Chain Reaction | 3   | 1   | Piercing Shot + Overcharge | kills explode, damaging nearby |
+
+**Resilience** — survivability
+
+| Mutation            | Pts | Max | Prerequisite                          | Effect                   |
+| ------------------- | --- | --- | ------------------------------------- | ------------------------ |
+| Compact Core        | 1   | 3   | —                                     | hitbox −10%/lvl          |
+| Spore Shield        | 1   | 3   | Compact Core                          | +1 absorb hit/lvl        |
+| Trauma Recovery     | 1   | 3   | Spore Shield                          | trauma duration −15%/lvl |
+| Regenerative Spores | 1   | 2   | Compact Core                          | HP regen +0.5/s per lvl  |
+| Adaptive Membrane   | 1   | 2   | Trauma Recovery + Regenerative Spores | damage taken −15%/lvl    |
+| Emergency Evac      | 3   | 1   | Adaptive Membrane                     | auto-retreat at 1 HP     |
+
+**Proliferation** — economy
+
+| Mutation             | Pts | Max | Prerequisite                    | Effect                           |
+| -------------------- | --- | --- | ------------------------------- | -------------------------------- |
+| Mycelial Expansion   | 1   | 3   | —                               | max Biomass +75%/lvl             |
+| Metabolic Efficiency | 1   | 3   | Mycelial Expansion              | passive Biomass +25%/lvl         |
+| Rapid Scouts         | 1   | 3   | Metabolic Efficiency            | expedition time −20%/lvl         |
+| Resource Routing     | 1   | 2   | Mycelial Expansion              | expedition reward +30%/lvl       |
+| Nitrogen Fixation    | 1   | 1   | Mycelial Expansion              | +0.5 Nutrients/s passive         |
+| Dormant Spores       | 1   | 2   | Rapid Scouts + Resource Routing | offline rate +25%/lvl (base 50%) |
+| Overmind             | 3   | 1   | Dormant Spores                  | run 2 expeditions at once        |
+| Extended Range       | 1   | 1   | —                               | +1 radar contact slot            |
+
+The budget constants live in `packages/config/src/constants.ts`.
+
+### 12.2 Evolutionary echoes
+
+- **Acquisition:** every combat victory adds `10 + difficulty×5` to that host's
+  `hostAssimilation` (target 100). At 100 — once per host — its **echo** is pushed to
+  `acquiredEchoes` and `hostsDefeated` ticks up (`applyVictory`,
+  `packages/game-engine/src/combat.ts`). The echo count also drives radar **tier unlocks**
+  (T2 at 2, T3 at 4, T4 at 6, Boss at 9 — `HOST_TIER_UNLOCK`).
+- **Effects** are aggregated additively by `getEchoEffects(acquiredEchoes)`
+  (`packages/game-engine/src/echoes.ts`). Combat reads them through `getEffectiveCombatStats`,
+  passive income through `getEffectiveBiomassPerSec`, and the mutation budget through
+  `genomePoints`.
+- **Upkeep tax:** each acquired echo adds `UPKEEP_PER_ECHO 0.1` to **both** the Water and
+  Nutrients drain (`getUpkeepRate`) — the "complexity tax" the panel's summary note describes.
+
+| Host (tier)              | Echo name            | Effect              |
+| ------------------------ | -------------------- | ------------------- |
+| Soil Nematode\*          | Nematode Resilience  | passive Biomass +3% |
+| Fallen Leaf (T1)         | Photosynthetic Trace | passive Biomass +5% |
+| Compost Worm (T1)        | Regenerative Matrix  | HP regen +1/s       |
+| Garden Beetle (T2)       | Chitinous Remnant    | spores +2 poison/s  |
+| Field Mouse (T2)         | Mammalian Metabolism | move speed +10%     |
+| Pond Frog (T2)           | Amphibious Membrane  | evasion +12%        |
+| Urban Pigeon (T3)        | Avian Adaptability   | fire rate +8%       |
+| Backyard Squirrel (T3)   | Neural Agility       | fire rate +10%      |
+| Stray Cat (T4)           | Reflex Override      | dodge window +15%   |
+| Feral Raccoon (T4)       | Adaptive Cortex      | spore damage +15%   |
+| Laboratory Rat (Boss T5) | Experimental DNA     | +3 genome points    |
+
+\* `soil_nematode` is tutorial-only and never enters the sonar pool, so its echo is normally
+unobtainable in the full game (see §9).
+
+The panel's **Active bonuses** chips summarise whichever effects are non-zero: passive Biomass,
+spore damage, fire rate, poison, HP regen, move speed, dodge window, evasion, and bonus genome
+points.
+
+### 12.3 Cost quick reference
+
+| Purchase             | Currency      | Formula                                     |
+| -------------------- | ------------- | ------------------------------------------- |
+| Capacity (`+10` cap) | Lysate        | `floor(10 × 1.5^expansions)` — Gather stage |
+| Generators           | Biomass       | `floor(5 × 1.7^level)`                      |
+| Mutations            | Genome points | budget `6 + 2×echoes (+3 Experimental DNA)` |
+| Respec               | Biomass       | free first time, then `40` Biomass          |
+
+### 12.4 Files
+
+- `packages/config/src/skill-trees.ts` — `SKILL_NODES` (20), `pointCost`, `SKILL_TREES`,
+  `SkillNodeDef`.
+- `packages/config/src/constants.ts` — `GENOME_BASE_POINTS`, `GENOME_POINTS_PER_ECHO`,
+  `RESPEC_BIOMASS_COST`.
+- `packages/config/src/hosts.ts` — each host's `echoes {id,name,description}` + tier gates.
+- `packages/game-engine/src/skills.ts` — point budget, prereq/purchase, `respecSkills`,
+  `migrateSkillAllocations`, `applySkillEffects` / effect recompute.
+- `packages/game-engine/src/radar.ts` — `getRadarSlots` reads the `extended_range` allocation.
+- `packages/game-engine/src/echoes.ts` — `getEchoEffects` (incl. `genomePoints`),
+  `getEffectiveCombatStats`, `getEchoName` / `getEchoDescription`.
+- `packages/game-engine/src/math.ts` — resource math and `getNutrientFixationBonus`.
+- `apps/web/src/lib/components/panels/EvolutionPanel.svelte` — the overlay UI (genome bar, respec).

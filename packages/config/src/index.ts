@@ -18,5 +18,3 @@ export {
 export type { GeneratorDef } from './generators';
 
 export * from './constants';
-export { UPGRADES } from './upgrades';
-export type { UpgradeDef, UpgradeCategory } from './upgrades';

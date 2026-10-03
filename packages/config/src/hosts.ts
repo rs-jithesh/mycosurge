@@ -128,7 +128,7 @@ export const HOSTS: HostDef[] = [
     echoes: {
       id: 'echo_lab',
       name: 'Experimental DNA',
-      description: 'All skill costs reduced by 10%',
+      description: 'Grants +3 genome points for mutations',
     },
   },
   {

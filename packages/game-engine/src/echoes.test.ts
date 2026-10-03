@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState } from './state';
 import { getEchoEffects, getEffectiveCombatStats, getEchoName, getEchoDescription } from './echoes';
-import { getEffectiveBiomassPerSec, getSkillLevelCost } from './math';
-import { purchaseSkill } from './skills';
+import { getEffectiveBiomassPerSec } from './math';
+import { getTotalGenomePoints } from './skills';
 
 describe('getEchoEffects', () => {
   it('returns neutral bonuses with no echoes', () => {
     const effects = getEchoEffects([]);
     expect(effects.biomassMult).toBe(0);
-    expect(effects.skillCostMult).toBe(1);
+    expect(effects.genomePoints).toBe(0);
     expect(effects.evadeChance).toBe(0);
   });
 
@@ -22,15 +22,15 @@ describe('getEchoEffects', () => {
     expect(effects.fireRateMult).toBeCloseTo(0.18);
   });
 
-  it('reduces skill costs multiplicatively', () => {
+  it('grants genome points from Experimental DNA', () => {
     const effects = getEchoEffects(['echo_lab']);
-    expect(effects.skillCostMult).toBeCloseTo(0.9);
+    expect(effects.genomePoints).toBe(3);
   });
 
   it('ignores unknown echo ids', () => {
     const effects = getEchoEffects(['not_a_real_echo']);
     expect(effects.biomassMult).toBe(0);
-    expect(effects.skillCostMult).toBe(1);
+    expect(effects.genomePoints).toBe(0);
   });
 });
 
@@ -64,16 +64,13 @@ describe('echo integration', () => {
     expect(getEffectiveBiomassPerSec(withEcho)).toBeCloseTo(getEffectiveBiomassPerSec(base) * 1.05);
   });
 
-  it('discounts mutation purchases', () => {
+  it('adds Experimental DNA genome points to the budget', () => {
     const state = createInitialState();
     state.gamePhase = 'active';
-    state.biomass = 100;
     state.acquiredEchoes = ['echo_lab'];
 
-    const discounted = getSkillLevelCost(5, 0, 0.9);
-    expect(discounted).toBe(4);
-    expect(purchaseSkill(state, 'spore_speed')).toBe(true);
-    expect(state.biomass).toBe(96);
+    // 6 base + 2 per echo (1 echo) + 3 from the echo itself = 11.
+    expect(getTotalGenomePoints(state)).toBe(11);
   });
 });
 

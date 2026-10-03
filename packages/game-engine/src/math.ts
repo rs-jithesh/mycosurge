@@ -18,7 +18,6 @@ import {
   LYSATE_STABILIZE_WATER_COST,
   LYSATE_STABILIZE_NUTRIENT_COST,
   LYSATE_CAP_EXPAND_AMOUNT,
-  SKILL_COST_SCALE,
   TRAUMA_BASE_DURATION,
   UPKEEP_PER_LEVEL,
   UPKEEP_PER_ECHO,
@@ -72,6 +71,12 @@ export function getExpeditionRewardBonus(allocations: Record<string, number>): n
 export function getTraumaReduction(allocations: Record<string, number>): number {
   const level = allocations['trauma_recovery'] ?? 0;
   return level * 0.15;
+}
+
+/** Passive Nutrients per second from the Nitrogen Fixation mutation. */
+export function getNutrientFixationBonus(allocations: Record<string, number>): number {
+  const level = allocations['nitrogen_fixation'] ?? 0;
+  return level * 0.5;
 }
 
 export function getEffectiveMaxBiomass(state: GameState): number {
@@ -157,12 +162,13 @@ export function getUpkeepRate(state: GameState, resource: PoolResource): number 
   );
 }
 
-/** Passive production from a pool's generator, before drain. */
+/** Passive production from a pool's generator, plus any mutation trickle, before drain. */
 export function getResourceProduction(state: GameState, resource: PoolResource): number {
   const def = GENERATORS.find((g) => g.resource === resource);
-  if (!def) return 0;
-  const level = state.generators[def.id] ?? 0;
-  return def.baseRate * level;
+  const level = def ? (state.generators[def.id] ?? 0) : 0;
+  const generatorRate = def ? def.baseRate * level : 0;
+  const fixation = resource === 'nutrients' ? getNutrientFixationBonus(state.skillAllocations) : 0;
+  return generatorRate + fixation;
 }
 
 /** Total drain on a pool: the baseline depletion plus metabolic upkeep. */
@@ -257,6 +263,11 @@ export function tickIdle(state: GameState, deltaSec: number): void {
   state.water = Math.max(0, state.water - getResourceDrain(state, 'water') * deltaSec);
   state.nutrients = Math.max(0, state.nutrients - getResourceDrain(state, 'nutrients') * deltaSec);
 
+  const fixation = getNutrientFixationBonus(state.skillAllocations) * deltaSec;
+  if (fixation > 0) {
+    state.nutrients = Math.min(state.nutrientsCap, state.nutrients + fixation);
+  }
+
   tickGenerators(state, deltaSec);
   tickLysate(state, deltaSec);
 
@@ -289,17 +300,4 @@ export function enterTrauma(state: GameState): void {
   state.traumaTimer = Math.max(5, duration);
   state.combatStats.hp = state.combatStats.maxHp;
   state.combatStats.shieldHits = 0;
-}
-
-export function getSkillLevelCost(baseCost: number, currentLevel: number, costMult = 1): number {
-  return Math.floor(baseCost * Math.pow(SKILL_COST_SCALE, currentLevel) * costMult);
-}
-
-export function canAffordSkill(
-  biomass: number,
-  baseCost: number,
-  currentLevel: number,
-  costMult = 1,
-): boolean {
-  return biomass >= getSkillLevelCost(baseCost, currentLevel, costMult);
 }

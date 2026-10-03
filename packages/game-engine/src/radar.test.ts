@@ -55,10 +55,10 @@ describe('getUnlockedHosts', () => {
 });
 
 describe('getRadarSlots', () => {
-  it('defaults to 2 and grows with extended_range', () => {
+  it('defaults to 2 and grows with the extended_range mutation', () => {
     const state = createInitialState();
     expect(getRadarSlots(state)).toBe(2);
-    state.upgradeLevels['extended_range'] = 1;
+    state.skillAllocations['extended_range'] = 1;
     expect(getRadarSlots(state)).toBe(3);
   });
 });

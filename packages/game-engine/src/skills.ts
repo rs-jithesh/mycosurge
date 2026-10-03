@@ -1,11 +1,19 @@
-import { SKILL_NODES } from '@mycosurge/config';
+import {
+  SKILL_NODES,
+  GENOME_BASE_POINTS,
+  GENOME_POINTS_PER_ECHO,
+  RESPEC_BIOMASS_COST,
+} from '@mycosurge/config';
 import type { SkillNodeDef } from '@mycosurge/config';
 import type { GameState } from './state';
-import { getSkillLevelCost } from './math';
+import { getEffectiveMaxBiomass } from './math';
 import { getEchoEffects } from './echoes';
 
-function skillCostMultiplier(state: GameState): number {
-  return getEchoEffects(state.acquiredEchoes).skillCostMult;
+const DEFAULT_POINT_COST = 1;
+
+/** Genome points a single level of a mutation costs. */
+export function getSkillPointCost(def: SkillNodeDef): number {
+  return def.pointCost ?? DEFAULT_POINT_COST;
 }
 
 export function getAllSkills(): SkillNodeDef[] {
@@ -20,14 +28,35 @@ export function getCurrentLevel(state: GameState, skillId: string): number {
   return state.skillAllocations[skillId] ?? 0;
 }
 
+/** Total genome points the player can spend (base + echoes + echo bonuses). */
+export function getTotalGenomePoints(state: GameState): number {
+  const echoBonus = getEchoEffects(state.acquiredEchoes).genomePoints;
+  return GENOME_BASE_POINTS + GENOME_POINTS_PER_ECHO * state.acquiredEchoes.length + echoBonus;
+}
+
+/** Genome points currently tied up in allocated mutation levels. */
+export function getSpentGenomePoints(state: GameState): number {
+  let spent = 0;
+  for (const def of SKILL_NODES) {
+    const level = state.skillAllocations[def.id] ?? 0;
+    if (level > 0) spent += level * getSkillPointCost(def);
+  }
+  return spent;
+}
+
+/** Genome points still available to spend. */
+export function getAvailableGenomePoints(state: GameState): number {
+  return Math.max(0, getTotalGenomePoints(state) - getSpentGenomePoints(state));
+}
+
+/** Point cost of the next level of a mutation, or null when it is maxed. */
 export function getNextCost(state: GameState, skillId: string): number | null {
   const def = getSkill(skillId);
   if (!def) return null;
 
-  const current = getCurrentLevel(state, skillId);
-  if (current >= def.maxLevel) return null;
+  if (getCurrentLevel(state, skillId) >= def.maxLevel) return null;
 
-  return getSkillLevelCost(def.baseCost, current, skillCostMultiplier(state));
+  return getSkillPointCost(def);
 }
 
 export function arePrerequisitesMet(state: GameState, skillId: string): boolean {
@@ -38,8 +67,7 @@ export function arePrerequisitesMet(state: GameState, skillId: string): boolean 
   return def.prerequisites.every((preReqId) => {
     const preReq = getSkill(preReqId);
     if (!preReq) return false;
-    const level = getCurrentLevel(state, preReqId);
-    return level >= preReq.maxLevel;
+    return getCurrentLevel(state, preReqId) >= 1;
   });
 }
 
@@ -52,15 +80,84 @@ export function purchaseSkill(state: GameState, skillId: string): boolean {
 
   if (!arePrerequisitesMet(state, skillId)) return false;
 
-  const cost = getSkillLevelCost(def.baseCost, current, skillCostMultiplier(state));
-  if (state.biomass < cost) return false;
+  const cost = getSkillPointCost(def);
+  if (getAvailableGenomePoints(state) < cost) return false;
 
-  state.biomass -= cost;
   state.skillAllocations[skillId] = current + 1;
 
   applySkillEffects(state, skillId);
 
   return true;
+}
+
+/** True when the player may respec: no active fight, not in trauma, points spent. */
+export function canRespec(state: GameState): boolean {
+  if (state.currentHostId) return false;
+  if (state.isInTrauma) return false;
+  return getSpentGenomePoints(state) > 0;
+}
+
+/** Biomass cost of the next respec (the first one is free). */
+export function getRespecCost(state: GameState): number {
+  return state.respecsUsed === 0 ? 0 : RESPEC_BIOMASS_COST;
+}
+
+/**
+ * Clear every mutation, recompute all derived effects from the (now empty)
+ * allocations, and clamp Biomass to the reduced max (Mycelial Expansion may
+ * have been raising the cap). The first respec is free; later ones cost
+ * `RESPEC_BIOMASS_COST`.
+ */
+export function respecSkills(state: GameState): boolean {
+  if (!canRespec(state)) return false;
+
+  const cost = getRespecCost(state);
+  if (state.biomass < cost) return false;
+
+  state.biomass -= cost;
+  state.skillAllocations = {};
+  state.respecsUsed += 1;
+
+  recomputeSkillEffects(state);
+  state.biomass = Math.min(state.biomass, getEffectiveMaxBiomass(state));
+
+  return true;
+}
+
+/**
+ * Pre-release migration: a save may have spent more genome points than the
+ * current budget allows (or predate the point system entirely). When overspent,
+ * clear all allocations without refund and recompute effects. Returns true when
+ * the player's mutations were reset so the caller can surface a one-time toast.
+ */
+export function migrateSkillAllocations(state: GameState): boolean {
+  if (getSpentGenomePoints(state) <= getTotalGenomePoints(state)) return false;
+
+  state.skillAllocations = {};
+  recomputeSkillEffects(state);
+  state.biomass = Math.min(state.biomass, getEffectiveMaxBiomass(state));
+
+  return true;
+}
+
+/** Reset every skill-derived stat to base, then re-apply the current allocations. */
+function recomputeSkillEffects(state: GameState): void {
+  state.combatStats.projectileSpeed = 1;
+  state.combatStats.fireRate = 1;
+  state.combatStats.projectileCount = 1;
+  state.combatStats.piercing = false;
+  state.combatStats.damage = 1;
+  state.combatStats.chainReaction = false;
+  state.combatStats.hitboxMultiplier = 1;
+  state.combatStats.shieldHits = 0;
+  state.combatStats.hpRegen = 0;
+  state.combatStats.damageResistance = 0;
+  state.combatStats.emergencyEvac = false;
+  state.maxExpeditionSlots = 1;
+
+  for (const def of SKILL_NODES) {
+    if ((state.skillAllocations[def.id] ?? 0) > 0) applySkillEffects(state, def.id);
+  }
 }
 
 function applySkillEffects(state: GameState, skillId: string): void {
@@ -116,21 +213,22 @@ function applySkillEffects(state: GameState, skillId: string): void {
     case 'overmind':
       state.maxExpeditionSlots = 2;
       break;
+    case 'extended_range':
+      // Extra radar contact slot is read lazily by getRadarSlots(); no raw stat here.
+      break;
+    case 'nitrogen_fixation':
+      // Passive Nutrients trickle is read lazily by getNutrientFixationBonus().
+      break;
   }
 }
 
 export function getAvailableSkills(state: GameState): SkillNodeDef[] {
-  return SKILL_NODES.filter((def) => {
-    const current = getCurrentLevel(state, def.id);
-    return current < def.maxLevel;
-  });
+  return SKILL_NODES.filter((def) => getCurrentLevel(state, def.id) < def.maxLevel);
 }
 
 export function getPurchasableSkills(state: GameState): SkillNodeDef[] {
+  const available = getAvailableGenomePoints(state);
   return getAvailableSkills(state).filter(
-    (def) =>
-      arePrerequisitesMet(state, def.id) &&
-      state.biomass >=
-        getSkillLevelCost(def.baseCost, getCurrentLevel(state, def.id), skillCostMultiplier(state)),
+    (def) => arePrerequisitesMet(state, def.id) && available >= getSkillPointCost(def),
   );
 }

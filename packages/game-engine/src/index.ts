@@ -23,8 +23,6 @@ export {
   getEffectiveMaxBiomass,
   isStarving,
   enterTrauma,
-  getSkillLevelCost,
-  canAffordSkill,
   getWaterPercent,
   getNutrientPercent,
   getCombatYieldMultiplier,
@@ -42,6 +40,7 @@ export {
   getResourceDrain,
   getNetResourceRate,
   getEcologicalEfficiency,
+  getNutrientFixationBonus,
 } from './math';
 export type { CapResource, PoolResource } from './math';
 export {
@@ -53,6 +52,14 @@ export {
   arePrerequisitesMet,
   getAvailableSkills,
   getPurchasableSkills,
+  getSkillPointCost,
+  getTotalGenomePoints,
+  getSpentGenomePoints,
+  getAvailableGenomePoints,
+  canRespec,
+  getRespecCost,
+  respecSkills,
+  migrateSkillAllocations,
 } from './skills';
 export {
   startExpedition,
@@ -62,7 +69,6 @@ export {
   getActiveExpeditions,
 } from './expeditions';
 export { tickGenerators, purchaseGenerator } from './generators';
-export { purchaseUpgrade, getUpgradeLevel } from './upgrades';
 export {
   canManualAbsorb,
   manualAbsorb,

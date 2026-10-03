@@ -69,6 +69,8 @@ export interface GameState {
   combatStats: CombatStats;
   skillAllocations: Record<string, number>;
   upgradeLevels: Record<string, number>;
+  /** Number of times the player has respecced mutations (first is free). */
+  respecsUsed: number;
   generators: Record<string, number>;
   lysateRaw: number;
   lysateBanked: number;
@@ -127,6 +129,7 @@ export function createInitialState(): GameState {
     },
     skillAllocations: {},
     upgradeLevels: {},
+    respecsUsed: 0,
     generators: {},
     lysateRaw: 0,
     lysateBanked: 0,

@@ -3,6 +3,13 @@ import {
   tickIdle,
   tickExpeditions,
   purchaseSkill as enginePurchaseSkill,
+  getTotalGenomePoints,
+  getSpentGenomePoints,
+  getAvailableGenomePoints,
+  canRespec as engineCanRespec,
+  getRespecCost,
+  respecSkills as engineRespecSkills,
+  migrateSkillAllocations,
   startExpedition as engineStartExpedition,
   collectExpedition as engineCollectExpedition,
   removeCollectedExpeditions,
@@ -19,7 +26,6 @@ import {
   tutorialTick,
   resetAbsorbCount,
   purchaseGenerator as enginePurchaseGenerator,
-  purchaseUpgrade as enginePurchaseEconomyUpgrade,
   expandWaterCap as engineExpandWaterCap,
   expandNutrientCap as engineExpandNutrientCap,
   expandBiomassCap as engineExpandBiomassCap,
@@ -58,7 +64,7 @@ import type {
   SystemId,
   SystemUnlocks,
 } from '@mycosurge/game-engine';
-import { HOSTS, SKILL_NODES, UPGRADES, GENERATORS } from '@mycosurge/config';
+import { HOSTS, SKILL_NODES, GENERATORS } from '@mycosurge/config';
 import { SYSTEM_META } from '$lib/content/systems';
 import { logStore } from './log.svelte';
 
@@ -87,6 +93,7 @@ function loadReveals(): RevealState {
 
 function createGameStore() {
   let offlineReport = $state<OfflineReport | null>(null);
+  let didResetSkills = $state(false);
   let state = $state<GameState>(loadState());
   let tickHandle: ReturnType<typeof setInterval> | null = null;
   let revealState = $state<RevealState>(loadReveals());
@@ -146,6 +153,9 @@ function createGameStore() {
           acquiredEchoes: parsed.acquiredEchoes ?? [],
         };
 
+        // Pre-release: drop mutations that no longer fit the genome-point budget.
+        if (migrateSkillAllocations(merged)) didResetSkills = true;
+
         const elapsed = merged.lastSavedAt > 0 ? (Date.now() - merged.lastSavedAt) / 1000 : 0;
         if (elapsed > 0) {
           const report = applyOfflineProgress(merged, elapsed);
@@ -172,6 +182,13 @@ function createGameStore() {
 
   function startTick() {
     if (tickHandle) return;
+
+    if (didResetSkills) {
+      didResetSkills = false;
+      logStore.error(
+        'Your mutations were reset to fit the new genome budget. Rebuild your network.',
+      );
+    }
 
     let prevBiomass = state.biomass;
     let prevAlert = state.alertLevel;
@@ -254,6 +271,15 @@ function createGameStore() {
         const level = state.skillAllocations[skillId] ?? 0;
         logStore.success(`Mutation unlocked: ${def.name} (Lv.${level})`);
       }
+      saveState();
+    }
+    return result;
+  }
+
+  function respecSkills(): boolean {
+    const result = engineRespecSkills(state);
+    if (result) {
+      logStore.info('Mutations reset — genome points refunded.');
       saveState();
     }
     return result;
@@ -386,19 +412,6 @@ function createGameStore() {
   function dismissContact(contactId: string): void {
     engineDismissContact(state, contactId);
     saveState();
-  }
-
-  function purchaseUpgrade(upgradeId: string): boolean {
-    const result = enginePurchaseEconomyUpgrade(state, upgradeId);
-    if (result) {
-      const def = UPGRADES.find((u) => u.id === upgradeId);
-      if (def) {
-        const level = state.upgradeLevels[upgradeId] ?? 0;
-        logStore.success(`${def.name} upgraded (Lv.${level}).`);
-      }
-      saveState();
-    }
-    return Boolean(result);
   }
 
   function purchaseGenerator(genId: string): boolean {
@@ -589,6 +602,21 @@ function createGameStore() {
     get echoEffects() {
       return getEchoEffects(state.acquiredEchoes);
     },
+    get genomePointsSpent() {
+      return getSpentGenomePoints(state);
+    },
+    get genomePointsTotal() {
+      return getTotalGenomePoints(state);
+    },
+    get genomePointsAvailable() {
+      return getAvailableGenomePoints(state);
+    },
+    get canRespec() {
+      return engineCanRespec(state);
+    },
+    get respecCost() {
+      return getRespecCost(state);
+    },
     echoName(echoId: string) {
       return getEchoName(echoId);
     },
@@ -615,8 +643,8 @@ function createGameStore() {
     updateCombatHp,
     resolveCombat,
     purchaseSkill,
+    respecSkills,
     purchaseGenerator,
-    purchaseUpgrade,
     expandWaterCap,
     expandNutrientCap,
     expandBiomassCap,

@@ -22,8 +22,8 @@ export interface EchoEffects {
   dodgeWindowBonus: number;
   /** Chance per hit to evade an antibody entirely (0.12 = 12%). */
   evadeChance: number;
-  /** Multiplier applied to mutation costs (0.9 = 10% cheaper). */
-  skillCostMult: number;
+  /** Extra genome points added to the mutation budget. */
+  genomePoints: number;
 }
 
 const BASE_EFFECTS: EchoEffects = {
@@ -35,7 +35,7 @@ const BASE_EFFECTS: EchoEffects = {
   moveSpeedBonus: 0,
   dodgeWindowBonus: 0,
   evadeChance: 0,
-  skillCostMult: 1,
+  genomePoints: 0,
 };
 
 /** Resolve a list of acquired echo ids into their combined bonuses. */
@@ -63,7 +63,7 @@ export function getEchoEffects(acquiredEchoes: readonly string[]): EchoEffects {
         effects.dodgeWindowBonus += 0.15;
         break;
       case 'echo_lab':
-        effects.skillCostMult *= 0.9;
+        effects.genomePoints += 3;
         break;
       case 'echo_worm':
         effects.hpRegen += 1;

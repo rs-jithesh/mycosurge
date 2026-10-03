@@ -1,62 +1,44 @@
 <script lang="ts">
   import { gameStore } from '$lib/stores/game.svelte';
-  import { SKILL_NODES, UPGRADES, getGeneratorCost } from '@mycosurge/config';
-  import type { UpgradeCategory } from '@mycosurge/config';
-  import { getSkillLevelCost, arePrerequisitesMet } from '@mycosurge/game-engine';
+  import { SKILL_NODES, SKILL_TREE_ORDER } from '@mycosurge/config';
+  import type { SkillTree, SkillNodeDef } from '@mycosurge/config';
+  import { arePrerequisitesMet, getSkillPointCost } from '@mycosurge/game-engine';
   import Overlay from '$lib/components/Overlay.svelte';
+  import ProgressBar from '$lib/components/ProgressBar.svelte';
 
   let { onClose }: { onClose: () => void } = $props();
 
-  let openCategory = $state<UpgradeCategory | null>(null);
+  const TREE_LABELS: Record<SkillTree, string> = {
+    aggression: 'Aggression',
+    resilience: 'Resilience',
+    proliferation: 'Proliferation',
+  };
 
-  function skillCost(skillId: string): number {
-    const current = gameStore.state.skillAllocations[skillId] ?? 0;
-    const def = SKILL_NODES.find((s) => s.id === skillId);
-    if (!def) return Infinity;
-    return getSkillLevelCost(def.baseCost, current, gameStore.echoEffects.skillCostMult);
+  function skillsForTree(tree: SkillTree): SkillNodeDef[] {
+    return SKILL_NODES.filter((s) => s.tree === tree);
   }
 
-  function upgradeCost(upgradeId: string): number {
-    const current = gameStore.state.upgradeLevels[upgradeId] ?? 0;
-    const def = UPGRADES.find((u) => u.id === upgradeId);
-    if (!def) return Infinity;
-    return getGeneratorCost(def.baseCost, current, def.costScale);
-  }
+  let genomeSpent = $derived(gameStore.genomePointsSpent);
+  let genomeTotal = $derived(gameStore.genomePointsTotal);
+  let respecCost = $derived(gameStore.respecCost);
+  let canRespec = $derived(gameStore.canRespec);
+  let respecReason = $derived.by(() => {
+    if (gameStore.currentHost) return 'Unavailable during combat';
+    if (gameStore.isInTrauma) return 'Unavailable while recovering';
+    if (genomeSpent === 0) return 'No mutations to reset';
+    return '';
+  });
 
-  function canPurchaseUpgrade(upgradeId: string): boolean {
-    const def = UPGRADES.find((u) => u.id === upgradeId);
-    if (!def) return false;
-    const current = gameStore.state.upgradeLevels[upgradeId] ?? 0;
-    if (current >= def.maxLevel) return false;
-    for (const p of def.prereqs) {
-      if ((gameStore.state.upgradeLevels[p] ?? 0) < 1) return false;
-    }
-    return gameStore.biomass >= upgradeCost(upgradeId);
-  }
-
-  function toggleCategory(cat: UpgradeCategory) {
-    openCategory = openCategory === cat ? null : cat;
-  }
-
-  function categoryLabel(cat: UpgradeCategory): string {
-    switch (cat) {
-      case 'mycelial':
-        return 'Network';
-      case 'incursion':
-        return 'Combat';
-      case 'structural':
-        return 'Structure';
-    }
-  }
-
-  function categoryUpgrades(cat: UpgradeCategory) {
-    return UPGRADES.filter((u) => u.category === cat);
+  function handleRespec() {
+    const message =
+      respecCost === 0
+        ? 'Respec? This clears every mutation and refunds all genome points. Your first respec is free.'
+        : `Respec? This clears every mutation and refunds all genome points for ${respecCost} Biomass.`;
+    if (confirm(message)) gameStore.respecSkills();
   }
 
   function nameFor(id: string): string {
-    return (
-      SKILL_NODES.find((s) => s.id === id)?.name ?? UPGRADES.find((u) => u.id === id)?.name ?? id
-    );
+    return SKILL_NODES.find((s) => s.id === id)?.name ?? id;
   }
 
   function prereqLabel(ids: string[]): string {
@@ -80,8 +62,7 @@
       list.push({ label: 'Dodge window', value: `+${Math.round(e.dodgeWindowBonus * 100)}%` });
     if (e.evadeChance)
       list.push({ label: 'Evasion', value: `${Math.round(e.evadeChance * 100)}%` });
-    if (e.skillCostMult < 1)
-      list.push({ label: 'Mutation cost', value: `−${Math.round((1 - e.skillCostMult) * 100)}%` });
+    if (e.genomePoints) list.push({ label: 'Genome points', value: `+${e.genomePoints}` });
     return list;
   });
 </script>
@@ -91,103 +72,82 @@
     <!-- ── NEURAL MUTATIONS (Skills) ── -->
     <section class="panel">
       <h2 class="panel-title text-label-caps">Mutations</h2>
+
+      <div class="genome-bar">
+        <div class="genome-meter">
+          <ProgressBar
+            tone="mint"
+            value={genomeSpent}
+            max={genomeTotal}
+            label="Genome"
+            valueText="{genomeSpent} / {genomeTotal}"
+          />
+        </div>
+        <button
+          class="cmd-btn secondary respec-btn"
+          disabled={!canRespec}
+          title={respecReason ||
+            `Reset mutations (${respecCost === 0 ? 'free' : `${respecCost} Biomass`})`}
+          onclick={handleRespec}
+        >
+          Respec · {respecCost === 0 ? 'free' : `${respecCost} Biomass`}
+        </button>
+      </div>
+      {#if respecReason}
+        <p class="respec-reason text-data-mono">{respecReason}</p>
+      {/if}
+
       {#if SKILL_NODES.length === 0}
         <p class="empty-text text-data-mono">No mutations available right now.</p>
       {:else}
-        <div class="skill-grid">
-          {#each SKILL_NODES as skill}
-            {@const level = gameStore.state.skillAllocations[skill.id] ?? 0}
-            {@const cost = skillCost(skill.id)}
-            {@const canAfford = gameStore.biomass >= cost}
-            {@const maxed = level >= skill.maxLevel}
-            {@const meetsPrereqs = arePrerequisitesMet(gameStore.state, skill.id)}
-            <div class="upgrade-item" class:upgrade-locked={!meetsPrereqs && !maxed}>
-              <div class="upgrade-header">
-                <span class="text-label-caps upgrade-name">{skill.name}</span>
-                <span class="text-data-mono upgrade-level">Level {level}/{skill.maxLevel}</span>
-              </div>
-              <div class="upgrade-desc text-data-mono">{skill.description}</div>
-              <div class="upgrade-footer">
-                {#if maxed}
-                  <span class="text-label-caps upgrade-max">Maxed</span>
-                {:else if !meetsPrereqs}
-                  <span class="text-data-mono upgrade-prereqs"
-                    >{prereqLabel(skill.prerequisites)}</span
-                  >
-                {:else}
-                  <span class="text-data-mono upgrade-cost">{cost} Biomass</span>
-                  <button
-                    class="cmd-btn upgrade-btn"
-                    disabled={!canAfford}
-                    onclick={() => gameStore.purchaseSkill(skill.id)}
-                  >
-                    Upgrade
-                  </button>
-                {/if}
+        <div class="tree-list">
+          {#each SKILL_TREE_ORDER as tree}
+            <div class="tree-section">
+              <h3 class="tree-title text-label-caps">{TREE_LABELS[tree]}</h3>
+              <div class="skill-grid">
+                {#each skillsForTree(tree) as skill}
+                  {@const level = gameStore.state.skillAllocations[skill.id] ?? 0}
+                  {@const pointCost = getSkillPointCost(skill)}
+                  {@const maxed = level >= skill.maxLevel}
+                  {@const meetsPrereqs = arePrerequisitesMet(gameStore.state, skill.id)}
+                  {@const canAffordPoints = gameStore.genomePointsAvailable >= pointCost}
+                  {@const purchasable = !maxed && meetsPrereqs && canAffordPoints}
+                  <div class="upgrade-item" class:upgrade-locked={!maxed && !meetsPrereqs}>
+                    <div class="upgrade-header">
+                      <span class="text-label-caps upgrade-name">{skill.name}</span>
+                      <span class="text-data-mono upgrade-level"
+                        >Level {level}/{skill.maxLevel}</span
+                      >
+                    </div>
+                    <div class="upgrade-desc text-data-mono">{skill.description}</div>
+                    <div class="upgrade-footer">
+                      {#if maxed}
+                        <span class="text-label-caps upgrade-max">Maxed</span>
+                      {:else}
+                        <span class="text-data-mono upgrade-cost">{pointCost} pt</span>
+                        <button
+                          class="cmd-btn upgrade-btn"
+                          disabled={!purchasable}
+                          onclick={() => gameStore.purchaseSkill(skill.id)}
+                        >
+                          Upgrade
+                        </button>
+                      {/if}
+                    </div>
+                    {#if !maxed && !purchasable}
+                      <div class="upgrade-reason text-data-mono">
+                        {!meetsPrereqs
+                          ? prereqLabel(skill.prerequisites)
+                          : 'Not enough genome points'}
+                      </div>
+                    {/if}
+                  </div>
+                {/each}
               </div>
             </div>
           {/each}
         </div>
       {/if}
-    </section>
-
-    <!-- ── ECONOMY UPGRADES ── -->
-    <section class="panel">
-      <h2 class="panel-title text-label-caps">Growth upgrades</h2>
-
-      {#each ['mycelial', 'incursion', 'structural'] as cat}
-        {@const upgrades = categoryUpgrades(cat as UpgradeCategory)}
-        <div class="category-section">
-          <button
-            class="category-header text-label-caps"
-            onclick={() => toggleCategory(cat as UpgradeCategory)}
-          >
-            <span>{categoryLabel(cat as UpgradeCategory)} ({upgrades.length})</span>
-            <span class="collapse-arrow">{openCategory === cat ? '−' : '+'}</span>
-          </button>
-
-          {#if openCategory === cat}
-            <div class="upgrade-grid">
-              {#each upgrades as upgrade}
-                {@const level = gameStore.state.upgradeLevels[upgrade.id] ?? 0}
-                {@const cost = upgradeCost(upgrade.id)}
-                {@const maxed = level >= upgrade.maxLevel}
-                {@const canBuy = canPurchaseUpgrade(upgrade.id)}
-                {@const meetsPrereqs = upgrade.prereqs.every(
-                  (p) => (gameStore.state.upgradeLevels[p] ?? 0) >= 1,
-                )}
-                <div class="upgrade-item" class:upgrade-locked={!meetsPrereqs && !maxed}>
-                  <div class="upgrade-header">
-                    <span class="text-label-caps upgrade-name">{upgrade.name}</span>
-                    <span class="text-data-mono upgrade-level"
-                      >Level {level}/{upgrade.maxLevel}</span
-                    >
-                  </div>
-                  <div class="upgrade-desc text-data-mono">{upgrade.description}</div>
-                  <div class="upgrade-footer">
-                    {#if maxed}
-                      <span class="text-label-caps upgrade-max">Maxed</span>
-                    {:else if !meetsPrereqs}
-                      <span class="text-data-mono upgrade-prereqs"
-                        >{prereqLabel(upgrade.prereqs)}</span
-                      >
-                    {:else}
-                      <span class="text-data-mono upgrade-cost">{cost} Biomass</span>
-                      <button
-                        class="cmd-btn upgrade-btn"
-                        disabled={!canBuy}
-                        onclick={() => gameStore.purchaseUpgrade(upgrade.id)}
-                      >
-                        Upgrade
-                      </button>
-                    {/if}
-                  </div>
-                </div>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      {/each}
     </section>
 
     <!-- ── EVOLUTIONARY ECHOES ── -->
@@ -254,9 +214,53 @@
     color: var(--on-surface-variant);
   }
 
-  /* ── Skill & Upgrade Grid ── */
-  .skill-grid,
-  .upgrade-grid {
+  .genome-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-panel-padding);
+    margin-bottom: var(--space-panel-padding);
+  }
+
+  .genome-meter {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .respec-btn {
+    flex: none;
+    padding: var(--space-unit) var(--space-panel-padding);
+    font-size: 10px;
+  }
+
+  .respec-reason {
+    margin: calc(-1 * var(--space-unit)) 0 var(--space-panel-padding);
+    color: var(--on-surface-variant);
+  }
+
+  .upgrade-reason {
+    color: var(--alert);
+  }
+
+  /* ── Skill Grid & Tree Groups ── */
+  .tree-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-panel-padding);
+  }
+
+  .tree-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-unit);
+  }
+
+  .tree-title {
+    margin: 0;
+    color: var(--secondary);
+    font-weight: 400;
+  }
+
+  .skill-grid {
     display: flex;
     flex-direction: column;
     gap: var(--space-unit);
@@ -305,10 +309,6 @@
     color: var(--on-surface-variant);
   }
 
-  .upgrade-prereqs {
-    color: var(--alert);
-  }
-
   .upgrade-max {
     color: var(--primary);
   }
@@ -317,36 +317,6 @@
     margin-left: auto;
     padding: var(--space-unit) var(--space-panel-padding);
     font-size: 10px;
-  }
-
-  /* ── Category Sections ── */
-  .category-section {
-    margin-bottom: var(--space-unit);
-  }
-
-  .category-header {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    min-height: 44px;
-    padding: 12px var(--space-panel-padding);
-    border: 1px solid var(--outline-variant);
-    background: var(--surface-container-low);
-    border-radius: var(--radius-md);
-    color: var(--primary);
-    text-align: left;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: inherit;
-  }
-
-  .category-header:hover {
-    background: var(--surface-container-high);
-  }
-
-  .collapse-arrow {
-    color: var(--secondary);
   }
 
   /* ── Echoes ── */

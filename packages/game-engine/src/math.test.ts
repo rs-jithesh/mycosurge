@@ -4,8 +4,8 @@ import {
   getDepletionMultiplier,
   getProliferationBonus,
   getTraumaReduction,
-  getSkillLevelCost,
-  canAffordSkill,
+  getNutrientFixationBonus,
+  getResourceProduction,
   getEffectiveMaxBiomass,
   getEffectiveBiomassPerSec,
   getEcologicalEfficiency,
@@ -63,24 +63,44 @@ describe('getTraumaReduction', () => {
   });
 });
 
-describe('getSkillLevelCost', () => {
-  it('returns base cost at level 0', () => {
-    expect(getSkillLevelCost(5, 0)).toBe(5);
+describe('getNutrientFixationBonus', () => {
+  it('returns 0 with no allocations', () => {
+    expect(getNutrientFixationBonus({})).toBe(0);
   });
 
-  it('scales by 1.5 per level', () => {
-    expect(getSkillLevelCost(5, 1)).toBe(7);
-    expect(getSkillLevelCost(5, 2)).toBe(11);
-  });
-});
-
-describe('canAffordSkill', () => {
-  it('returns true when biomass is sufficient', () => {
-    expect(canAffordSkill(10, 5, 0)).toBe(true);
+  it('returns 0.5 per level', () => {
+    expect(getNutrientFixationBonus({ nitrogen_fixation: 1 })).toBe(0.5);
   });
 
-  it('returns false when biomass is insufficient', () => {
-    expect(canAffordSkill(3, 5, 0)).toBe(false);
+  it('feeds into Nutrients production but not Water', () => {
+    const state = createInitialState();
+    state.skillAllocations['nitrogen_fixation'] = 1;
+    expect(getResourceProduction(state, 'nutrients')).toBe(0.5);
+    expect(getResourceProduction(state, 'water')).toBe(0);
+  });
+
+  it('adds a passive Nutrients trickle each tick', () => {
+    const baseline = createInitialState();
+    baseline.gamePhase = 'active';
+    baseline.nutrients = 50;
+    tickIdle(baseline, 1);
+
+    const fixed = createInitialState();
+    fixed.gamePhase = 'active';
+    fixed.nutrients = 50;
+    fixed.skillAllocations['nitrogen_fixation'] = 1;
+    tickIdle(fixed, 1);
+
+    expect(fixed.nutrients - baseline.nutrients).toBeCloseTo(0.5);
+  });
+
+  it('does not push Nutrients past the cap', () => {
+    const state = createInitialState();
+    state.gamePhase = 'active';
+    state.nutrients = state.nutrientsCap;
+    state.skillAllocations['nitrogen_fixation'] = 1;
+    tickIdle(state, 1);
+    expect(state.nutrients).toBeLessThanOrEqual(state.nutrientsCap);
   });
 });
 

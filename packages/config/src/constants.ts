@@ -18,7 +18,14 @@ export const EXPEDITION_BASE_TIME = 300;
 export const COMBAT_BIOMASS_BASE = 25;
 export const COMBAT_BIOMASS_PER_DIFFICULTY = 15;
 
-export const SKILL_COST_SCALE = 1.5;
+// ── Genome points (mutation budget) ──
+// Mutations are paid with a limited point budget, not Biomass, so a player
+// cannot own every node and builds diverge. Total points grow with echoes.
+export const GENOME_BASE_POINTS = 6;
+/** Extra genome points granted per acquired echo. */
+export const GENOME_POINTS_PER_ECHO = 2;
+/** Biomass cost of every respec after the first (free) one. */
+export const RESPEC_BIOMASS_COST = 40;
 
 // ── Water & Nutrients ──
 export const WATER_DEPLETION_RATE = 0.8;

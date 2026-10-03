@@ -2,7 +2,7 @@
   import '../app.css';
   import { onMount } from 'svelte';
   import { afterNavigate, goto, pushState } from '$app/navigation';
-  import { resolve } from '$app/paths';
+  import { base, resolve } from '$app/paths';
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
@@ -86,7 +86,18 @@
 <div class="terminal-frame">
   <!-- Top Bar -->
   <header class="top-bar">
-    <span class="top-bar-brand text-headline-md">MYCOSURGE</span>
+    <span class="top-bar-brand text-headline-md">
+      <img
+        class="top-bar-logo"
+        src="{base}/assets/logo.png"
+        width="26"
+        height="26"
+        alt=""
+        aria-hidden="true"
+        draggable="false"
+      />
+      MYCOSURGE
+    </span>
 
     <div class="top-bar-actions">
       <span class="top-bar-status text-label-caps">● Online</span>
@@ -161,6 +172,17 @@
   .top-bar-brand {
     color: var(--primary);
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .top-bar-logo {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    flex: none;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--primary) 35%, transparent));
   }
 
   .top-bar-actions {
