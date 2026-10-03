@@ -122,8 +122,8 @@
         >
           Preview welcome
         </button>
+        <button class="cmd-btn danger reset-btn" onclick={handleReset}>Reset</button>
       {/if}
-      <button class="cmd-btn danger reset-btn" onclick={handleReset}>Reset</button>
     </div>
   </header>
 

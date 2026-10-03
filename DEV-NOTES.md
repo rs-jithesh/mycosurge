@@ -5,11 +5,12 @@ for the arena see `COMBAT.md`.
 
 ## Resetting & replaying
 
-- **Top-bar Reset** (in `+layout.svelte`) clears the save and returns to the tutorial.
+- **Top-bar Reset** (in `+layout.svelte`, shown only when the dev flag is on) clears the save
+  and returns to the tutorial.
 - Manual reset: remove `localStorage` keys `mycosurge_save`, `mycosurge_unlock_seen`, and
   `mycosurge_reveals`, then reload.
-- **Skip intro** — the button in the tutorial header completes onboarding immediately.
-  The `?skipintro` URL flag does the same for QA.
+- **Skip intro** — the tutorial-header button (shown only when the dev flag is on) completes
+  onboarding immediately. The `?skipintro` URL flag does the same for QA.
 
 ## Developer flag
 
@@ -21,9 +22,10 @@ localStorage.setItem('mycosurge_dev', 'true');
 ```
 
 `apps/web/src/lib/stores/dev.svelte.ts` reads `mycosurge_dev === 'true'` (any other value, or
-a missing key, keeps dev features off). While enabled, the top bar shows a **Preview welcome**
-button that opens the `WelcomeBackDialog` with a sample `OfflineReport` — useful because the
-real dialog only appears after a genuine absence. Remove the key to turn dev features back off.
+a missing key, keeps dev features off). While enabled the UI reveals: the top bar **Preview
+welcome** button (opens the `WelcomeBackDialog` with a sample `OfflineReport`), the top bar
+**Reset** button (clears the save), and the tutorial **Skip intro** button. Remove the key to
+hide them.
 
 ## Save data
 

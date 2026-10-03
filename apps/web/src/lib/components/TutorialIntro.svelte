@@ -3,6 +3,7 @@
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
+  import { devStore } from '$lib/stores/dev.svelte';
   import ObjectiveBanner from './ObjectiveBanner.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import CountUp from './CountUp.svelte';
@@ -118,7 +119,9 @@
       <span class="step-chip text-data-mono"
         >{ONBOARDING_COPY.stepLabel(step.index, step.total)}</span
       >
-      <button class="skip-btn text-label-caps" onclick={skipIntro}>Skip intro</button>
+      {#if devStore.enabled}
+        <button class="skip-btn text-label-caps" onclick={skipIntro}>Skip intro</button>
+      {/if}
     </div>
   </header>
 

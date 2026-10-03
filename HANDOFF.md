@@ -190,8 +190,9 @@ T4 (6), Boss T5 (9). See `GAME-DESIGN.md` for the full table.
 
 ## 6. UI structure
 
-- **Shell** (`+layout.svelte`): top bar (brand, launcher buttons, Online, Reset). Single view +
-  scrollable center; mobile = stacked content + bottom `ActivityLog`. Breakpoint 768px.
+- **Shell** (`+layout.svelte`): top bar (brand, launcher buttons, Online; the **Reset** button
+  is dev-only, behind `mycosurge_dev`). Single view + scrollable center; mobile = stacked
+  content + bottom `ActivityLog`. Breakpoint 768px.
 - **Navigation**: only `/` (Core) is a route. **Evolution / Expeditions open as overlays**
   (right drawer ≥768px, full-screen sheet <768px), driven by `stores/ui.svelte.ts` (an overlay
   stack). Top-bar launcher buttons are hidden until `gamePhase === 'active'` and their system
@@ -342,9 +343,10 @@ pnpm --filter web test                      # currently 14 tests
 pnpm build
 ```
 
-QA: `?skipintro` jumps straight to the full game (and now fills storages). Top-bar **Reset**
-clears progress. Manual reset: clear `localStorage` keys `mycosurge_save` +
-`mycosurge_unlock_seen` + `mycosurge_reveals` (the app's Reset button clears all three).
+QA: `?skipintro` jumps straight to the full game (and now fills storages). The top-bar
+**Reset** button (dev-only, behind `mycosurge_dev`) clears progress. Manual reset: clear
+`localStorage` keys `mycosurge_save` + `mycosurge_unlock_seen` + `mycosurge_reveals` (the
+app's Reset button clears all three).
 
 ---
 
