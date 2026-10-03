@@ -1,7 +1,7 @@
 # Mycosurge — Handoff
 
 Status: **in active development.** Everything below reflects the current working tree.
-Note: the repo has a single commit (`init repo`); **all changes are uncommitted.**
+The repo is a normal git history (several feature commits); the working tree is clean.
 
 Purpose: a self-contained brief so a reviewer/agent can understand the game, its current
 state, and where everything lives without reading the whole codebase.
@@ -104,8 +104,10 @@ Each pool has a cap. Rewards arriving above a cap are **kept** (never silently d
 ### Generators
 
 Bought/levelled with Biomass; cost scales by `costScale`. `osmotic_pump` (+1 Water/s),
-`enzymatic_exudates` (+1 Nutrients/s). `baseCost 5`, `costScale 2`, `maxLevel 10`
-→ Lv0 = 5, Lv1 = 10, Lv2 = 20…
+`enzymatic_exudates` (+1 Nutrients/s). `baseCost 5`, `costScale 1.7`, `maxLevel 10`
+→ Lv0 = 5, Lv1 = 8, Lv2 = 14, Lv3 = 24, Lv4 = 41, Lv5 = 70, Lv6 = 120… The first six
+purchase steps stay under the base `100` Biomass cap; the seventh (120) deliberately asks
+for a Biomass cap expansion first.
 
 **Metabolic upkeep** adds a gentle drain to both pools that grows with complexity
 (`UPKEEP_PER_LEVEL × level` + `UPKEEP_PER_ECHO × echoes` + `UPKEEP_PER_EXPANSION × expansions`),
@@ -156,9 +158,11 @@ Bloated 8% (−15% speed, +60% reward, +50% Lysate).
 Each win assimilates that host by `10 + difficulty×5`; at 100 the host is grown over → its
 **echo** joins your network and the next host tier unlocks. Separately, each win adds a small
 fixed `GLOBAL_STRAIN_PER_WIN` (2) to the global `assimilationPercent`, which — with the alert
-level — slowly reduces passive Biomass. Echoes grant **real effects** through
-`packages/game-engine/src/echoes.ts` — passive Biomass, fire rate/damage, poison, HP regen,
-movement speed, dodge window, evasion, and mutation-cost reduction.
+level — slowly reduces passive Biomass. The two drags are **added, then capped** by
+`ECOLOGICAL_DRAG_CAP` (0.5), so repeated wins never compound into a deep income cliff, and the
+win screen shows the current strain/alert and the resulting income drag. Echoes grant **real
+effects** through `packages/game-engine/src/echoes.ts` — passive Biomass, fire rate/damage,
+poison, HP regen, movement speed, dodge window, evasion, and mutation-cost reduction.
 
 ### Offline progression
 
@@ -205,8 +209,9 @@ T4 (6), Boss T5 (9). See `GAME-DESIGN.md` for the full table.
 
 ## 7. The Growth Cycle (most recent feature)
 
-A 4-stage loop — **Gather → Grow → Hunt → Expand → (Gather)** — shown as a circular wheel
+A 4-stage loop — **Gather → Grow → Hunt → Evolve → (Gather)** — shown as a circular wheel
 with a contextual detail panel. It is **navigation/teaching only**; it never acts on its own.
+(The Evolve stage's internal id is `expand`; only its label changed.)
 
 ### Phases & panel contents
 
@@ -215,7 +220,7 @@ with a contextual detail panel. It is **navigation/teaching only**; it never act
 | **Gather** | Water/Nutrients meters, **Absorb**, passive-income summary                                                  |
 | **Grow**   | Biomass meter + rate, **Synthesize**, generator upgrade cards                                               |
 | **Hunt**   | Banked/Raw Lysate, sonar contacts (badge/level/strain/Echo, Scan/Ping/Engage/Dismiss), locked-signal teaser |
-| **Expand** | Lysate bank, three `+10 cap` rows, **Evolution** link                                                       |
+| **Evolve** | Lysate bank, three `+10 cap` rows, **Evolution** link                                                       |
 
 ### How the suggestion works
 
@@ -225,11 +230,11 @@ evaluated top-to-bottom every tick; first match wins:
 1. Not in full game / in trauma → **Gather**
 2. Starving (either reserve <5%) → **Gather**
 3. Mid-fight (`currentHostId`) → **Hunt**
-4. A revealed contact → **Hunt**
-5. A reserve <40% → **Gather**
-6. A pool ≥90% full **and** you can afford _that_ pool's expansion → **Expand**
+4. A reserve <40% → **Gather** (a low-yield fight isn't worth it)
+5. A revealed contact → **Hunt**
+6. A pool ≥90% full **and** you can afford _that_ pool's expansion → **Evolve**
 7. Biomass < next generator cost → **Grow**
-8. All generators maxed + Lysate ≥ cheapest expansion → **Expand**
+8. All generators maxed + Lysate ≥ cheapest expansion → **Evolve**
 9. Lysate (banked+raw) < cheapest expansion → **Hunt**
 10. Otherwise → **Grow**
 
@@ -267,7 +272,7 @@ the player is already on it, no suggestion shows. The selected arc stays lit.
   (confirm-on-exit when none is open); `autofocus` is off. The Growth Cycle wheel was enlarged
   (`min(700px, 74vh)`). Copy: user-facing "Radar" → "Hunt"; `SYSTEM_META.route` dropped.
 - **Icon assets (Tier 0 + Tier 1)**: 13 Gemini-generated icons (Water, Nutrients, Biomass,
-  Lysate, Echo, Core + Radar, Evolution, Expeditions, Gather, Grow, Hunt, Expand) live as 256px
+  Lysate, Echo, Core + Radar, Evolution, Expeditions, Gather, Grow, Hunt, Evolve) live as 256px
   PNGs in `apps/web/static/assets/icons/`. A registry (`content/icons.ts` → `ICON_META`) and
   `<ResourceIcon>` render the PNG when present and fall back to the original Unicode glyph when
   missing (`round` clips badge icons). Wired into `PhaseDetailPanel` (phase header, resource
@@ -276,12 +281,13 @@ the player is already on it, no suggestion shows. The selected arc stays lit.
   (per-icon prompts). No free Gemini image API tier, so generation is manual via Google AI
   Studio. Next: Tier 2 host portraits. Interim note: the Gemini badges were cropped to fill
   their tiles (uniform 192px) until hand-drawn, free-floating icons replace them.
-- **Phase 2 progressive disclosure**: after the tutorial only the core chain (Core, Radar)
-  shows. **Evolution** reveals at `totalBiomassEarned ≥ 5`; **Expeditions** at the first echo
-  (`packages/game-engine/src/systems.ts` → `getSystemUnlocks`). Locked tabs are hidden
-  (`Sidebar`/`Nav`), routes redirect until unlocked, each reveal logs a one-time toast and
-  shows a "New" badge until visited (`mycosurge_reveals` in localStorage). The
-  post-tutorial overlay is now reactive (also fires for `?skipintro`, which reveals all for
+- **Phase 2 progressive disclosure**: after the tutorial only the core chain (Core, Hunt)
+  shows. **Evolution and Expeditions** both reveal at the **first echo**
+  (`packages/game-engine/src/systems.ts` → `getSystemUnlocks`). Until then the top-bar
+  launcher buttons stay hidden (`+layout.svelte`) and the systems' overlays can't be opened;
+  each reveal logs a one-time toast and shows a "New" badge until visited (`mycosurge_reveals`
+  in localStorage).
+  The post-tutorial overlay is now reactive (also fires for `?skipintro`, which reveals all for
   QA).
 - **Phase 1 economy + assimilation**: gentle **metabolic upkeep** (`UPKEEP_PER_LEVEL/ECHO/
 EXPANSION`) that keeps a maxed network honest without starving it; a deterministic
@@ -324,14 +330,14 @@ See `DEV-NOTES.md` for the full list. Highlights:
 ```sh
 pnpm check
 pnpm lint
-pnpm --filter @mycosurge/game-engine test   # currently 121 tests
-pnpm --filter web test                      # currently 11 tests
+pnpm --filter @mycosurge/game-engine test   # currently 153 tests
+pnpm --filter web test                      # currently 14 tests
 pnpm build
 ```
 
 QA: `?skipintro` jumps straight to the full game (and now fills storages). Top-bar **Reset**
 clears progress. Manual reset: clear `localStorage` keys `mycosurge_save` +
-`mycosurge_unlock_seen`.
+`mycosurge_unlock_seen` + `mycosurge_reveals` (the app's Reset button clears all three).
 
 ---
 
@@ -350,5 +356,7 @@ clears progress. Manual reset: clear `localStorage` keys `mycosurge_save` +
 `LYSATE_CAP_EXPAND_AMOUNT 10` · `LYSATE_CAP_COST_SCALE 1.5` · `COMBAT_BIOMASS_BASE 25` ·
 `COMBAT_BIOMASS_PER_DIFFICULTY 15` · `TRAUM_BASE_DURATION 30` · `EXPEDITION_BASE_TIME 300` ·
 `SKILL_COST_SCALE 1.5` · `UPKEEP_PER_LEVEL 0.1` · `UPKEEP_PER_ECHO 0.1` ·
-`UPKEEP_PER_EXPANSION 0.05` · `GLOBAL_STRAIN_PER_WIN 2` · `OFFLINE_MAX_SECONDS 28800` ·
-`OFFLINE_BASE_RATE 0.5` · `OFFLINE_DORMANT_BONUS_PER_LEVEL 0.25`.
+`UPKEEP_PER_EXPANSION 0.05` · `GLOBAL_STRAIN_PER_WIN 2` · `ECOLOGICAL_DRAG_CAP 0.5` ·
+`OFFLINE_MAX_SECONDS 28800` · `OFFLINE_BASE_RATE 0.5` ·
+`OFFLINE_DORMANT_BONUS_PER_LEVEL 0.25`. Generator `costScale 1.7` lives in
+`packages/config/src/generators.ts`.

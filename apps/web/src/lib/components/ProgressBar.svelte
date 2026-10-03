@@ -8,6 +8,7 @@
     label = '',
     valueText = '',
     showValue = true,
+    markers = [],
   }: {
     value: number;
     max: number;
@@ -15,6 +16,8 @@
     label?: string;
     valueText?: string;
     showValue?: boolean;
+    /** Decorative threshold ticks, as percentages (0–100). */
+    markers?: number[];
   } = $props();
 
   let pct = $derived(max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0);
@@ -34,6 +37,10 @@
   {/if}
   <div class="track" role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max}>
     <span class="fill" data-tone={tone} style="width: {pct}%"></span>
+    {#each markers as marker, i (i)}
+      <span class="marker" aria-hidden="true" style="left: {Math.max(0, Math.min(100, marker))}%"
+      ></span>
+    {/each}
   </div>
 </div>
 
@@ -60,6 +67,7 @@
   }
 
   .track {
+    position: relative;
     height: 10px;
     border-radius: var(--radius-pill);
     background: var(--surface-container-high);
@@ -72,6 +80,17 @@
     border-radius: var(--radius-pill);
     background: var(--primary);
     transition: width var(--duration-normal) var(--ease-out-soft);
+  }
+
+  .marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1.5px;
+    margin-left: -0.75px;
+    background: color-mix(in srgb, var(--on-surface-variant) 55%, transparent);
+    z-index: 1;
+    pointer-events: none;
   }
 
   .fill[data-tone='amber'] {

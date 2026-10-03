@@ -14,7 +14,7 @@ export {
   GROWTH_PHASES,
 } from './phase';
 export type { GrowthPhase } from './phase';
-export { getSystemUnlocks, EVOLUTION_BIOMASS_THRESHOLD } from './systems';
+export { getSystemUnlocks } from './systems';
 export type { SystemId, SystemUnlocks } from './systems';
 export {
   tickIdle,

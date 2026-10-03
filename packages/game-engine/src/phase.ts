@@ -49,12 +49,13 @@ export function getCheapestExpandCost(state: GameState): number {
  * Priority:
  *   1. Not yet in the full game, or recovering -> Gather.
  *   2. Starving -> Gather.
- *   3. Mid-fight or a revealed signal -> Hunt.
- *   4. A reserve running low -> Gather.
- *   5. A pool is nearly full and Lysate can pay for *that* pool -> Expand.
- *   6. Biomass can't afford the next generator -> Grow.
- *   7. Nothing left to upgrade but Lysate banked -> Expand.
- *   8. Short on Lysate -> Hunt; otherwise -> Grow.
+ *   3. Mid-fight -> Hunt.
+ *   4. A reserve running low -> Gather (a low-yield fight isn't worth it).
+ *   5. A revealed signal -> Hunt.
+ *   6. A pool is nearly full and Lysate can pay for *that* pool -> Expand.
+ *   7. Biomass can't afford the next generator -> Grow.
+ *   8. Nothing left to upgrade but Lysate banked -> Expand.
+ *   9. Short on Lysate -> Hunt; otherwise -> Grow.
  */
 export function getRecommendedPhase(state: GameState): GrowthPhase {
   if (state.gamePhase !== 'active' || state.isInTrauma) return 'gather';
@@ -62,11 +63,13 @@ export function getRecommendedPhase(state: GameState): GrowthPhase {
   if (isStarving(state)) return 'gather';
 
   if (state.currentHostId) return 'hunt';
-  if (state.contacts.some((c) => c.revealed)) return 'hunt';
 
+  // Top up before taking a fight: low reserves would only pay a reduced yield.
   const waterLow = ratio(state.water, state.waterCap) < LOW_RESERVE_RATIO;
   const nutrientLow = ratio(state.nutrients, state.nutrientsCap) < LOW_RESERVE_RATIO;
   if (waterLow || nutrientLow) return 'gather';
+
+  if (state.contacts.some((c) => c.revealed)) return 'hunt';
 
   const waterFull = ratio(state.water, state.waterCap) >= FULL_RESERVE_RATIO;
   const nutrientFull = ratio(state.nutrients, state.nutrientsCap) >= FULL_RESERVE_RATIO;

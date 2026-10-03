@@ -8,6 +8,7 @@ import {
   canAffordSkill,
   getEffectiveMaxBiomass,
   getEffectiveBiomassPerSec,
+  getEcologicalEfficiency,
   isStarving,
   tickIdle,
   enterTrauma,
@@ -140,6 +141,21 @@ describe('getEffectiveBiomassPerSec', () => {
     const state = createInitialState();
     state.alertLevel = 50;
     expect(getEffectiveBiomassPerSec(state)).toBeCloseTo(0.375);
+  });
+});
+
+describe('getEcologicalEfficiency', () => {
+  it('reads 1 with no strain or alert', () => {
+    const state = createInitialState();
+    expect(getEcologicalEfficiency(state)).toBe(1);
+  });
+
+  it('caps the combined alert and strain drag', () => {
+    const state = createInitialState();
+    state.alertLevel = 100;
+    state.assimilationPercent = 100;
+    // Additive drag is 0.5 + 0.3 = 0.8, capped at 0.5.
+    expect(getEcologicalEfficiency(state)).toBeCloseTo(0.5);
   });
 });
 

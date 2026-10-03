@@ -3,6 +3,7 @@ import {
   ALERT_DECAY_RATE,
   ALERT_EFFECT_CAP,
   DEPLETION_RATE_PER_ASSIM,
+  ECOLOGICAL_DRAG_CAP,
   MAX_BIOMASS_BASE,
   MAX_WATER_BASE,
   MAX_NUTRIENT_BASE,
@@ -39,10 +40,13 @@ export function getDepletionMultiplier(assimilationPercent: number): number {
 
 /**
  * Combined passive-Biomass efficiency from ecological strain and alert level (0–1).
- * `1` means no drag; lower means the network is running below its raw capacity.
+ * The two drags are added rather than multiplied, and the total is capped, so
+ * repeated wins can't compound into a deep income cliff. `1` means no drag.
  */
 export function getEcologicalEfficiency(state: GameState): number {
-  return getAlertMultiplier(state.alertLevel) * getDepletionMultiplier(state.assimilationPercent);
+  const alertDrag = 1 - getAlertMultiplier(state.alertLevel);
+  const strainDrag = 1 - getDepletionMultiplier(state.assimilationPercent);
+  return 1 - Math.min(ECOLOGICAL_DRAG_CAP, alertDrag + strainDrag);
 }
 
 export function getProliferationBonus(allocations: Record<string, number>): number {
@@ -87,12 +91,11 @@ export function getEffectiveBiomassPerSec(state: GameState): number {
   // Starvation halts passive growth in the full game (the tutorial manages its own economy).
   if (state.gamePhase === 'active' && isStarving(state)) return 0;
 
-  const alertMult = getAlertMultiplier(state.alertLevel);
-  const depletionMult = getDepletionMultiplier(state.assimilationPercent);
+  const efficiency = getEcologicalEfficiency(state);
   const skillBonus = getProliferationBonus(state.skillAllocations);
   const echoBonus = getEchoEffects(state.acquiredEchoes).biomassMult;
 
-  return state.baseBiomassPerSec * alertMult * depletionMult * (1 + skillBonus + echoBonus);
+  return state.baseBiomassPerSec * efficiency * (1 + skillBonus + echoBonus);
 }
 
 export function getWaterPercent(state: GameState): number {

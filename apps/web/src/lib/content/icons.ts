@@ -68,7 +68,7 @@ export const ICON_META: Record<IconKey, IconMeta> = {
   gather: { file: 'gather.png', glyph: '≋', label: 'Gather', tone: 'cyan' },
   grow: { file: 'grow.png', glyph: '✦', label: 'Grow', tone: 'amber' },
   hunt: { file: 'hunt.png', glyph: '◈', label: 'Hunt', tone: 'coral' },
-  expand: { file: 'expand.png', glyph: '⬡', label: 'Expand', tone: 'mint' },
+  expand: { file: 'expand.png', glyph: '⬡', label: 'Evolve', tone: 'mint' },
 
   osmotic_pump: { file: 'osmotic_pump.png', glyph: '≋', label: 'Osmotic Pump', tone: 'cyan' },
   enzymatic_exudates: {

@@ -119,10 +119,11 @@ real is both the cheapest bug fix and the strongest answer to #7/#8.
 
 **P1.3 — First-30-minutes progressive disclosure (#11)** — ✅ shipped
 
-- Core chain (Core, Radar) leads after the tutorial; Evolution reveals at
-  `totalBiomassEarned ≥ 5`, Expeditions at the first echo (`systems.ts` `getSystemUnlocks`).
-- Locked tabs hidden; routes redirect; one-time unlock toasts + "New" badge; reactive overlay
-  (also fixes `?skipintro`). See the Phase 2 section below.
+- Core chain (Core, Hunt) leads after the tutorial; Evolution and Expeditions both reveal at
+  the first echo (`systems.ts` `getSystemUnlocks`). An earlier `totalBiomassEarned ≥ 5` gate for
+  Evolution was a no-op (the tutorial already exceeds 5), so it was replaced.
+- Until then the top-bar launcher buttons stay hidden and overlays can't be opened; one-time
+  unlock toasts + "New" badges; reactive overlay (also fixes `?skipintro`). See Phase 2 below.
 
 ## Phase 1 — Economy tension + assimilation clarity (P1.1 + P1.2) — ✅ shipped
 
@@ -181,7 +182,7 @@ locked tabs hidden; "already shown" state in `localStorage` (`mycosurge_reveals`
 a system never re-locks:
 
 - `radar`: `gamePhase === 'active'` (core chain; tutorial route unaffected).
-- `evolution`: `totalBiomassEarned >= 5` (cheapest mutation `baseCost`).
+- `evolution`: `acquiredEchoes.length >= 1` (first host grown over).
 - `expeditions`: `acquiredEchoes.length >= 1` (first host grown over).
 
 **Work breakdown**
@@ -190,7 +191,7 @@ a system never re-locks:
 - **D2** `apps/web/src/lib/content/systems.ts` — `SYSTEM_META` (name/glyph/blurb/route/toast).
 - **D3** store: `unlockedSystems`, `revealState` (`mycosurge_reveals`), `announceNewSystems`,
   `isSystemNew`, `markSystemSeen`, `skipIntro` reveal-all override, `resetGame` clears reveals.
-- **D4** `Sidebar`/`Nav` filter links and show a "New" badge.
+- **D4** `+layout.svelte` top-bar launcher buttons filter on unlock and show a "New" badge.
 - **D5** Evolution/Expeditions route guards + `markSystemSeen`.
 - **D6** `PhaseDetailPanel` hides the Evolution CTA until unlocked.
 - **D7** reactive overlay in `+page.svelte` (fixes no-remount + `?skipintro`); reworded copy.

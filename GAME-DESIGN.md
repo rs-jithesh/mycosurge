@@ -188,10 +188,13 @@ grants echoes. Full assimilation is also what unlocks the next host tier.
 
 Separately, every victory adds a small, fixed amount of **ecological strain** (`2` per win)
 to a global meter, independent of the per-host echo progress. Strain — together with the
-combat **alert level** — slowly reduces raw passive Biomass efficiency. The Core's Grow panel
-shows the strain percentage and its current drag (`passive −N%`); the Evolution page lists the
-aggregated echo bonuses, so the trade is legible: **more complexity means lower raw
-efficiency but greater capability**, and the echoes repay the drag many times over.
+combat **alert level** — slowly reduces raw passive Biomass efficiency. The two drags are
+**added and then capped** (`ECOLOGICAL_DRAG_CAP`, max `−50%`), so a string of wins can't
+compound into an income cliff; the win screen reports the current strain/alert and the drag.
+The Core's Grow panel shows the strain percentage and its current drag (`passive −N%`); the
+Evolution page lists the aggregated echo bonuses, so the trade is legible: **more complexity
+means lower raw efficiency but greater capability**, and the echoes repay the drag many times
+over.
 
 ## Onboarding
 

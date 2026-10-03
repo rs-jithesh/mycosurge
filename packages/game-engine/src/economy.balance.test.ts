@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GENERATORS, getGeneratorCost } from '@mycosurge/config';
+import { GENERATORS, getGeneratorCost, MAX_BIOMASS_BASE } from '@mycosurge/config';
 import { createInitialState } from './state';
 import type { GameState } from './state';
 import {
@@ -90,6 +90,22 @@ describe('metabolic upkeep', () => {
     const upkeepShare = getUpkeepRate(state, 'water') / getResourceProduction(state, 'water');
     expect(upkeepShare).toBeGreaterThan(0.15);
     expect(upkeepShare).toBeLessThan(0.4);
+  });
+});
+
+describe('generator cost curve', () => {
+  const gen = GENERATORS[0];
+
+  it('keeps the first six purchase steps within the base Biomass cap', () => {
+    for (let level = 0; level < 6; level++) {
+      expect(getGeneratorCost(gen.baseCost, level, gen.costScale)).toBeLessThanOrEqual(
+        MAX_BIOMASS_BASE,
+      );
+    }
+  });
+
+  it('only asks for cap expansion beyond that', () => {
+    expect(getGeneratorCost(gen.baseCost, 6, gen.costScale)).toBeGreaterThan(MAX_BIOMASS_BASE);
   });
 });
 

@@ -9,19 +9,18 @@ export interface SystemUnlocks {
   expeditions: boolean;
 }
 
-/** Lifetime Biomass needed before Mutations/Growth upgrades are worth showing. */
-export const EVOLUTION_BIOMASS_THRESHOLD = 5;
-
 /**
  * Which full-game systems the player has reached. Triggers use cumulative
  * counters (lifetime Biomass, echoes collected) so a system never re-locks once
- * the player has invested in it.
+ * the player has invested in it. Evolution and Expeditions both open at the
+ * first echo, once the player has actually banked combat progress.
  */
 export function getSystemUnlocks(state: GameState): SystemUnlocks {
   const active = state.gamePhase === 'active';
+  const hasEcho = state.acquiredEchoes.length >= 1;
   return {
     radar: active,
-    evolution: active && state.totalBiomassEarned >= EVOLUTION_BIOMASS_THRESHOLD,
-    expeditions: active && state.acquiredEchoes.length >= 1,
+    evolution: active && hasEcho,
+    expeditions: active && hasEcho,
   };
 }

@@ -56,6 +56,7 @@
   const host = $derived(HOSTS.find((h) => h.id === hostId));
   const isInTrauma = $derived(gameStore.isInTrauma);
   const strain = $derived(gameStore.activeStrain);
+  const ecoDragPct = $derived(Math.round((1 - gameStore.ecologicalEfficiency) * 100));
 
   onMount(async () => {
     wasTutorial = gameStore.state.gamePhase === 'tactician';
@@ -213,6 +214,17 @@
               <div class="reward-line">+{reward?.lysateEarned} Lysate</div>
             {/if}
           </div>
+          {#if gameStore.strainPercent > 0}
+            <div class="reward-panel">
+              <div class="reward-header text-label-caps">Ecological cost</div>
+              <div class="reward-line">
+                Strain {Math.floor(gameStore.strainPercent)}% · alert {Math.floor(
+                  gameStore.state.alertLevel,
+                )}%
+              </div>
+              <div class="reward-line drag">Passive income −{ecoDragPct}%</div>
+            </div>
+          {/if}
           <div class="action-row">
             <button class="cmd-btn primary" onclick={handleReturn}>Return to Core</button>
           </div>
@@ -530,6 +542,10 @@
   .reward-line {
     color: var(--primary);
     line-height: 1.8;
+  }
+
+  .reward-line.drag {
+    color: var(--warning);
   }
 
   .penalty-line {

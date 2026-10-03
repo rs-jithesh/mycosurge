@@ -71,6 +71,13 @@ describe('getRecommendedPhase', () => {
     expect(getRecommendedPhase(state)).toBe('hunt');
   });
 
+  it('tops up reserves before acting on a revealed signal', () => {
+    const state = activeState();
+    state.nutrients = state.nutrientsCap * 0.2;
+    state.contacts = [contact(true)];
+    expect(getRecommendedPhase(state)).toBe('gather');
+  });
+
   it('points at Grow when biomass cannot afford the next generator', () => {
     const state = activeState();
     state.biomass = 0;

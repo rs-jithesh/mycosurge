@@ -1,6 +1,14 @@
 <script lang="ts">
   import { type GrowthPhase } from '@mycosurge/game-engine';
-  import { GENERATORS, getGeneratorCost, LYSATE_CAP_EXPAND_AMOUNT } from '@mycosurge/config';
+  import {
+    GENERATORS,
+    getGeneratorCost,
+    LYSATE_CAP_EXPAND_AMOUNT,
+    STARVATION_STATE_THRESHOLD,
+    STARVATION_THRESHOLD,
+    WATER_YIELD_THRESHOLD,
+    NUTRIENT_YIELD_THRESHOLD,
+  } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { phaseMeta } from '$lib/content/phases';
@@ -19,6 +27,16 @@
   let nutrientsPercent = $derived(gs.nutrientsCap > 0 ? gs.nutrients / gs.nutrientsCap : 0);
   let isWaterCritical = $derived(waterPercent < 0.35);
   let isNutrientCritical = $derived(nutrientsPercent < 0.4);
+
+  // Threshold ticks: starvation-state (5%), zero-yield (15%), full-yield (35/40%).
+  let waterMarkers = $derived(
+    [STARVATION_STATE_THRESHOLD, STARVATION_THRESHOLD, WATER_YIELD_THRESHOLD].map((r) => r * 100),
+  );
+  let nutrientMarkers = $derived(
+    [STARVATION_STATE_THRESHOLD, STARVATION_THRESHOLD, NUTRIENT_YIELD_THRESHOLD].map(
+      (r) => r * 100,
+    ),
+  );
 
   let activeGenerators = $derived(GENERATORS.filter((g) => (gs.generators[g.id] ?? 0) > 0).length);
   let waterIncome = $derived(
@@ -104,6 +122,7 @@
           value={gs.water}
           max={gs.waterCap}
           showValue={false}
+          markers={waterMarkers}
         />
       </div>
       <div class="res" class:res-critical={isNutrientCritical}>
@@ -120,6 +139,7 @@
           value={gs.nutrients}
           max={gs.nutrientsCap}
           showValue={false}
+          markers={nutrientMarkers}
         />
       </div>
 

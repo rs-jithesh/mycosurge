@@ -8,6 +8,9 @@ export const ALERT_EFFECT_CAP = 0.5;
 
 export const DEPLETION_RATE_PER_ASSIM = 0.003;
 
+/** Hard ceiling on the *combined* alert + strain drag on passive Biomass. */
+export const ECOLOGICAL_DRAG_CAP = 0.5;
+
 export const TRAUMA_BASE_DURATION = 30;
 
 export const EXPEDITION_BASE_TIME = 300;
