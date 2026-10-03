@@ -1,19 +1,9 @@
 <script lang="ts">
-  import { type GrowthPhase } from '@mycosurge/game-engine';
-  import {
-    GENERATORS,
-    getGeneratorCost,
-    LYSATE_CAP_EXPAND_AMOUNT,
-    STARVATION_STATE_THRESHOLD,
-    STARVATION_THRESHOLD,
-    WATER_YIELD_THRESHOLD,
-    NUTRIENT_YIELD_THRESHOLD,
-  } from '@mycosurge/config';
+  import { type CapResource, type GrowthPhase } from '@mycosurge/game-engine';
+  import { GENERATORS, getGeneratorCost, LYSATE_CAP_EXPAND_AMOUNT } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { phaseMeta } from '$lib/content/phases';
-  import CountUp from './CountUp.svelte';
-  import ProgressBar from './ProgressBar.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
   import HuntSection from '$lib/components/hunt/HuntSection.svelte';
 
@@ -22,47 +12,15 @@
   let meta = $derived(phaseMeta(phase));
   let gs = $derived(gameStore.state);
 
-  // ── Shared readouts ──
-  let waterPercent = $derived(gs.waterCap > 0 ? gs.water / gs.waterCap : 0);
-  let nutrientsPercent = $derived(gs.nutrientsCap > 0 ? gs.nutrients / gs.nutrientsCap : 0);
-  let isWaterCritical = $derived(waterPercent < 0.35);
-  let isNutrientCritical = $derived(nutrientsPercent < 0.4);
-
-  // Threshold ticks: starvation-state (5%), zero-yield (15%), full-yield (35/40%).
-  let waterMarkers = $derived(
-    [STARVATION_STATE_THRESHOLD, STARVATION_THRESHOLD, WATER_YIELD_THRESHOLD].map((r) => r * 100),
-  );
-  let nutrientMarkers = $derived(
-    [STARVATION_STATE_THRESHOLD, STARVATION_THRESHOLD, NUTRIENT_YIELD_THRESHOLD].map(
-      (r) => r * 100,
-    ),
-  );
-
   let activeGenerators = $derived(GENERATORS.filter((g) => (gs.generators[g.id] ?? 0) > 0).length);
-  let waterIncome = $derived(
-    GENERATORS.filter((g) => g.resource === 'water').reduce(
-      (sum, g) => sum + g.baseRate * (gs.generators[g.id] ?? 0),
-      0,
-    ),
-  );
-  let nutrientIncome = $derived(
-    GENERATORS.filter((g) => g.resource === 'nutrients').reduce(
-      (sum, g) => sum + g.baseRate * (gs.generators[g.id] ?? 0),
-      0,
-    ),
-  );
-  let waterNet = $derived(gameStore.netResourceRate('water'));
-  let nutrientNet = $derived(gameStore.netResourceRate('nutrients'));
-  let waterDrain = $derived(waterIncome - waterNet);
-  let nutrientDrain = $derived(nutrientIncome - nutrientNet);
-  let strainEffect = $derived(Math.round((1 - gameStore.ecologicalEfficiency) * 100));
 
   let manualCooldown = $derived(gs.manualCooldown);
   let canAbsorb = $derived(manualCooldown <= 0);
   let canSynthesize = $derived(gs.water >= 10 && gs.nutrients >= 10);
   let synthYield = $derived(gameStore.synthesisYield());
 
-  // ── Expand ──
+  let echoes = $derived(gameStore.acquiredEchoes);
+
   let capRows = $derived([
     { resource: 'water' as const, label: 'Water', cap: gs.waterCap, tone: 'cyan' as const },
     {
@@ -79,11 +37,11 @@
     },
   ]);
 
-  function capCost(resource: 'water' | 'nutrients' | 'biomass'): number {
+  function capCost(resource: CapResource): number {
     return gameStore.capExpandCost(resource);
   }
 
-  function canExpand(resource: 'water' | 'nutrients' | 'biomass'): boolean {
+  function canExpand(resource: CapResource): boolean {
     return gs.lysateBanked >= capCost(resource);
   }
 
@@ -110,39 +68,6 @@
   <div class="panel-body">
     {#if phase === 'gather'}
       <!-- ── GATHER ── -->
-      <div class="res" class:res-critical={isWaterCritical}>
-        <div class="res-top">
-          <span class="res-name water"><ResourceIcon name="water" size={22} round /> Water</span>
-          <span class="text-data-mono res-val">
-            <b>{Math.floor(gs.water)}</b> / {Math.floor(gs.waterCap)}
-          </span>
-        </div>
-        <ProgressBar
-          tone={isWaterCritical ? 'coral' : 'cyan'}
-          value={gs.water}
-          max={gs.waterCap}
-          showValue={false}
-          markers={waterMarkers}
-        />
-      </div>
-      <div class="res" class:res-critical={isNutrientCritical}>
-        <div class="res-top">
-          <span class="res-name nutrients"
-            ><ResourceIcon name="nutrients" size={22} round /> Nutrients</span
-          >
-          <span class="text-data-mono res-val">
-            <b>{Math.floor(gs.nutrients)}</b> / {Math.floor(gs.nutrientsCap)}
-          </span>
-        </div>
-        <ProgressBar
-          tone={isNutrientCritical ? 'coral' : 'violet'}
-          value={gs.nutrients}
-          max={gs.nutrientsCap}
-          showValue={false}
-          markers={nutrientMarkers}
-        />
-      </div>
-
       <button
         class="cmd-btn action-btn"
         disabled={!canAbsorb}
@@ -153,66 +78,40 @@
           {canAbsorb ? '+2 Water · +2 Nutrients' : `Ready in ${Math.ceil(manualCooldown)}s`}
         </span>
       </button>
+      <p class="hint">
+        Draw water and nutrients straight from the substrate. Watch the reserves panel while you
+        cycle.
+      </p>
 
-      <div class="income-strip">
-        <span class="text-label-caps income-label">Net income</span>
-        <div class="income-flow">
-          <div class="flow-cell">
-            <span class="flow-name water"><ResourceIcon name="water" size={18} round /> Water</span>
-            <span class="text-data-mono flow-val" class:neg={waterNet < 0}>
-              {waterNet >= 0 ? '+' : ''}{waterNet.toFixed(1)}/s
-            </span>
-            <span class="text-data-mono flow-detail">
-              +{waterIncome.toFixed(1)} · −{waterDrain.toFixed(1)} upkeep
-            </span>
-          </div>
-          <div class="flow-cell">
-            <span class="flow-name nutrients"
-              ><ResourceIcon name="nutrients" size={18} round /> Nutrients</span
-            >
-            <span class="text-data-mono flow-val" class:neg={nutrientNet < 0}>
-              {nutrientNet >= 0 ? '+' : ''}{nutrientNet.toFixed(1)}/s
-            </span>
-            <span class="text-data-mono flow-detail">
-              +{nutrientIncome.toFixed(1)} · −{nutrientDrain.toFixed(1)} upkeep
-            </span>
-          </div>
+      <div class="cap-section">
+        <div class="cap-head">
+          <span class="text-label-caps">Capacity</span>
+          <span class="text-data-mono cap-hint">Spend Lysate to hold more</span>
         </div>
-        <p class="hint">
-          Upkeep rises as the network grows — balance production against complexity.
-        </p>
+        <div class="cap-rows">
+          {#each capRows as row}
+            {@const cost = capCost(row.resource)}
+            <div class="cap-row">
+              <div class="cap-info">
+                <span class="cap-name" data-tone={row.tone}>{row.label}</span>
+                <span class="text-data-mono cap-val">
+                  {Math.floor(row.cap)}
+                  <span class="cap-next">→ {Math.floor(row.cap) + LYSATE_CAP_EXPAND_AMOUNT}</span>
+                </span>
+              </div>
+              <button
+                class="cmd-btn cap-btn"
+                disabled={!canExpand(row.resource)}
+                onclick={() => gameStore.expandCap(row.resource)}
+              >
+                +{LYSATE_CAP_EXPAND_AMOUNT} cap · {cost} Lysate
+              </button>
+            </div>
+          {/each}
+        </div>
       </div>
     {:else if phase === 'grow'}
       <!-- ── GROW ── -->
-      <div class="biomass-block">
-        <div class="res-top">
-          <span class="res-name"><ResourceIcon name="biomass" size={22} round /> Biomass</span>
-          <span class="text-data-mono res-val">
-            <b><CountUp value={gameStore.biomass} format={(n) => n.toFixed(n < 10 ? 1 : 0)} /></b>
-            / {Math.floor(gameStore.maxBiomass)}
-          </span>
-        </div>
-        <ProgressBar
-          tone="amber"
-          value={gameStore.biomass}
-          max={gameStore.maxBiomass}
-          showValue={false}
-        />
-        <span class="text-data-mono rate">+{gameStore.biomassPerSec.toFixed(1)} / s</span>
-      </div>
-
-      <div class="strain-chip">
-        <span class="text-label-caps strain-name">Ecological strain</span>
-        <span class="text-data-mono strain-val">{Math.floor(gs.assimilationPercent)}%</span>
-        <span
-          class="text-data-mono strain-effect"
-          class:active={strainEffect > 0}
-          title="Complexity lowers raw efficiency but raises capability — echoes repay the drag."
-        >
-          passive −{strainEffect}%
-        </span>
-      </div>
-
       <button
         class="cmd-btn action-btn"
         disabled={!canSynthesize}
@@ -281,39 +180,26 @@
     {:else if phase === 'hunt'}
       <HuntSection mode="full" />
     {:else}
-      <!-- ── EXPAND ── -->
-      <div class="lysate-strip">
-        <div class="lysate-cell">
-          <span class="text-label-caps lysate-label">Banked Lysate</span>
-          <span class="text-data-mono lysate-val banked">{Math.floor(gs.lysateBanked)}</span>
+      <!-- ── EVOLVE ── -->
+      <div class="echo-section">
+        <div class="echo-head">
+          <span class="text-label-caps">Echoes</span>
+          <span class="text-data-mono echo-count">{echoes.length} collected</span>
         </div>
-        <div class="lysate-cell">
-          <span class="text-label-caps lysate-label">Raw Lysate</span>
-          <span class="text-data-mono lysate-val">{Math.floor(gs.lysateRaw * 10) / 10}</span>
-        </div>
-      </div>
-      <p class="hint">Earn Lysate by defeating hosts. Spend it to raise your capacity.</p>
-
-      <div class="cap-rows">
-        {#each capRows as row}
-          {@const cost = capCost(row.resource)}
-          <div class="cap-row">
-            <div class="cap-info">
-              <span class="cap-name" data-tone={row.tone}>{row.label}</span>
-              <span class="text-data-mono cap-val">
-                {Math.floor(row.cap)}
-                <span class="cap-next">→ {Math.floor(row.cap) + LYSATE_CAP_EXPAND_AMOUNT}</span>
-              </span>
-            </div>
-            <button
-              class="cmd-btn cap-btn"
-              disabled={!canExpand(row.resource)}
-              onclick={() => gameStore.expandCap(row.resource)}
-            >
-              +{LYSATE_CAP_EXPAND_AMOUNT} cap · {cost} Lysate
-            </button>
-          </div>
-        {/each}
+        {#if echoes.length === 0}
+          <p class="hint">
+            Defeat hosts to acquire echoes. Each echo permanently enhances the network.
+          </p>
+        {:else}
+          <ul class="echo-list">
+            {#each echoes as id (id)}
+              <li class="echo-chip">
+                <ResourceIcon name="echo" size={18} round />
+                <span>{gameStore.echoName(id)}</span>
+              </li>
+            {/each}
+          </ul>
+        {/if}
       </div>
 
       {#if gameStore.unlockedSystems.evolution}
@@ -322,6 +208,10 @@
           <span class="action-sub">Spend Biomass on permanent mutations</span>
         </button>
       {/if}
+
+      <p class="hint">
+        Capacity upgrades live in the Gather stage — raise a cap there to hold more at once.
+      </p>
     {/if}
   </div>
 </div>
@@ -334,6 +224,9 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
   }
 
   .detail-panel[data-tone='cyan'] {
@@ -389,59 +282,11 @@
   }
 
   .panel-body {
+    flex: 1;
     padding: var(--space-panel-padding);
     display: flex;
     flex-direction: column;
     gap: 14px;
-  }
-
-  /* ── Resource rows ── */
-  .res {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .res-top {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-
-  .res-name {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-weight: 600;
-  }
-
-  .res-name.water,
-  .cap-name[data-tone='cyan'] {
-    color: var(--secondary);
-  }
-
-  .res-name.nutrients,
-  .cap-name[data-tone='violet'] {
-    color: var(--nutrient);
-  }
-
-  .cap-name[data-tone='amber'] {
-    color: var(--warning);
-  }
-
-  .res-val {
-    color: var(--on-surface-variant);
-  }
-
-  .res-val b {
-    color: var(--on-surface);
-    font-weight: 600;
-  }
-
-  .res-critical .res-name,
-  .res-critical .res-val,
-  .res-critical .res-val b {
-    color: var(--alert);
   }
 
   /* ── Actions ── */
@@ -461,107 +306,7 @@
     opacity: 0.85;
   }
 
-  .income-strip {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-md);
-    background: var(--surface-container-high);
-    padding: 10px 12px;
-  }
-
-  .income-label {
-    color: var(--on-surface-variant);
-    font-size: 9px;
-  }
-
-  .income-flow {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .flow-cell {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: baseline;
-    gap: 8px;
-  }
-
-  .flow-name {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-weight: 600;
-    font-size: 12px;
-  }
-
-  .flow-name.water {
-    color: var(--secondary);
-  }
-
-  .flow-name.nutrients {
-    color: var(--nutrient);
-  }
-
-  .flow-val {
-    color: var(--primary);
-    justify-self: end;
-  }
-
-  .flow-val.neg {
-    color: var(--alert);
-  }
-
-  .flow-detail {
-    grid-column: 1 / -1;
-    color: var(--on-surface-variant);
-    font-size: 10px;
-  }
-
-  .strain-chip {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-md);
-    background: var(--surface-container-high);
-    padding: 8px 12px;
-  }
-
-  .strain-name {
-    color: var(--on-surface-variant);
-    font-size: 9px;
-  }
-
-  .strain-val {
-    color: var(--warning);
-  }
-
-  .strain-effect {
-    margin-left: auto;
-    color: var(--on-surface-variant);
-    font-size: 11px;
-  }
-
-  .strain-effect.active {
-    color: var(--alert);
-  }
-
-  /* ── Grow ── */
-  .biomass-block {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .biomass-block .rate {
-    color: var(--primary);
-    font-size: 12px;
-    align-self: flex-end;
-  }
-
+  /* ── Grow: generators ── */
   .gen-section {
     display: flex;
     flex-direction: column;
@@ -662,38 +407,25 @@
     color: var(--secondary);
   }
 
-  /* ── Lysate ── */
-  .lysate-strip {
-    display: flex;
-    gap: 10px;
-  }
-
-  .lysate-cell {
-    flex: 1;
+  /* ── Gather: capacity upgrades ── */
+  .cap-section {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-md);
-    background: var(--surface-container-high);
-    padding: 8px 12px;
+    gap: 8px;
   }
 
-  .lysate-label {
+  .cap-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     color: var(--on-surface-variant);
-    font-size: 9px;
   }
 
-  .lysate-val {
-    font-size: 18px;
-    color: var(--on-surface);
+  .cap-hint {
+    color: var(--on-surface-variant);
+    font-size: 10px;
   }
 
-  .lysate-val.banked {
-    color: var(--primary);
-  }
-
-  /* ── Expand ── */
   .cap-rows {
     display: flex;
     flex-direction: column;
@@ -721,6 +453,16 @@
     font-weight: 600;
   }
 
+  .cap-name[data-tone='cyan'] {
+    color: var(--secondary);
+  }
+  .cap-name[data-tone='violet'] {
+    color: var(--nutrient);
+  }
+  .cap-name[data-tone='amber'] {
+    color: var(--warning);
+  }
+
   .cap-val {
     color: var(--on-surface);
     font-size: 12px;
@@ -735,6 +477,46 @@
     padding: 6px 10px;
     min-height: 40px;
     flex-shrink: 0;
+  }
+
+  /* ── Evolve: echoes ── */
+  .echo-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .echo-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--on-surface-variant);
+  }
+
+  .echo-count {
+    color: var(--warning);
+    font-size: 11px;
+  }
+
+  .echo-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .echo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-pill);
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+    font-size: 12px;
   }
 
   .evolution-cta {

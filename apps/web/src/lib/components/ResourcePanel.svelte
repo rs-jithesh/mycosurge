@@ -1,0 +1,355 @@
+<script lang="ts">
+  import type { CapResource } from '@mycosurge/game-engine';
+  import {
+    NUTRIENT_YIELD_THRESHOLD,
+    STARVATION_STATE_THRESHOLD,
+    STARVATION_THRESHOLD,
+    WATER_YIELD_THRESHOLD,
+  } from '@mycosurge/config';
+  import { gameStore } from '$lib/stores/game.svelte';
+  import CountUp from './CountUp.svelte';
+  import ProgressBar from './ProgressBar.svelte';
+  import ResourceIcon from './ResourceIcon.svelte';
+
+  let gs = $derived(gameStore.state);
+
+  const waterMarkers = [
+    STARVATION_STATE_THRESHOLD,
+    STARVATION_THRESHOLD,
+    WATER_YIELD_THRESHOLD,
+  ].map((r) => r * 100);
+  const nutrientMarkers = [
+    STARVATION_STATE_THRESHOLD,
+    STARVATION_THRESHOLD,
+    NUTRIENT_YIELD_THRESHOLD,
+  ].map((r) => r * 100);
+
+  type Meter = {
+    resource: CapResource;
+    label: string;
+    icon: 'water' | 'nutrients' | 'biomass';
+    tone: 'cyan' | 'violet' | 'amber';
+    value: number;
+    max: number;
+    critical: boolean;
+    markers: number[];
+    net: number;
+    production?: number;
+    upkeep?: number;
+  };
+
+  let meters = $derived<Meter[]>([
+    {
+      resource: 'water',
+      label: 'Water',
+      icon: 'water',
+      tone: 'cyan',
+      value: gs.water,
+      max: gs.waterCap,
+      critical: gs.waterCap > 0 && gs.water / gs.waterCap < 0.35,
+      markers: waterMarkers,
+      net: gameStore.netResourceRate('water'),
+      production: gameStore.resourceProduction('water'),
+      upkeep: gameStore.resourceUpkeep('water'),
+    },
+    {
+      resource: 'nutrients',
+      label: 'Nutrients',
+      icon: 'nutrients',
+      tone: 'violet',
+      value: gs.nutrients,
+      max: gs.nutrientsCap,
+      critical: gs.nutrientsCap > 0 && gs.nutrients / gs.nutrientsCap < 0.4,
+      markers: nutrientMarkers,
+      net: gameStore.netResourceRate('nutrients'),
+      production: gameStore.resourceProduction('nutrients'),
+      upkeep: gameStore.resourceUpkeep('nutrients'),
+    },
+    {
+      resource: 'biomass',
+      label: 'Biomass',
+      icon: 'biomass',
+      tone: 'amber',
+      value: gameStore.biomass,
+      max: gameStore.maxBiomass,
+      critical: false,
+      markers: [],
+      net: gameStore.biomassPerSec,
+    },
+  ]);
+
+  let strainEffect = $derived(Math.round((1 - gameStore.ecologicalEfficiency) * 100));
+</script>
+
+<div class="panel resource-panel">
+  <div class="panel-header">
+    <span class="text-label-caps">Resources</span>
+    <span class="text-data-mono strain" class:active={strainEffect > 0}
+      >−{strainEffect}% strain</span
+    >
+  </div>
+
+  <div class="res-list">
+    {#each meters as m (m.resource)}
+      <div class="res-row" data-tone={m.tone} class:is-critical={m.critical}>
+        <div class="res-top">
+          <span class="res-name"><ResourceIcon name={m.icon} size={20} round /> {m.label}</span>
+          <span class="text-data-mono res-val">
+            {#if m.resource === 'biomass'}
+              <b><CountUp value={m.value} format={(n) => n.toFixed(n < 10 ? 1 : 0)} /></b>
+            {:else}
+              <b>{Math.floor(m.value)}</b>
+            {/if}
+            <span class="cap">/ {Math.floor(m.max)}</span>
+          </span>
+        </div>
+        <ProgressBar
+          tone={m.critical ? 'coral' : m.tone}
+          value={m.value}
+          max={m.max}
+          showValue={false}
+          markers={m.markers}
+        />
+        <div class="res-foot">
+          <span class="text-data-mono net" class:neg={m.net < 0}>
+            {m.net >= 0 ? '+' : ''}{m.net.toFixed(1)}/s
+          </span>
+          {#if m.production !== undefined}
+            <span class="text-data-mono detail">
+              +{m.production.toFixed(1)} · −{(m.upkeep ?? 0).toFixed(1)} upkeep
+            </span>
+          {:else}
+            <span class="text-data-mono detail">passive growth</span>
+          {/if}
+        </div>
+      </div>
+    {/each}
+
+    <div class="res-row lysate">
+      <div class="res-top">
+        <span class="res-name"><ResourceIcon name="lysate" size={20} round /> Lysate</span>
+        <span class="tag text-label-caps">Spendable</span>
+      </div>
+      <div class="lysate-rows">
+        <div class="lysate-cell">
+          <span class="text-label-caps lysate-label">Banked</span>
+          <span class="text-data-mono lysate-banked">{Math.floor(gs.lysateBanked)}</span>
+        </div>
+        <div class="lysate-cell">
+          <span class="text-label-caps lysate-label">Raw</span>
+          <span class="text-data-mono lysate-raw">{Math.floor(gs.lysateRaw * 10) / 10}</span>
+        </div>
+      </div>
+      <p class="lysate-hint">Raw Lysate stabilises into Banked; spend Banked to raise capacity.</p>
+    </div>
+  </div>
+
+  <div class="vitals">
+    <div class="vital">
+      <span class="text-label-caps vital-label">Echoes</span>
+      <span class="text-data-mono vital-val">{gameStore.acquiredEchoes.length}</span>
+    </div>
+    <div class="vital">
+      <span class="text-label-caps vital-label">Strain</span>
+      <span class="text-data-mono vital-val">{Math.floor(gs.assimilationPercent)}%</span>
+    </div>
+    <div class="vital">
+      <span class="text-label-caps vital-label">Hosts</span>
+      <span class="text-data-mono vital-val">{gameStore.hostsDefeated}</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .panel {
+    border: 1px solid var(--border);
+    background: var(--surface-container);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (min-width: 1080px) {
+    .panel {
+      height: 100%;
+    }
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-unit);
+    padding: var(--space-unit) var(--space-panel-padding);
+    background: var(--surface-container-low);
+    border-bottom: 1px solid var(--border);
+    color: var(--primary);
+  }
+
+  .strain {
+    color: var(--on-surface-variant);
+    font-size: 11px;
+  }
+
+  .strain.active {
+    color: var(--alert);
+  }
+
+  .res-list {
+    flex: 1;
+    padding: 2px var(--space-panel-padding);
+  }
+
+  .res-row {
+    --tone: var(--primary);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 0;
+  }
+
+  .res-row + .res-row {
+    border-top: 1px solid var(--border);
+  }
+
+  .res-row[data-tone='cyan'] {
+    --tone: var(--secondary);
+  }
+  .res-row[data-tone='violet'] {
+    --tone: var(--nutrient);
+  }
+  .res-row[data-tone='amber'] {
+    --tone: var(--warning);
+  }
+
+  .res-row.is-critical {
+    --tone: var(--alert);
+  }
+
+  .res-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .res-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    color: var(--tone);
+  }
+
+  .res-row.is-critical .res-name {
+    color: var(--alert);
+  }
+
+  .res-val {
+    color: var(--on-surface-variant);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .res-val b {
+    color: var(--on-surface);
+    font-weight: 600;
+  }
+
+  .cap {
+    color: var(--on-surface-variant);
+  }
+
+  .res-row.is-critical .res-val,
+  .res-row.is-critical .res-val b {
+    color: var(--alert);
+  }
+
+  .res-foot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .net {
+    color: var(--primary);
+  }
+
+  .net.neg {
+    color: var(--alert);
+  }
+
+  .detail {
+    color: var(--on-surface-variant);
+    font-size: 10px;
+  }
+
+  /* ── Lysate ── */
+  .lysate-rows {
+    display: flex;
+    gap: 18px;
+  }
+
+  .lysate-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .lysate-label {
+    color: var(--on-surface-variant);
+    font-size: 9px;
+  }
+
+  .lysate-banked {
+    color: var(--warning);
+    font-size: 18px;
+  }
+
+  .lysate-raw {
+    color: var(--on-surface);
+    font-size: 18px;
+  }
+
+  .lysate-hint {
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--on-surface-variant);
+  }
+
+  .tag {
+    color: var(--warning);
+    font-size: 9px;
+  }
+
+  /* ── Vitals ── */
+  .vitals {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 10px var(--space-panel-padding);
+    border-top: 1px solid var(--border);
+    background: var(--surface-container-low);
+  }
+
+  .vital {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .vital-label {
+    color: var(--on-surface-variant);
+    font-size: 9px;
+  }
+
+  .vital-val {
+    color: var(--on-surface);
+    font-size: 15px;
+  }
+</style>

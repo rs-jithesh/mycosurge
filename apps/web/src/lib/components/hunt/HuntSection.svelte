@@ -37,6 +37,24 @@
   let hasActiveHost = $derived(gameStore.currentHost !== null);
   let activeHost = $derived(HOSTS.find((h) => h.id === gameStore.currentHost));
   let canPing = $derived(water >= SCAN_WATER_COST && contacts.length < gameStore.radarSlots);
+
+  let pingBtn = $state<HTMLButtonElement | null>(null);
+  const reduceMotion =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function ping() {
+    if (!gameStore.pingSubstrate()) return;
+    if (reduceMotion || !pingBtn) return;
+    pingBtn.animate(
+      [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.09)' },
+        { transform: 'scale(0.98)' },
+        { transform: 'scale(1)' },
+      ],
+      { duration: 440, easing: 'ease-out' },
+    );
+  }
   let lockedCount = $derived(
     HOSTS.filter((h) => h.id !== 'soil_nematode' && !isHostUnlocked(h, gs.acquiredEchoes.length))
       .length,
@@ -155,20 +173,6 @@
       </button>
     </div>
   {:else}
-    <div class="lysate-strip">
-      <div class="lysate-cell">
-        <span class="text-label-caps lysate-label">Banked Lysate</span>
-        <span class="text-data-mono lysate-val banked">{Math.floor(gs.lysateBanked)}</span>
-      </div>
-      <div class="lysate-cell">
-        <span class="text-label-caps lysate-label">Raw Lysate</span>
-        <span class="text-data-mono lysate-val">
-          {Math.floor(gs.lysateRaw * 10) / 10}
-          {#if gs.lysateRaw > 0}<span class="raw-dot" title="Stabilising">*</span>{/if}
-        </span>
-      </div>
-    </div>
-
     {#if contacts.length === 0}
       <div class="empty-hunt">
         <p class="empty-title">No signals right now</p>
@@ -249,7 +253,7 @@
     {/if}
 
     <div class="hunt-actions">
-      <button class="cmd-btn" disabled={!canPing} onclick={() => gameStore.pingSubstrate()}>
+      <button class="cmd-btn ping-btn" bind:this={pingBtn} disabled={!canPing} onclick={ping}>
         Ping substrate · {SCAN_WATER_COST} Water
       </button>
     </div>
@@ -475,41 +479,6 @@
     font-weight: 600;
   }
 
-  /* ── Lysate ── */
-  .lysate-strip {
-    display: flex;
-    gap: 10px;
-  }
-
-  .lysate-cell {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-md);
-    background: var(--surface-container-high);
-    padding: 8px 12px;
-  }
-
-  .lysate-label {
-    color: var(--on-surface-variant);
-    font-size: 9px;
-  }
-
-  .lysate-val {
-    font-size: 18px;
-    color: var(--on-surface);
-  }
-
-  .lysate-val.banked {
-    color: var(--primary);
-  }
-
-  .raw-dot {
-    color: var(--secondary);
-  }
-
   /* ── Contact list ── */
   .empty-hunt {
     display: flex;
@@ -629,6 +598,11 @@
     flex: 1;
     font-size: 12px;
     padding: 8px 10px;
+  }
+
+  .ping-btn {
+    will-change: transform;
+    transform-origin: center;
   }
 
   .recovery-note {

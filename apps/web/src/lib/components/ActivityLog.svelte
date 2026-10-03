@@ -2,6 +2,8 @@
   import { logStore } from '$lib/stores/log.svelte';
   import { tick } from 'svelte';
 
+  let { embedded = false }: { embedded?: boolean } = $props();
+
   let container: HTMLDivElement;
   let autoScroll = $state(true);
 
@@ -32,7 +34,7 @@
   }
 </script>
 
-<div class="log-panel">
+<div class="log-panel" class:embedded>
   <div class="log-header text-label-caps">Activity</div>
   <div
     class="log-container"
@@ -64,6 +66,20 @@
     display: flex;
     flex-direction: column;
     max-height: 140px;
+  }
+
+  /* Embedded: rendered as a bordered card (e.g. inside the Core column). */
+  .log-panel.embedded {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-container);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    max-height: 260px;
+  }
+
+  .log-panel.embedded .log-header {
+    background: var(--surface-container-low);
   }
 
   .log-header {

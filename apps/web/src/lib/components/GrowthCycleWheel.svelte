@@ -85,9 +85,6 @@
       >
         <span class="dot" aria-hidden="true"></span>
         <span class="name">{p.label}</span>
-        {#if showSuggested && i === suggestedIndex}
-          <span class="suggest-flag text-label-caps">Next</span>
-        {/if}
       </button>
     {/each}
   </div>
@@ -102,9 +99,10 @@
 <style>
   .wheel {
     position: relative;
-    width: min(700px, 74vh, 100%);
+    width: min(100%, 90vh);
     aspect-ratio: 1;
     margin: 0 auto;
+    container-type: inline-size;
   }
 
   .dial {
@@ -207,14 +205,14 @@
     transform: translate(-50%, -50%);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
+    gap: 0.45em;
+    padding: 0.45em 0.95em;
     border-radius: var(--radius-pill);
     border: 1px solid var(--border);
     background: var(--surface-container);
     color: var(--on-surface-variant);
     font-family: var(--font-sans);
-    font-size: 13px;
+    font-size: clamp(11px, 2.6cqw, 18px);
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
@@ -259,15 +257,9 @@
     color: var(--on-surface);
   }
 
-  .suggest-flag {
-    color: var(--tone);
-    font-size: 8px;
-    margin-left: 2px;
-  }
-
   .dot {
-    width: 7px;
-    height: 7px;
+    width: 0.5em;
+    height: 0.5em;
     border-radius: 50%;
     background: currentColor;
     opacity: 0.7;
@@ -275,6 +267,30 @@
 
   .phase-label.is-active .dot {
     opacity: 1;
+  }
+
+  /* The suggested stage pulses its dot instead of showing a "Next" tag. */
+  .phase-label.is-suggested .dot {
+    animation: dot-blink 900ms ease-in-out infinite;
+  }
+
+  @keyframes dot-blink {
+    0%,
+    100% {
+      opacity: 0.15;
+      transform: scale(0.75);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .phase-label.is-suggested .dot {
+      animation: none;
+      opacity: 1;
+    }
   }
 
   .nucleus {

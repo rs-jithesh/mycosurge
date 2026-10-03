@@ -1,0 +1,109 @@
+<script lang="ts">
+  import type { GrowthPhase } from '@mycosurge/game-engine';
+  import { phaseMeta } from '$lib/content/phases';
+  import ResourceIcon from './ResourceIcon.svelte';
+
+  let {
+    phase,
+    suggested = null,
+  }: {
+    phase: GrowthPhase;
+    suggested?: GrowthPhase | null;
+  } = $props();
+
+  let meta = $derived(phaseMeta(phase));
+  let next = $derived(suggested && suggested !== phase ? phaseMeta(suggested) : null);
+</script>
+
+<div class="core" data-tone={meta.tone}>
+  <span class="icon" aria-hidden="true"><ResourceIcon name={phase} size={44} round /></span>
+  <span class="stage text-label-caps">{meta.label}</span>
+  <p class="objective">{meta.objective}</p>
+  {#if next}
+    <span class="wish-chip" data-tone={next.tone}>Wants to {next.label.toLowerCase()}</span>
+  {/if}
+</div>
+
+<style>
+  .core {
+    --tone: var(--primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(4px, 1.1cqw, 10px);
+    width: 100%;
+    text-align: center;
+  }
+
+  .core[data-tone='cyan'] {
+    --tone: var(--secondary);
+  }
+  .core[data-tone='amber'] {
+    --tone: var(--warning);
+  }
+  .core[data-tone='coral'] {
+    --tone: var(--alert);
+  }
+  .core[data-tone='mint'] {
+    --tone: var(--primary);
+  }
+
+  .icon {
+    display: grid;
+    place-items: center;
+    width: clamp(44px, 13cqw, 92px);
+    height: clamp(44px, 13cqw, 92px);
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface-container-high);
+    box-shadow: inset 0 0 20px -6px var(--tone);
+  }
+
+  .icon :global(img),
+  .icon :global(.resource-icon) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .core .stage {
+    font-size: clamp(10px, 2.3cqw, 16px);
+    color: var(--tone);
+  }
+
+  .objective {
+    margin: 0;
+    max-width: 100%;
+    font-size: clamp(11px, 2.3cqw, 16px);
+    line-height: 1.45;
+    color: var(--on-surface-variant);
+  }
+
+  .wish-chip {
+    --tone: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28em 0.85em;
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in srgb, var(--tone) 50%, transparent);
+    background: color-mix(in srgb, var(--tone) 14%, var(--surface-container-high));
+    color: var(--tone);
+    font-family: var(--font-sans);
+    font-size: clamp(9px, 1.9cqw, 13px);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .wish-chip[data-tone='cyan'] {
+    --tone: var(--secondary);
+  }
+  .wish-chip[data-tone='amber'] {
+    --tone: var(--warning);
+  }
+  .wish-chip[data-tone='coral'] {
+    --tone: var(--alert);
+  }
+  .wish-chip[data-tone='mint'] {
+    --tone: var(--primary);
+  }
+</style>

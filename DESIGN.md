@@ -146,8 +146,14 @@ Rules:
 A responsive, panel-based layout. Mobile is the primary target (bullet-hell combat is
 touch-driven); desktop adds a persistent sidebar.
 
-- **Grid:** Single-column stack on mobile (< 768px); two columns on desktop (sidebar
-  navigation | content), with content capped to a readable width.
+- **Grid:** Single-column stack on mobile (< 768px); on desktop the **Core** is three panels —
+  **Resources** (all pools: Water, Nutrients, Biomass, Lysate, plus capacity upgrades) on the
+  left, the **growth cycle** in the centre, and **stage-specific options** on the right. The
+  stage panel never repeats resource readouts. At 768–1079px the resource panel collapses to a
+  horizontal strip above a two-column cycle + stage view; on wide screens the three columns
+  stretch to a full-height cockpit and the cycle, wheel text, and panels scale with the
+  viewport. Activity sits under the stage options on the right, dropping below the stage column
+  at mid widths.
 - **Spacing:** Strict 4px base scale. Panel padding 16px, gutters 16px, margins 24px.
 - **Combat:** the arena opens as a full-screen overlay above the page — a centred,
   fixed-aspect Pixi canvas with an objective banner, host and player HP bars, and a

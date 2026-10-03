@@ -97,3 +97,13 @@ Gather shows the meters and a read-only income summary that points at Grow.
 ## Effort
 
 ~2–4 days (new components + interaction), separate from the completed theme swap.
+
+## Follow-up (shipped): three-panel Core
+
+The wheel stayed central, but resources were pulled out of the per-phase detail panel into a
+single left **`ResourcePanel`** (Water / Nutrients / Biomass / Lysate, and colony vitals). The
+stage panel (`PhaseDetailPanel`) now holds **only** stage-specific actions (with the Activity feed
+beneath it on desktop) — capacity upgrades live in the **Gather** stage — and the nucleus slot
+shows `CycleCore` (active stage + objective) instead of the Biomass readout. Responsive: three
+columns ≥1080px, resources strip on top with a two-column cycle + stage view at 768–1079px,
+single column with the stepper and the layout's bottom log <768px. `ColonyNucleus` was retired.

@@ -198,7 +198,13 @@ T4 (6), Boss T5 (9). See `GAME-DESIGN.md` for the full table.
   stack). There are **no top-bar launchers**: Evolution opens from the Evolve phase panel
   (gated on `unlockedSystems.evolution`); Expeditions currently has no in-game entry point.
   Browser Back closes the top overlay; when nothing is open it confirms before leaving.
-- **Core** (`+page.svelte`): Growth Cycle wheel + detail panel + desktop Activity panel.
+- **Core** (`+page.svelte`): three panels — **left `ResourcePanel`** (Water / Nutrients /
+  Biomass / Lysate readouts + colony vitals), **center `GrowthCycleWheel`** (nucleus slot is
+  `CycleCore`, showing the active stage + objective), **right `PhaseDetailPanel`** (stage-specific
+  actions only — resources are gone from here; capacity upgrades live in the **Gather** tab).
+  Activity sits under the stage options in the right column on wide screens; at 768–1079px the
+  resources collapse to a top strip and activity tucks under the stage column below; <768px uses
+  the stepper and the layout's bottom log.
 - **Hunt**: there is no separate Radar UI. The Hunt phase in `PhaseDetailPanel` renders
   `HuntSection` (`mode="full"`), the single home for sonar contacts / combat entry. The
   tutorial handoff renders the same component (`mode="tutorial"`) inline with its scan flow.
@@ -248,9 +254,10 @@ arc (dashed) and, when it differs from the active stage, the focus strip's **Sug
 
 **The engine suggests; the player chooses — and it never auto-switches.** The active stage is
 seeded from the recommendation on load and only changes when the player clicks a wheel label /
-mobile step. While the active stage differs from the recommendation the suggested arc is dashed
-with a "Next" flag and the focus strip reads **"Suggested: X"** with a **Switch** button; when
-the player is already on it, no suggestion shows. The selected arc stays lit.
+mobile step. While the active stage differs from the recommendation, the suggested arc is dashed
+with a **blinking dot** on its label and the centre nucleus shows a **"Wants to <stage>"** chip
+tinted to the suggested tone; when the player is already on it, no suggestion shows. The selected
+arc stays lit.
 
 ### Files
 
@@ -266,6 +273,11 @@ the player is already on it, no suggestion shows. The selected arc stays lit.
 
 ## 8. Recent changes (this session)
 
+- **Three-panel Core**: resources moved out of the stage panels into a single left
+  `ResourcePanel` (all four pools + colony vitals; capacity upgrades live in the Gather stage),
+  the wheel's nucleus became `CycleCore` (stage + objective), and `PhaseDetailPanel` now holds
+  only stage options. `ColonyNucleus` was retired; `HuntSection` lost its duplicate Lysate
+  strip; `ActivityLog` gained an `embedded` variant. See §6.
 - **Top-bar launchers removed**: the Evolution / Expeditions buttons are gone from
   `+layout.svelte`. Evolution stays reachable from the Evolve phase panel; **Expeditions has no
   entry point** at present (its panel/overlay code is still there). Reset and the tutorial

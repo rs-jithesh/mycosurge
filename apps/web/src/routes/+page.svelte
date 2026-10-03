@@ -1,36 +1,17 @@
 <script lang="ts">
-  import { tick, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { gameStore } from '$lib/stores/game.svelte';
-  import { logStore } from '$lib/stores/log.svelte';
   import TutorialIntro from '$lib/components/TutorialIntro.svelte';
   import SystemsUnlocked from '$lib/components/SystemsUnlocked.svelte';
   import GrowthCycleWheel from '$lib/components/GrowthCycleWheel.svelte';
-  import ColonyNucleus from '$lib/components/ColonyNucleus.svelte';
+  import CycleCore from '$lib/components/CycleCore.svelte';
+  import ResourcePanel from '$lib/components/ResourcePanel.svelte';
   import PhaseDetailPanel from '$lib/components/PhaseDetailPanel.svelte';
+  import ActivityLog from '$lib/components/ActivityLog.svelte';
   import WelcomeBackDialog from '$lib/components/WelcomeBackDialog.svelte';
   import { devStore } from '$lib/stores/dev.svelte';
-  import { PHASES, phaseMeta } from '$lib/content/phases';
+  import { PHASES } from '$lib/content/phases';
   import type { GrowthPhase } from '@mycosurge/game-engine';
-
-  let logContainer = $state<HTMLDivElement>();
-  let logAutoScroll = $state(true);
-
-  function handleLogScroll() {
-    if (!logContainer) return;
-    const { scrollTop, scrollHeight, clientHeight } = logContainer;
-    logAutoScroll = scrollHeight - scrollTop - clientHeight < 32;
-  }
-
-  function scrollLogToBottom() {
-    if (logContainer && logAutoScroll) {
-      logContainer.scrollTop = logContainer.scrollHeight;
-    }
-  }
-
-  $effect(() => {
-    logStore.entries;
-    tick().then(scrollLogToBottom);
-  });
 
   let isFullGame = $derived(gameStore.state.gamePhase === 'active');
 
@@ -81,15 +62,6 @@
     }
     showUnlock = false;
   }
-
-  function pad(n: number): string {
-    return n.toString().padStart(2, '0');
-  }
-
-  function fmtTime(ts: number): string {
-    const d = new Date(ts);
-    return `[${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}]`;
-  }
 </script>
 
 {#if !isFullGame}
@@ -109,85 +81,53 @@
 {#if isFullGame}
   <div class="core">
     {#if gameStore.isInTrauma}
-      <div class="trauma-banner">
+      <div class="warning-strip trauma">
         Recovering — {Math.ceil(gameStore.state.traumaTimer)}s left
+      </div>
+    {/if}
+    {#if gameStore.isStarving}
+      <div class="warning-strip starving">
+        Starving — restore Water &amp; Nutrients to resume growth.
       </div>
     {/if}
 
     <div class="core-grid">
-      <!-- Growth cycle wheel (desktop) -->
-      <section class="wheel-col">
-        {#snippet nucleus()}
-          <ColonyNucleus />
-        {/snippet}
-        <GrowthCycleWheel {phase} {recommended} onselect={selectPhase} {nucleus} />
+      <!-- Left: all resources -->
+      <section class="resources-col">
+        <ResourcePanel />
       </section>
 
-      <!-- Contextual detail -->
-      <section class="detail-col">
-        <div class="focus-bar" data-tone={phaseMeta(suggested ?? phase).tone}>
-          <span class="focus-label text-label-caps">
-            {suggested ? 'Suggested' : 'Current goal'}
-          </span>
-          <span class="focus-text">
-            {#if suggested}
-              {phaseMeta(suggested).label} — {phaseMeta(suggested).objective}
-            {:else}
-              {phaseMeta(phase).objective}
-            {/if}
-          </span>
-          {#if suggested}
-            <button class="switch-btn cmd-btn" onclick={() => selectPhase(recommended)}>
-              Switch
+      <!-- Center: the growth cycle -->
+      <section class="cycle-col">
+        <div class="wheel-wrap">
+          {#snippet nucleus()}
+            <CycleCore {phase} {suggested} />
+          {/snippet}
+          <GrowthCycleWheel {phase} {recommended} onselect={selectPhase} {nucleus} />
+        </div>
+
+        <div class="stepper" role="tablist" aria-label="Growth cycle stages">
+          {#each PHASES as p}
+            <button
+              class="step"
+              class:is-active={phase === p.id}
+              class:is-suggested={recommended === p.id && phase !== p.id}
+              data-tone={p.tone}
+              role="tab"
+              aria-selected={phase === p.id}
+              onclick={() => selectPhase(p.id)}
+            >
+              <span>{p.label}</span>
             </button>
-          {/if}
+          {/each}
         </div>
+      </section>
 
-        <div class="mobile-only">
-          <ColonyNucleus compact />
-          <div class="stepper" role="tablist" aria-label="Growth cycle stages">
-            {#each PHASES as p}
-              <button
-                class="step"
-                class:is-active={phase === p.id}
-                class:is-suggested={recommended === p.id && phase !== p.id}
-                data-tone={p.tone}
-                role="tab"
-                aria-selected={phase === p.id}
-                onclick={() => selectPhase(p.id)}
-              >
-                <span>{p.label}</span>
-              </button>
-            {/each}
-          </div>
-        </div>
-
+      <!-- Right: stage-specific options, with activity below -->
+      <section class="stage-col">
         <PhaseDetailPanel {phase} />
-
-        <div class="panel activity-panel">
-          <div class="panel-header">
-            <span class="text-label-caps">Activity</span>
-          </div>
-          <div
-            class="log-entries"
-            role="log"
-            aria-live="polite"
-            aria-label="Activity log"
-            bind:this={logContainer}
-            onscroll={handleLogScroll}
-          >
-            {#each logStore.entries as entry (entry.id)}
-              <div
-                class="log-line"
-                class:is-warn={entry.level === 'warn'}
-                class:is-error={entry.level === 'error'}
-                class:is-success={entry.level === 'success'}
-              >
-                <span class="log-time">{fmtTime(entry.timestamp)}</span>
-                <span class="log-msg">{entry.text}</span>
-              </div>
-            {/each}
-          </div>
+        <div class="activity-slot">
+          <ActivityLog embedded />
         </div>
       </section>
     </div>
@@ -207,79 +147,72 @@
 
   .core-grid {
     display: grid;
+    gap: var(--space-gutter);
     grid-template-columns: 1fr;
+    grid-template-areas:
+      'resources'
+      'cycle'
+      'stage';
+    align-items: start;
+  }
+
+  .resources-col {
+    grid-area: resources;
+    min-width: 0;
+  }
+
+  .cycle-col {
+    grid-area: cycle;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: var(--space-gutter);
   }
 
-  .wheel-col {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--space-gutter) 0;
-  }
-
-  .detail-col {
+  .stage-col {
+    grid-area: stage;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-gutter);
-    min-width: 0;
   }
 
-  /* Focus strip */
-  .focus-bar {
-    --tone: var(--primary);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--tone);
-    border-radius: var(--radius-md);
-    background: var(--surface-container-high);
-    padding: 10px 14px;
-  }
-
-  .focus-bar[data-tone='cyan'] {
-    --tone: var(--secondary);
-  }
-  .focus-bar[data-tone='amber'] {
-    --tone: var(--warning);
-  }
-  .focus-bar[data-tone='coral'] {
-    --tone: var(--alert);
-  }
-  .focus-bar[data-tone='mint'] {
-    --tone: var(--primary);
-  }
-
-  .focus-label {
-    color: var(--tone);
-    flex-shrink: 0;
-  }
-
-  .focus-text {
-    flex: 1;
-    color: var(--on-surface);
-    font-size: 13px;
-    min-width: 0;
-  }
-
-  .switch-btn {
-    flex-shrink: 0;
-    padding: 4px 10px;
-    font-size: 11px;
-  }
-
-  /* Mobile stepper */
-  .mobile-only {
+  .activity-slot {
     display: none;
-    flex-direction: column;
-    gap: var(--space-gutter);
+  }
+
+  /* ── Warnings ── */
+  .warning-strip {
+    border-radius: var(--radius-md);
+    padding: 10px var(--space-panel-padding);
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .warning-strip.trauma {
+    border: 1px solid var(--alert);
+    background: var(--error-container);
+    color: var(--on-error-container);
+  }
+
+  .warning-strip.starving {
+    border: 1px solid var(--warning);
+    background: var(--surface-container-high);
+    color: var(--warning);
+  }
+
+  /* ── Cycle ── */
+  .wheel-wrap {
+    display: none;
+    width: 100%;
   }
 
   .stepper {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
+    width: 100%;
     margin: 0;
     padding: 0;
   }
@@ -331,97 +264,52 @@
     background: var(--surface-container-high);
   }
 
-  /* Activity (desktop) */
-  .panel {
-    border: 1px solid var(--border);
-    background: var(--surface-container);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-  }
+  /* ── Desktop: resources strip on top, cycle + stage side by side ── */
+  @media (min-width: 768px) {
+    .core {
+      justify-content: center;
+      min-height: calc(100dvh - 80px);
+    }
 
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-unit) var(--space-panel-padding);
-    background: var(--surface-container-low);
-    border-bottom: 1px solid var(--border);
-    color: var(--primary);
-  }
-
-  .log-entries {
-    padding: var(--space-panel-padding);
-    font-size: var(--font-data-mono);
-    line-height: var(--line-data-mono);
-    overflow-y: auto;
-    max-height: 200px;
-  }
-
-  .log-line {
-    display: flex;
-    gap: var(--space-gutter);
-    line-height: 1.8;
-  }
-
-  .log-time {
-    color: var(--secondary);
-    flex-shrink: 0;
-    width: 72px;
-  }
-
-  .log-msg {
-    color: var(--on-surface-variant);
-  }
-
-  .is-warn .log-msg {
-    color: var(--on-surface);
-  }
-
-  .is-error .log-msg {
-    color: var(--alert);
-  }
-
-  .is-success .log-msg {
-    color: var(--primary);
-  }
-
-  .trauma-banner {
-    border: 1px solid var(--alert);
-    background: var(--error-container);
-    color: var(--on-error-container);
-    border-radius: var(--radius-md);
-    padding: 10px var(--space-panel-padding);
-    text-align: center;
-    font-weight: 600;
-  }
-
-  /* Two-column cockpit on wide screens */
-  @media (min-width: 1100px) {
     .core-grid {
-      grid-template-columns: minmax(480px, 1fr) 460px;
-      align-items: start;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas:
+        'resources resources'
+        'cycle stage';
     }
 
-    .wheel-col {
-      position: sticky;
-      top: var(--space-gutter);
-      padding: calc(var(--space-gutter) * 2) 0;
+    .wheel-wrap {
+      display: block;
+    }
+
+    .stepper {
+      display: none;
+    }
+
+    .activity-slot {
+      display: block;
     }
   }
 
-  /* Mobile: stepper replaces the wheel; layout owns the activity log */
-  @media (max-width: 767px) {
-    .wheel-col {
-      display: none;
+  /* ── Wide: three fluid columns (resources | cycle | stage+activity). The cycle
+     takes a growing share so the wheel fills the taller viewports. ── */
+  @media (min-width: 1080px) {
+    .core-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2.1fr) minmax(0, 1.1fr);
+      grid-template-areas: 'resources cycle stage';
+      align-items: stretch;
     }
+  }
 
-    .mobile-only {
-      display: flex;
+  @media (min-width: 1500px) {
+    .core-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2.6fr) minmax(0, 1.1fr);
     }
+  }
 
-    .activity-panel {
-      display: none;
+  @media (min-width: 1900px) {
+    .core-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 3fr) minmax(0, 1.1fr);
     }
   }
 </style>
