@@ -57,7 +57,11 @@
 
   let geometry = $derived(generateNetwork(seed, stageIndex));
   let allPlacements = $derived(generateHostPlacements(seed));
-  let placements = $derived(allPlacements.filter((p) => p.stage === stageIndex));
+  // The map shows the frontier: species you have already catalogued are recorded in
+  // the bestiary and reappear as live radar contacts, so they no longer clutter here.
+  let placements = $derived(
+    allPlacements.filter((p) => p.stage === stageIndex && !catalogued.has(p.hostId)),
+  );
   let firstContact = $derived(getFirstContact(gs, allPlacements));
   let contactMarkers = $derived(
     getContactMarkers(gs.contacts, allPlacements).filter((m) => m.stage === stageIndex),
@@ -593,11 +597,7 @@
                 <circle
                   class="host-marker"
                   {r}
-                  fill={vis === 'sensed'
-                    ? 'transparent'
-                    : vis === 'catalogued'
-                      ? 'var(--primary)'
-                      : 'var(--alert)'}
+                  fill={vis === 'sensed' ? 'transparent' : 'var(--alert)'}
                   stroke={vis === 'sensed' ? 'var(--secondary)' : 'var(--on-surface)'}
                   stroke-width={1.6}
                   stroke-dasharray={vis === 'sensed' ? '3 3' : 'none'}
