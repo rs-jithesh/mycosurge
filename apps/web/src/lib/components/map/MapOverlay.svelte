@@ -82,18 +82,6 @@
   let hoverSector = $state<number | null>(null);
   let selectedSector = $state<number | null>(null);
   let activeSector = $derived(hoverSector ?? selectedSector);
-  let tipPos = $derived.by(() => {
-    const s = activeSector;
-    if (s === null) return null;
-    const a = sectorCentreAngle(s);
-    const r = Math.max(0, drawnDepths[s] ?? 0) + growStepMm + bandWidth * 0.02;
-    const x = cx + panX + Math.cos(a) * r * k;
-    const y = cy + panY + Math.sin(a) * r * k;
-    return {
-      x: Math.min(Math.max(x, 74), Math.max(74, viewW - 74)),
-      y: Math.min(Math.max(y, 28), Math.max(28, viewH - 28)),
-    };
-  });
   let cordBranch = $derived(
     gameStore.cordBranchId ? Number(gameStore.cordBranchId.split('-')[1]) : -1,
   );
@@ -434,6 +422,29 @@
     </div>
   </header>
 
+  <div class="map-info">
+    {#if activeSector !== null}
+      <span class="info-dir">
+        {SECTOR_LABELS[activeSector]} · {formatReach(stage.minMm + (drawnDepths[activeSector] ?? 0))
+          .label}
+      </span>
+      <span class="info-cost">{gameStore.reachCost} {resourceLabel('biomass')}</span>
+      <span class="info-hint">
+        {gs.biomass >= gameStore.reachCost
+          ? finePointer
+            ? 'Click to grow here'
+            : 'Tap again to grow here'
+          : 'Not enough Biomass'}
+      </span>
+    {:else}
+      <span class="info-hint">
+        {finePointer
+          ? 'Hover a wedge for its cost · click to grow · tap signals to engage'
+          : 'Tap a wedge to preview, tap again to grow · tap signals to engage'}
+      </span>
+    {/if}
+  </div>
+
   <div class="map-stage">
     <svg
       class="map-svg"
@@ -702,30 +713,6 @@
         <span class="stage-ceremony-name">{ceremonyLabel}</span>
       </div>
     {/if}
-
-    <p class="map-legend text-label-caps">
-      {finePointer
-        ? 'Hover a wedge for its cost · click to grow · tap signals to engage'
-        : 'Tap a wedge to preview, tap again to grow · tap signals to engage'}
-    </p>
-
-    {#if activeSector !== null && tipPos}
-      <div class="sector-tip" style="left: {tipPos.x}px; top: {tipPos.y}px;">
-        <span class="tip-dir">
-          {SECTOR_LABELS[activeSector]} · {formatReach(
-            stage.minMm + (drawnDepths[activeSector] ?? 0),
-          ).label}
-        </span>
-        <span class="tip-cost">{gameStore.reachCost} {resourceLabel('biomass')}</span>
-        <span class="tip-sub">
-          {gs.biomass >= gameStore.reachCost
-            ? finePointer
-              ? 'Click to grow here'
-              : 'Tap again to grow here'
-            : 'Not enough Biomass'}
-        </span>
-      </div>
-    {/if}
   </div>
 </div>
 
@@ -840,16 +827,33 @@
     }
   }
 
-  .map-legend {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 10px;
-    margin: 0;
-    text-align: center;
+  .map-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    flex-shrink: 0;
+    min-height: 30px;
+    padding: 5px var(--space-margin);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-container-lowest);
+    font-size: 12px;
     color: var(--on-surface-variant);
-    font-size: 10px;
-    pointer-events: none;
+  }
+
+  .info-dir {
+    font-family: var(--font-mono);
+    color: var(--on-surface);
+  }
+
+  .info-cost {
+    font-family: var(--font-mono);
+    color: var(--primary);
+  }
+
+  .info-hint {
+    color: var(--on-surface-variant);
   }
 
   .stage-ceremony {
@@ -896,39 +900,6 @@
     .stage-ceremony {
       animation: none;
     }
-  }
-
-  .sector-tip {
-    position: absolute;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    padding: 6px 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: color-mix(in srgb, var(--surface-container-highest) 94%, transparent);
-    box-shadow: var(--shadow-sm);
-    white-space: nowrap;
-    pointer-events: none;
-    transform: translate(-50%, 8px);
-  }
-
-  .tip-dir {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--on-surface);
-  }
-
-  .tip-cost {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--primary);
-  }
-
-  .tip-sub {
-    font-size: 10px;
-    color: var(--on-surface-variant);
   }
 
   /* The UA focus box on an SVG marker renders as a big rectangle around its
