@@ -79,7 +79,9 @@ mycosurge/
   disabled, or vice versa.
 - **Panel headers**: `text-label-caps`.
 - **Formatted with Prettier**: `semi: true`, `singleQuote: true`, `tabWidth: 2`, `printWidth: 100`.
-- **Responsive breakpoint**: 768px. Mobile is a single-column stack; desktop adds the sidebar.
+- **Responsive breakpoint**: desktop is `min-width: 768px` **and landscape**; everything
+  portrait (including tablet portrait) uses the mobile composition. Mobile is a
+  single-column stack; desktop adds the sidebar.
 
 ## Testing
 

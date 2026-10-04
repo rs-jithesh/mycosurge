@@ -389,7 +389,7 @@
     transform-origin: center;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 768px) and (orientation: landscape) {
     .bg-layer {
       background-image:
         linear-gradient(rgba(14, 21, 19, 0.58), rgba(14, 21, 19, 0.76)), var(--bg-desktop);
@@ -580,7 +580,8 @@
     padding-bottom: var(--space-gutter);
   }
 
-  @media (max-width: 767px) {
+  /* Mobile composition: narrow OR any portrait orientation (e.g. a tablet held upright). */
+  @media (max-width: 767px), (orientation: portrait) {
     .top-bar {
       flex-wrap: wrap;
       row-gap: 6px;
@@ -610,7 +611,7 @@
     }
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 768px) and (orientation: landscape) {
     .desktop-layout {
       display: flex;
     }
