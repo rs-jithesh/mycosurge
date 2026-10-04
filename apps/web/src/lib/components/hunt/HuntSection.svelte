@@ -52,8 +52,7 @@
     );
   }
   let lockedCount = $derived(
-    HOSTS.filter((h) => h.id !== 'soil_nematode' && !isHostUnlocked(h, gs.acquiredEchoes.length))
-      .length,
+    HOSTS.filter((h) => h.id !== 'soil_nematode' && !isHostUnlocked(h, gameStore.reach)).length,
   );
 
   function engage(contactId: string) {

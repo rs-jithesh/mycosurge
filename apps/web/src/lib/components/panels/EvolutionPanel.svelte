@@ -184,8 +184,7 @@
             {/each}
           </div>
           <p class="summary-note">
-            Complexity raises upkeep on Water and Nutrients — but each echo repays it many times
-            over.
+            Each echo permanently enhances the network. Collect them all to grow stronger.
           </p>
         </div>
       {/if}

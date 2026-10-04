@@ -21,21 +21,22 @@
 </script>
 
 <div class="core">
-  <StatusWarnings />
-
   <div class="core-grid">
     <!-- Left: all resources -->
     <section class="resources-col">
       <ResourcePanel />
     </section>
 
-    <!-- Center: the growth cycle -->
+    <!-- Center: the growth cycle, with status banners in the space beneath it -->
     <section class="cycle-col">
       <div class="wheel-wrap">
         {#snippet nucleus()}
           <CycleCore {phase} {suggested} />
         {/snippet}
         <GrowthCycleWheel {phase} {recommended} {onselect} {nucleus} />
+        <div class="cycle-warnings">
+          <StatusWarnings />
+        </div>
       </div>
     </section>
 
@@ -82,16 +83,29 @@
     gap: var(--space-gutter);
   }
 
+  /* The wheel is a square SVG with empty padding below the ring, so the banners can be
+     overlaid there without adding any height to the layout. */
+  .wheel-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  .cycle-warnings {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
   .stage-col {
     grid-area: stage;
     min-width: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-gutter);
-  }
-
-  .wheel-wrap {
-    width: 100%;
   }
 
   /* ── Wide: three fluid columns (resources | cycle | stage+activity). The cycle

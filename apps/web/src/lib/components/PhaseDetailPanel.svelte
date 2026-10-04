@@ -5,11 +5,12 @@
     getGeneratorCost,
     LYSATE_CAP_EXPAND_AMOUNT,
     resourceLabel,
-    resourceName,
   } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
+  import { uiStore } from '$lib/stores/ui.svelte';
   import { phaseMeta } from '$lib/content/phases';
   import ResourceIcon from './ResourceIcon.svelte';
+  import ResourceSymbol from './ResourceSymbol.svelte';
   import HuntSection from '$lib/components/hunt/HuntSection.svelte';
   import PhaseAction from './core/PhaseAction.svelte';
 
@@ -105,8 +106,8 @@
             {@const cost = capCost(row.resource)}
             <div class="cap-row">
               <div class="cap-info">
-                <span class="cap-name" data-tone={row.tone} title={resourceName(row.resource)}
-                  >{row.label}</span
+                <span class="cap-name" data-tone={row.tone}
+                  ><ResourceSymbol id={row.resource} /></span
                 >
                 <span class="text-data-mono cap-val">
                   {Math.floor(row.cap)}
@@ -143,7 +144,7 @@
             {@const canAfford = gameStore.biomass >= cost}
             {@const unit = resourceLabel(gen.resource)}
             <div class="gen-card">
-              <span class="gen-icon"><ResourceIcon name={gen.resource} size={40} round /></span>
+              <span class="gen-icon" data-tone={gen.resource} aria-hidden="true">{unit}</span>
               <div class="gen-meta">
                 <div class="gen-name">
                   {gen.name}
@@ -151,7 +152,7 @@
                 </div>
                 <div class="text-data-mono gen-rate">
                   +{gen.baseRate * level}
-                  {unit}/s
+                  <ResourceSymbol id={gen.resource} />/s
                   {#if level < gen.maxLevel}<span class="gen-next"
                       >→ +{gen.baseRate * (level + 1)}</span
                     >{/if}
@@ -180,7 +181,11 @@
     {:else if phase === 'hunt'}
       <HuntSection mode="full" hideAction={isMobile} />
     {:else}
-      <!-- ── EVOLVE ── -->
+      <!-- ── EXPAND ── -->
+      {#if !isMobile}
+        <PhaseAction phase="expand" />
+      {/if}
+
       <div class="echo-section">
         {#if isMobile}
           <button
@@ -222,10 +227,12 @@
         <div class="genome-available text-data-mono">
           Genome: {gameStore.genomePointsAvailable} available
         </div>
-      {/if}
-
-      {#if !isMobile}
-        <PhaseAction phase="expand" />
+        <button
+          class="cmd-btn secondary evolution-btn"
+          onclick={() => uiStore.openPanel('evolution')}
+        >
+          Evolution · spend genome points
+        </button>
       {/if}
 
       <p class="hint">
@@ -349,7 +356,17 @@
     display: grid;
     place-items: center;
     color: var(--primary);
+    font-size: 24px;
+    line-height: 1;
     flex-shrink: 0;
+  }
+
+  .gen-icon[data-tone='water'] {
+    color: var(--secondary);
+  }
+
+  .gen-icon[data-tone='nutrients'] {
+    color: var(--nutrient);
   }
 
   .gen-meta {
@@ -524,6 +541,11 @@
   .genome-available {
     color: var(--primary);
     font-size: 12px;
+  }
+
+  .evolution-btn {
+    font-size: 12px;
+    padding: 8px 12px;
   }
 
   .hint {

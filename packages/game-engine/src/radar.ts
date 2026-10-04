@@ -74,10 +74,9 @@ export function pickStrain(): StrainDef {
   return STRAINS[0];
 }
 
-/** Hosts currently eligible to appear as sonar contacts. */
+/** Hosts currently eligible to appear as sonar contacts — gated by network reach. */
 export function getUnlockedHosts(state: GameState): HostDef[] {
-  const echoCount = state.acquiredEchoes.length;
-  return HOSTS.filter((h) => h.id !== TUTORIAL_HOST_ID && isHostUnlocked(h, echoCount));
+  return HOSTS.filter((h) => h.id !== TUTORIAL_HOST_ID && isHostUnlocked(h, state.mycelialNetwork));
 }
 
 /** How many contacts the radar can hold at once. */
@@ -108,16 +107,25 @@ function addContact(state: GameState, contact: RadarContact): void {
   state.lastContactHostId = contact.hostId;
 }
 
+/** Add a sonar blip on a free slot without charging Water. Returns it, or null if full. */
+export function spawnBlip(state: GameState): RadarContact | null {
+  if (state.contacts.length >= getRadarSlots(state)) return null;
+
+  const contact = rollContact(state);
+  if (!contact) return null;
+
+  addContact(state, contact);
+  return contact;
+}
+
 /** Spend Water to force a new blip onto a free radar slot. */
 export function pingSubstrate(state: GameState): boolean {
   if (state.water < SCAN_WATER_COST) return false;
-  if (state.contacts.length >= getRadarSlots(state)) return false;
 
-  const contact = rollContact(state);
+  const contact = spawnBlip(state);
   if (!contact) return false;
 
   state.water -= SCAN_WATER_COST;
-  addContact(state, contact);
   return true;
 }
 

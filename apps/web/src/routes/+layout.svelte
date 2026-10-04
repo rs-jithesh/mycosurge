@@ -93,6 +93,13 @@
 <svelte:window onkeydown={handleEscape} />
 
 <div class="terminal-frame">
+  <!-- Blurred bio-luminescent backdrop (decorative) -->
+  <div
+    class="bg-layer"
+    aria-hidden="true"
+    style="--bg-mobile: url('{base}/assets/bg-mobile.jpg'); --bg-desktop: url('{base}/assets/bg-desktop.jpg');"
+  ></div>
+
   <!-- Top Bar -->
   <header class="top-bar">
     <span class="top-bar-brand text-headline-md">
@@ -206,11 +213,38 @@
 
 <style>
   .terminal-frame {
+    position: relative;
+    isolation: isolate;
     display: flex;
     flex-direction: column;
     height: 100vh;
     width: 100%;
-    background: var(--background);
+    background: transparent;
+  }
+
+  /* A heavily downscaled, blurred image scaled up — cheap to load and paint.
+     Sits behind the HUD inside the frame's stacking context. */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(14, 21, 19, 0.62), rgba(14, 21, 19, 0.78)), var(--bg-mobile);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(26px) saturate(1.05);
+    transform: scale(1.15);
+    transform-origin: center;
+  }
+
+  @media (min-width: 768px) {
+    .bg-layer {
+      background-image:
+        linear-gradient(rgba(14, 21, 19, 0.58), rgba(14, 21, 19, 0.76)), var(--bg-desktop);
+      filter: blur(34px) saturate(1.05);
+    }
   }
 
   .top-bar {

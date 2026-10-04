@@ -93,7 +93,10 @@ export {
   tickRadar,
   resetRadarSeq,
   ensureUniqueContactIds,
+  spawnBlip,
 } from './radar';
+export { getReachCost, getReachBand, getNextReachTier, canExtendReach, extendReach } from './reach';
+export type { ReachResult } from './reach';
 export {
   applyVictory,
   applyDefeat,

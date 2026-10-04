@@ -45,9 +45,9 @@ export const PHASES: PhaseMeta[] = [
   {
     id: 'expand',
     index: 4,
-    label: 'Evolve',
-    tagline: 'Spend Lysate to raise capacity and evolve.',
-    objective: 'Raise capacity, then evolve.',
+    label: 'Expand',
+    tagline: 'Push your reach deeper for stronger hosts.',
+    objective: 'Extend reach into deeper substrate.',
     icon: '⬡',
     tone: 'mint',
   },

@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { GENERATORS, getGeneratorCost, MAX_BIOMASS_BASE } from '@mycosurge/config';
+import {
+  GENERATORS,
+  getGeneratorCost,
+  MAX_BIOMASS_BASE,
+  REACH_START,
+  UPKEEP_PER_REACH,
+} from '@mycosurge/config';
 import { createInitialState } from './state';
 import type { GameState } from './state';
-import {
-  tickIdle,
-  getNetResourceRate,
-  getUpkeepRate,
-  getResourceProduction,
-  getCapExpansionTotal,
-} from './math';
+import { tickIdle, getNetResourceRate, getUpkeepRate, getResourceProduction } from './math';
 import { purchaseGenerator } from './generators';
 import { manualSynthesize } from './manual';
 
@@ -18,6 +18,8 @@ const HALF_HOUR = 30 * MINUTE;
 function fullGameState(): GameState {
   const state = createInitialState();
   state.gamePhase = 'active';
+  // A freshly-unlocked full game continues from the tutorial's reach.
+  state.mycelialNetwork = REACH_START;
   state.water = state.waterCap * 0.6;
   state.nutrients = state.nutrientsCap * 0.6;
   return state;
@@ -51,45 +53,42 @@ function buyCheapestGenerator(state: GameState): boolean {
   return purchaseGenerator(state, bestId);
 }
 
-describe('metabolic upkeep', () => {
-  it('is not charged before the full game', () => {
-    const state = createInitialState();
-    state.generators = { osmotic_pump: 10, enzymatic_exudates: 10 };
-    expect(getUpkeepRate(state, 'water')).toBe(0);
+describe('reach upkeep', () => {
+  it('charges per mm of reach at the full-game start', () => {
+    const state = fullGameState();
+    expect(getUpkeepRate(state, 'water')).toBeCloseTo(UPKEEP_PER_REACH * REACH_START);
+    expect(getUpkeepRate(state, 'nutrients')).toBeCloseTo(UPKEEP_PER_REACH * REACH_START);
   });
 
-  it('keeps an early single generator net-positive', () => {
+  it('keeps an early single generator net-positive at the starting reach', () => {
     const state = fullGameState();
     state.generators = { osmotic_pump: 1 };
-    // +1/s production − 0.8/s depletion − 0.1/s upkeep
+    // +1/s production − 0.8/s base − reach upkeep > 0
     expect(getNetResourceRate(state, 'water')).toBeGreaterThan(0);
   });
 
-  it('scales upkeep with complexity', () => {
-    const state = fullGameState();
-    state.generators = { osmotic_pump: 5 };
-    const before = getUpkeepRate(state, 'water');
-    state.acquiredEchoes = ['echo_leaf', 'echo_worm'];
-    state.waterCap += 20;
-    expect(getUpkeepRate(state, 'water')).toBeGreaterThan(before);
-    expect(getCapExpansionTotal(state)).toBe(2);
+  it('needs more generators to hold a deeper network', () => {
+    const shallow = fullGameState();
+    shallow.generators = { osmotic_pump: 1 };
+
+    const deep = fullGameState();
+    deep.mycelialNetwork = 35;
+    deep.generators = { osmotic_pump: 1 };
+
+    expect(getNetResourceRate(deep, 'water')).toBeLessThan(getNetResourceRate(shallow, 'water'));
+    expect(getNetResourceRate(deep, 'water')).toBeLessThan(0);
+
+    // Two generators cover the deeper maintenance.
+    deep.generators = { osmotic_pump: 3 };
+    expect(getNetResourceRate(deep, 'water')).toBeGreaterThan(0);
   });
 
-  it('trims a fully grown network to a gentle net surplus', () => {
+  it('reduces net production by exactly the reach drain', () => {
     const state = fullGameState();
-    state.generators = { osmotic_pump: 10, enzymatic_exudates: 10 };
-    state.acquiredEchoes = new Array(9).fill('x');
-    state.waterCap += 60;
-    state.nutrientsCap += 60;
-
-    const net = getNetResourceRate(state, 'water');
-    expect(net).toBeGreaterThan(5.5);
-    expect(net).toBeLessThan(7.5);
-
-    // Upkeep should be a meaningful but not dominant share of production.
-    const upkeepShare = getUpkeepRate(state, 'water') / getResourceProduction(state, 'water');
-    expect(upkeepShare).toBeGreaterThan(0.15);
-    expect(upkeepShare).toBeLessThan(0.4);
+    state.generators = { osmotic_pump: 4 };
+    expect(getNetResourceRate(state, 'water')).toBeCloseTo(
+      getResourceProduction(state, 'water') - 0.8 - UPKEEP_PER_REACH * REACH_START,
+    );
   });
 });
 

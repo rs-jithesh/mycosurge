@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import type { OfflineReport } from '@mycosurge/game-engine';
-  import { resourceLabel } from '@mycosurge/config';
+  import ResourceSymbol from './ResourceSymbol.svelte';
   import CountUp from './CountUp.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
 
@@ -91,41 +91,45 @@
     <div class="stats">
       {#if report.biomassGained !== 0}
         <div class="stat" data-tone="mint">
-          <ResourceIcon name="biomass" size={28} round />
           <span class="stat-val text-data-mono" class:neg={report.biomassGained < 0}>
             {signed(report.biomassGained)}
           </span>
-          <span class="stat-label text-label-caps">{resourceLabel('biomass')}</span>
+          <span class="stat-label text-label-caps"
+            ><ResourceSymbol id="biomass" focusable={false} /></span
+          >
         </div>
       {/if}
 
       {#if report.waterGained !== 0}
         <div class="stat" data-tone="cyan">
-          <ResourceIcon name="water" size={28} round />
           <span class="stat-val text-data-mono" class:neg={report.waterGained < 0}>
             {signed(report.waterGained)}
           </span>
-          <span class="stat-label text-label-caps">{resourceLabel('water')}</span>
+          <span class="stat-label text-label-caps"
+            ><ResourceSymbol id="water" focusable={false} /></span
+          >
         </div>
       {/if}
 
       {#if report.nutrientsGained !== 0}
         <div class="stat" data-tone="violet">
-          <ResourceIcon name="nutrients" size={28} round />
           <span class="stat-val text-data-mono" class:neg={report.nutrientsGained < 0}>
             {signed(report.nutrientsGained)}
           </span>
-          <span class="stat-label text-label-caps">{resourceLabel('nutrients')}</span>
+          <span class="stat-label text-label-caps"
+            ><ResourceSymbol id="nutrients" focusable={false} /></span
+          >
         </div>
       {/if}
 
       {#if report.lysateStabilized !== 0}
         <div class="stat" data-tone="amber">
-          <ResourceIcon name="lysate" size={28} round />
           <span class="stat-val text-data-mono" class:neg={report.lysateStabilized < 0}>
             {signed(report.lysateStabilized)}
           </span>
-          <span class="stat-label text-label-caps">{resourceLabel('lysate')} banked</span>
+          <span class="stat-label text-label-caps"
+            ><ResourceSymbol id="lysate" focusable={false} /> banked</span
+          >
         </div>
       {/if}
 

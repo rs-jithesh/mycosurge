@@ -5,6 +5,8 @@ import {
   MANUAL_SYNTH_NUTRIENT_COST,
   NUTRIENT_YIELD_THRESHOLD,
   STARVATION_STATE_THRESHOLD,
+  SYNTHESIS_BRIM_RATIO,
+  SYNTHESIS_BRIM_BONUS,
 } from '@mycosurge/config';
 import type { GameState } from './state';
 import { addBiomass } from './math';
@@ -41,7 +43,8 @@ export function canManualSynthesize(state: GameState): boolean {
 /**
  * Biomass the next synthesis would yield, based on the reserves left afterwards.
  * Healthy reserves give a full unit; strained reserves a half; near-starvation wastes
- * the conversion entirely.
+ * the conversion entirely. When both reserves are brimming, a timely synthesis earns a
+ * small bonus — a reward for collecting before production goes to waste.
  */
 export function getSynthesisYield(state: GameState): number {
   const waterAfter = Math.max(0, state.water - MANUAL_SYNTH_WATER_COST);
@@ -51,7 +54,13 @@ export function getSynthesisYield(state: GameState): number {
     state.nutrientsCap > 0 ? nutrientAfter / state.nutrientsCap : 0,
   );
 
-  if (minRatio >= NUTRIENT_YIELD_THRESHOLD) return 1;
+  if (minRatio >= NUTRIENT_YIELD_THRESHOLD) {
+    const currentMinRatio = Math.min(
+      state.waterCap > 0 ? state.water / state.waterCap : 0,
+      state.nutrientsCap > 0 ? state.nutrients / state.nutrientsCap : 0,
+    );
+    return currentMinRatio >= SYNTHESIS_BRIM_RATIO ? 1 + SYNTHESIS_BRIM_BONUS : 1;
+  }
   if (minRatio >= STARVATION_STATE_THRESHOLD) return 0.5;
   return 0;
 }

@@ -1,17 +1,13 @@
 <script lang="ts">
-  import { resourceLabel } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
-  import ResourceIcon from './ResourceIcon.svelte';
+  import ResourceSymbol from './ResourceSymbol.svelte';
 
   let gs = $derived(gameStore.state);
 </script>
 
 <div class="panel lysate-panel">
   <div class="panel-header">
-    <span class="text-label-caps name" title="Lysate">
-      <ResourceIcon name="lysate" size={18} round />
-      {resourceLabel('lysate')}
-    </span>
+    <span class="text-label-caps name"><ResourceSymbol id="lysate" /></span>
     <span class="tag text-label-caps">Spendable</span>
   </div>
   <div class="lysate-body">

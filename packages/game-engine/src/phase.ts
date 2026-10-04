@@ -2,6 +2,7 @@ import { GENERATORS, getGeneratorCost } from '@mycosurge/config';
 import type { GameState } from './state';
 import { getCapExpandCost, getEffectiveMaxBiomass, isStarving } from './math';
 import type { CapResource } from './math';
+import { getReachCost } from './reach';
 
 /**
  * The four stages of the Core growth cycle, in loop order:
@@ -76,19 +77,20 @@ export function getRecommendedPhase(state: GameState): GrowthPhase {
   const maxBiomass = getEffectiveMaxBiomass(state);
   const biomassFull = ratio(state.biomass, maxBiomass) >= FULL_RESERVE_RATIO;
 
-  // Expand only when a full pool is one we can actually pay to grow.
-  const canExpandFull =
+  // Expand when a full pool can be acted on: push reach with Biomass, or raise that pool's cap.
+  const canReach = state.biomass >= getReachCost(state.mycelialNetwork);
+  const fullPaidCap =
     (waterFull && state.lysateBanked >= getCapExpandCost(state, 'water')) ||
     (nutrientFull && state.lysateBanked >= getCapExpandCost(state, 'nutrients')) ||
     (biomassFull && state.lysateBanked >= getCapExpandCost(state, 'biomass'));
-  if (canExpandFull) return 'expand';
+  if ((waterFull || nutrientFull || biomassFull) && (canReach || fullPaidCap)) return 'expand';
 
   const generatorCost = getCheapestGeneratorCost(state);
   if (generatorCost !== null && state.biomass < generatorCost) return 'grow';
 
   const expandCost = getCheapestExpandCost(state);
-  // Every income upgrade is bought out: put Lysate into capacity.
-  if (generatorCost === null && state.lysateBanked >= expandCost) return 'expand';
+  // Every income upgrade is bought out: push reach, or put Lysate into capacity.
+  if (generatorCost === null && (canReach || state.lysateBanked >= expandCost)) return 'expand';
 
   if (state.lysateBanked + state.lysateRaw < expandCost) return 'hunt';
 

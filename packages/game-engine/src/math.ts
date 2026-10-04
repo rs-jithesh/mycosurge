@@ -3,7 +3,6 @@ import {
   ALERT_DECAY_RATE,
   ALERT_EFFECT_CAP,
   DEPLETION_RATE_PER_ASSIM,
-  ECOLOGICAL_DRAG_CAP,
   MAX_BIOMASS_BASE,
   MAX_WATER_BASE,
   MAX_NUTRIENT_BASE,
@@ -19,9 +18,7 @@ import {
   LYSATE_STABILIZE_NUTRIENT_COST,
   LYSATE_CAP_EXPAND_AMOUNT,
   TRAUMA_BASE_DURATION,
-  UPKEEP_PER_LEVEL,
-  UPKEEP_PER_ECHO,
-  UPKEEP_PER_EXPANSION,
+  UPKEEP_PER_REACH,
   GENERATORS,
   getLysateCapExpandCost,
 } from '@mycosurge/config';
@@ -39,13 +36,11 @@ export function getDepletionMultiplier(assimilationPercent: number): number {
 
 /**
  * Combined passive-Biomass efficiency from ecological strain and alert level (0–1).
- * The two drags are added rather than multiplied, and the total is capped, so
- * repeated wins can't compound into a deep income cliff. `1` means no drag.
+ * `1` means no drag. **Ecological strain / alert drag is disabled for now** while the
+ * economy is simplified — re-enable by restoring the drag calculation below.
  */
-export function getEcologicalEfficiency(state: GameState): number {
-  const alertDrag = 1 - getAlertMultiplier(state.alertLevel);
-  const strainDrag = 1 - getDepletionMultiplier(state.assimilationPercent);
-  return 1 - Math.min(ECOLOGICAL_DRAG_CAP, alertDrag + strainDrag);
+export function getEcologicalEfficiency(_state: GameState): number {
+  return 1;
 }
 
 export function getProliferationBonus(allocations: Record<string, number>): number {
@@ -162,18 +157,13 @@ export function getCapExpansionTotal(state: GameState): number {
 }
 
 /**
- * Continuous metabolic drain on a pool, scaling with network complexity. Charged
+ * Continuous metabolic drain on a pool. Maintenance scales with network reach — the
+ * deeper the network spreads, the more Water and Nutrients it costs to hold. Charged
  * only in the full game so the tutorial economy is unaffected.
  */
-export function getUpkeepRate(state: GameState, resource: PoolResource): number {
+export function getUpkeepRate(state: GameState, _resource: PoolResource): number {
   if (state.gamePhase !== 'active') return 0;
-  const def = GENERATORS.find((g) => g.resource === resource);
-  const level = def ? (state.generators[def.id] ?? 0) : 0;
-  return (
-    UPKEEP_PER_LEVEL * level +
-    UPKEEP_PER_ECHO * state.acquiredEchoes.length +
-    UPKEEP_PER_EXPANSION * getCapExpansionTotal(state)
-  );
+  return UPKEEP_PER_REACH * state.mycelialNetwork;
 }
 
 /** Passive production from a pool's generator, plus any mutation trickle, before drain. */

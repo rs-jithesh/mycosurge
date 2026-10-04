@@ -13,6 +13,7 @@ describe('resource notation', () => {
     expect(resourceSymbol('nutrients')).toBe('ν');
     expect(resourceSymbol('biomass')).toBe('β');
     expect(resourceSymbol('lysate')).toBe('λ');
+    expect(resourceSymbol('reach')).toBe('μ');
   });
 
   it('keeps readable names alongside the symbols', () => {

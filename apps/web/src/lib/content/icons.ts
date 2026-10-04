@@ -54,10 +54,10 @@ export interface IconMeta {
 }
 
 export const ICON_META: Record<IconKey, IconMeta> = {
-  water: { file: 'water.png', glyph: '≋', label: 'Water', tone: 'cyan' },
-  nutrients: { file: 'nutrients.png', glyph: '✦', label: 'Nutrients', tone: 'violet' },
-  biomass: { file: 'biomass.png', glyph: '❋', label: 'Biomass', tone: 'mint' },
-  lysate: { file: 'lysate.png', glyph: '⬡', label: 'Lysate', tone: 'amber' },
+  water: { file: 'water.png', glyph: 'ψ', label: 'Water', tone: 'cyan' },
+  nutrients: { file: 'nutrients.png', glyph: 'ν', label: 'Nutrients', tone: 'violet' },
+  biomass: { file: 'biomass.png', glyph: 'β', label: 'Biomass', tone: 'mint' },
+  lysate: { file: 'lysate.png', glyph: 'λ', label: 'Lysate', tone: 'amber' },
   echo: { file: 'echo.png', glyph: '❂', label: 'Echo', tone: 'amber' },
   core: { file: 'core.png', glyph: '◎', label: 'Core', tone: 'mint' },
 
@@ -68,7 +68,7 @@ export const ICON_META: Record<IconKey, IconMeta> = {
   gather: { file: 'gather.png', glyph: '≋', label: 'Gather', tone: 'cyan' },
   grow: { file: 'grow.png', glyph: '✦', label: 'Grow', tone: 'amber' },
   hunt: { file: 'hunt.png', glyph: '◈', label: 'Hunt', tone: 'coral' },
-  expand: { file: 'expand.png', glyph: '⬡', label: 'Evolve', tone: 'mint' },
+  expand: { file: 'expand.png', glyph: '⬡', label: 'Expand', tone: 'mint' },
 
   osmotic_pump: { file: 'osmotic_pump.png', glyph: '≋', label: 'Osmotic Pump', tone: 'cyan' },
   enzymatic_exudates: {

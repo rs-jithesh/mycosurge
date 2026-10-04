@@ -47,9 +47,16 @@ describe('manualAbsorb', () => {
 describe('getSynthesisYield', () => {
   it('returns a full unit with healthy reserves', () => {
     const state = createInitialState();
-    state.water = 100;
+    state.water = 60;
     state.nutrients = 100;
     expect(getSynthesisYield(state)).toBe(1);
+  });
+
+  it('adds a timely bonus when both reserves are brimming', () => {
+    const state = createInitialState();
+    state.water = 100;
+    state.nutrients = 100;
+    expect(getSynthesisYield(state)).toBe(1.5);
   });
 
   it('returns a half unit when reserves run strained', () => {
@@ -68,15 +75,25 @@ describe('getSynthesisYield', () => {
 });
 
 describe('manualSynthesize', () => {
-  it('converts a full unit into biomass at healthy reserves', () => {
+  it('brimming reserves grant the timely bonus', () => {
     const state = createInitialState();
     state.water = 100;
     state.nutrients = 100;
     expect(canManualSynthesize(state)).toBe(true);
     const result = manualSynthesize(state);
-    expect(result).toEqual({ success: true, yield: 1 });
+    expect(result).toEqual({ success: true, yield: 1.5 });
     expect(state.water).toBe(90);
     expect(state.nutrients).toBe(90);
+    expect(state.biomass).toBe(1.5);
+  });
+
+  it('converts a full unit into biomass at healthy (not full) reserves', () => {
+    const state = createInitialState();
+    state.water = 60;
+    state.nutrients = 100;
+    const result = manualSynthesize(state);
+    expect(result).toEqual({ success: true, yield: 1 });
+    expect(state.water).toBe(50);
     expect(state.biomass).toBe(1);
   });
 

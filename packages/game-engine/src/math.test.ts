@@ -15,8 +15,11 @@ import {
   expandBiomassCap,
   getCapExpandCost,
   expandCap,
+  getUpkeepRate,
+  getResourceDrain,
+  getNetResourceRate,
 } from './math';
-import { getGeneratorCost } from '@mycosurge/config';
+import { getGeneratorCost, UPKEEP_PER_REACH } from '@mycosurge/config';
 import { createInitialState, type GameState } from './state';
 
 describe('getAlertMultiplier', () => {
@@ -157,10 +160,10 @@ describe('getEffectiveBiomassPerSec', () => {
     expect(getEffectiveBiomassPerSec(state)).toBe(0.5);
   });
 
-  it('applies alert penalty', () => {
+  it('ignores alert while the drag is disabled', () => {
     const state = createInitialState();
     state.alertLevel = 50;
-    expect(getEffectiveBiomassPerSec(state)).toBeCloseTo(0.375);
+    expect(getEffectiveBiomassPerSec(state)).toBe(0.5);
   });
 });
 
@@ -170,12 +173,43 @@ describe('getEcologicalEfficiency', () => {
     expect(getEcologicalEfficiency(state)).toBe(1);
   });
 
-  it('caps the combined alert and strain drag', () => {
+  it('stays neutral while strain/alert drag is disabled', () => {
     const state = createInitialState();
     state.alertLevel = 100;
     state.assimilationPercent = 100;
-    // Additive drag is 0.5 + 0.3 = 0.8, capped at 0.5.
-    expect(getEcologicalEfficiency(state)).toBeCloseTo(0.5);
+    expect(getEcologicalEfficiency(state)).toBe(1);
+  });
+});
+
+describe('reach upkeep', () => {
+  it('is not charged before the full game', () => {
+    const state = createInitialState();
+    state.mycelialNetwork = 20;
+    expect(getUpkeepRate(state, 'water')).toBe(0);
+    expect(getUpkeepRate(state, 'nutrients')).toBe(0);
+  });
+
+  it('scales with reach in the full game', () => {
+    const state = createInitialState();
+    state.gamePhase = 'active';
+    state.mycelialNetwork = 10;
+    expect(getUpkeepRate(state, 'water')).toBeCloseTo(UPKEEP_PER_REACH * 10);
+    expect(getUpkeepRate(state, 'nutrients')).toBeCloseTo(UPKEEP_PER_REACH * 10);
+  });
+
+  it('adds reach upkeep to the baseline drain', () => {
+    const state = createInitialState();
+    state.gamePhase = 'active';
+    state.mycelialNetwork = 5;
+    expect(getResourceDrain(state, 'water')).toBeCloseTo(0.8 + UPKEEP_PER_REACH * 5);
+  });
+
+  it('drags net production negative when reach outruns income', () => {
+    const state = createInitialState();
+    state.gamePhase = 'active';
+    state.mycelialNetwork = 35;
+    state.generators = { osmotic_pump: 1 };
+    expect(getNetResourceRate(state, 'water')).toBeLessThan(0);
   });
 });
 

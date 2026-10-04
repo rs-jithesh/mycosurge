@@ -189,15 +189,18 @@ export const HOSTS: HostDef[] = [
   },
 ];
 
-/** Number of distinct echoes required before each tier enters the sonar pool. */
-export const HOST_TIER_UNLOCK: Record<number, number> = {
-  1: 0,
-  2: 2,
-  3: 4,
-  4: 6,
-  5: 9,
+/**
+ * Network reach (mm) required before each host tier enters the sonar pool. Deeper reach
+ * opens a stronger pool — the risk/reward dial of the expansion system.
+ */
+export const HOST_TIER_REACH: Record<number, number> = {
+  1: 5,
+  2: 10,
+  3: 16,
+  4: 24,
+  5: 35,
 };
 
-export function isHostUnlocked(host: HostDef, echoCount: number): boolean {
-  return echoCount >= (HOST_TIER_UNLOCK[host.tier] ?? 0);
+export function isHostUnlocked(host: HostDef, reach: number): boolean {
+  return reach >= (HOST_TIER_REACH[host.tier] ?? 0);
 }

@@ -25,6 +25,9 @@
     gs.water >= SCAN_WATER_COST && gameStore.contacts.length < gameStore.radarSlots,
   );
 
+  let reachCost = $derived(gameStore.reachCost);
+  let canExtendReach = $derived(gs.biomass >= reachCost);
+
   function resumeFight() {
     const host = gameStore.currentHost;
     if (host) uiStore.openCombat(host);
@@ -59,7 +62,8 @@
       {#if !canSynthesize}
         Need 10 {resourceLabel('water')} + 10 {resourceLabel('nutrients')}
       {:else if synthYield >= 1}
-        10 {resourceLabel('water')} + 10 {resourceLabel('nutrients')} → 1 {resourceLabel('biomass')}
+        10 {resourceLabel('water')} + 10 {resourceLabel('nutrients')} → {synthYield}
+        {resourceLabel('biomass')}{synthYield > 1 ? ' · brimming bonus' : ''}
       {:else if synthYield > 0}
         10 {resourceLabel('water')} + 10 {resourceLabel('nutrients')} → 0.5 {resourceLabel(
           'biomass',
@@ -86,16 +90,24 @@
       <span class="action-sub">Scan for a signal · {SCAN_WATER_COST} {resourceLabel('water')}</span>
     </button>
   {/if}
-{:else if gameStore.unlockedSystems.evolution}
-  <button class="cmd-btn evolution-cta" class:hero onclick={() => uiStore.openPanel('evolution')}>
-    <span class="action-verb">Evolution</span>
-    <span class="action-sub">Spend genome points on permanent mutations</span>
+{:else}
+  <button
+    class="cmd-btn action-btn"
+    class:hero
+    disabled={!canExtendReach}
+    onclick={() => gameStore.extendReach()}
+  >
+    <span class="action-verb">Extend Reach</span>
+    <span class="action-sub">
+      {canExtendReach
+        ? `${reachCost} ${resourceLabel('biomass')} → +1 mm deeper`
+        : `Need ${reachCost} ${resourceLabel('biomass')}`}
+    </span>
   </button>
 {/if}
 
 <style>
-  .action-btn,
-  .evolution-cta {
+  .action-btn {
     flex-direction: column;
     gap: 2px;
     padding: 12px;
@@ -111,8 +123,7 @@
     opacity: 0.85;
   }
 
-  .action-btn.hero,
-  .evolution-cta.hero {
+  .action-btn.hero {
     padding: 14px;
     min-height: 52px;
     font-size: 15px;

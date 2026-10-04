@@ -32,25 +32,26 @@ beforeEach(() => {
 });
 
 describe('getUnlockedHosts', () => {
-  it('starts with only tier 1 hosts and never the tutorial host', () => {
+  it('returns only tier 1 at the starting reach, never the tutorial host', () => {
     const state = createInitialState();
+    state.mycelialNetwork = 5;
     const ids = getUnlockedHosts(state).map((h) => h.id);
     expect(ids.sort()).toEqual(['compost_worm', 'fallen_leaf']);
     expect(ids).not.toContain('soil_nematode');
   });
 
-  it('unlocks tier 2 at 2 echoes', () => {
+  it('unlocks tier 2 at 10 mm of reach', () => {
     const state = createInitialState();
-    state.acquiredEchoes = ['echo_leaf', 'echo_worm'];
+    state.mycelialNetwork = 10;
     expect(getUnlockedHosts(state).some((h) => h.id === 'garden_beetle')).toBe(true);
     expect(getUnlockedHosts(state).some((h) => h.id === 'urban_pigeon')).toBe(false);
   });
 
-  it('gates the boss until 9 echoes', () => {
+  it('gates the boss until 35 mm of reach', () => {
     const state = createInitialState();
-    state.acquiredEchoes = new Array(8).fill('x');
+    state.mycelialNetwork = 24;
     expect(getUnlockedHosts(state).some((h) => h.id === 'lab_rat')).toBe(false);
-    state.acquiredEchoes = new Array(9).fill('x');
+    state.mycelialNetwork = 35;
     expect(getUnlockedHosts(state).some((h) => h.id === 'lab_rat')).toBe(true);
   });
 });
@@ -67,6 +68,7 @@ describe('getRadarSlots', () => {
 describe('pingSubstrate', () => {
   it('spends water and adds a blip', () => {
     const state = createInitialState();
+    state.mycelialNetwork = 5;
     state.water = 20;
     expect(pingSubstrate(state)).toBe(true);
     expect(state.water).toBe(15);
@@ -83,6 +85,7 @@ describe('pingSubstrate', () => {
 
   it('respects the radar slot limit', () => {
     const state = createInitialState();
+    state.mycelialNetwork = 5;
     state.water = 100;
     expect(pingSubstrate(state)).toBe(true);
     expect(pingSubstrate(state)).toBe(true);
@@ -113,6 +116,7 @@ describe('scanContact', () => {
 describe('tickRadar', () => {
   it('spawns a contact once the timer elapses', () => {
     const state = createInitialState();
+    state.mycelialNetwork = 5;
     state.sonarTimer = 0;
     const spawned = tickRadar(state, 1);
     expect(spawned).not.toBeNull();
@@ -178,6 +182,7 @@ describe('dismissContact', () => {
 describe('contact id uniqueness', () => {
   it('does not reuse an id after the in-memory sequence resets (reload)', () => {
     const state = createInitialState();
+    state.mycelialNetwork = 5;
     state.water = 100;
     pingSubstrate(state);
     expect(state.contacts[0].id).toBe('contact-1');

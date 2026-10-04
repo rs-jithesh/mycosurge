@@ -42,14 +42,14 @@ export const STARVATION_THRESHOLD = 0.15;
 export const STARVATION_STATE_THRESHOLD = 0.05;
 
 // ── Metabolic upkeep (full game) ──
-// A gentle continuous drain on Water and Nutrients that scales with network
-// complexity, so automation is a tradeoff rather than a permanent surplus.
-// Applied only while `gamePhase === 'active'` (the tutorial runs its own economy).
-/** Extra drain on a pool per level of its own generator. */
+// A gentle continuous drain on Water and Nutrients. Upkeep is driven by network
+// reach: the deeper the network spreads, the more it costs to maintain. Applied
+// only while `gamePhase === 'active'` (the tutorial runs its own economy).
+/** Continuous drain on Water and Nutrients per mm of reach. */
+export const UPKEEP_PER_REACH = 0.02;
+/** Legacy complexity-based upkeep (disabled while reach drives upkeep). */
 export const UPKEEP_PER_LEVEL = 0.1;
-/** Extra drain on both pools per acquired echo (complexity tax). */
 export const UPKEEP_PER_ECHO = 0.1;
-/** Extra drain on both pools per capacity expansion. */
 export const UPKEEP_PER_EXPANSION = 0.05;
 
 // ── Lysate ──
@@ -79,6 +79,18 @@ export const MANUAL_ABSORB_AMOUNT = 2;
 export const MANUAL_ABSORB_COOLDOWN = 5;
 export const MANUAL_SYNTH_WATER_COST = 10;
 export const MANUAL_SYNTH_NUTRIENT_COST = 10;
+/** Both reserves at or above this fraction make a synthesis "brimming". */
+export const SYNTHESIS_BRIM_RATIO = 0.9;
+/** Extra Biomass granted for a timely (brimming) synthesis — a reward, never a penalty. */
+export const SYNTHESIS_BRIM_BONUS = 0.5;
+
+// ── Network reach / expansion ──
+/** Reach (mm) the network starts the full game with — the tutorial's 5 mm. */
+export const REACH_START = 5;
+/** Biomass cost of the first reach extension. */
+export const REACH_COST_BASE = 12;
+/** Each mm beyond the first costs this much more than the last. */
+export const REACH_COST_SCALE = 1.35;
 
 // ── Offline progression ──
 /** Longest stretch of absence that still accrues progress. */

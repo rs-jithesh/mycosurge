@@ -33,6 +33,9 @@ import {
   expandCap as engineExpandCap,
   tickRadar as engineTickRadar,
   ensureUniqueContactIds,
+  extendReach as engineExtendReach,
+  getReachCost,
+  getNextReachTier,
   pingSubstrate as enginePingSubstrate,
   scanContact as engineScanContact,
   engageContact as engineEngageContact,
@@ -65,7 +68,7 @@ import type {
   SystemId,
   SystemUnlocks,
 } from '@mycosurge/game-engine';
-import { HOSTS, SKILL_NODES, GENERATORS } from '@mycosurge/config';
+import { HOSTS, SKILL_NODES, GENERATORS, REACH_START } from '@mycosurge/config';
 import { SYSTEM_META } from '$lib/content/systems';
 import { logStore } from './log.svelte';
 
@@ -158,6 +161,10 @@ function createGameStore() {
         if (migrateSkillAllocations(merged)) didResetSkills = true;
         // Repair duplicate radar-contact ids from older saves (they crash keyed lists).
         ensureUniqueContactIds(merged);
+        // Reach replaced echo-gating; active saves continue from at least the tutorial's 5 mm.
+        if (merged.gamePhase === 'active') {
+          merged.mycelialNetwork = Math.max(merged.mycelialNetwork, REACH_START);
+        }
 
         const elapsed = merged.lastSavedAt > 0 ? (Date.now() - merged.lastSavedAt) / 1000 : 0;
         if (elapsed > 0) {
@@ -374,6 +381,26 @@ function createGameStore() {
     return true;
   }
 
+  function extendReach(): boolean {
+    const result = engineExtendReach(state);
+    if (!result.success) {
+      logStore.warn(`You need ${result.cost} Biomass to extend your reach.`);
+      return false;
+    }
+    logStore.success(`Reach extended to ${result.reach}mm.`);
+    if (result.unlockedTier !== null) {
+      const names = HOSTS.filter((h) => h.tier === result.unlockedTier)
+        .map((h) => h.name)
+        .join(', ');
+      logStore.info(`Deeper signals detected — ${names} are now in range.`);
+    }
+    if (result.spawned) {
+      logStore.info('A new signal drifts in from the frontier.');
+    }
+    saveState();
+    return true;
+  }
+
   function pingSubstrate(): boolean {
     const result = enginePingSubstrate(state);
     if (result) {
@@ -568,6 +595,18 @@ function createGameStore() {
     },
     get isInTrauma() {
       return state.isInTrauma;
+    },
+    get reach() {
+      return state.mycelialNetwork;
+    },
+    get reachCost() {
+      return getReachCost(state.mycelialNetwork);
+    },
+    get nextReachTier() {
+      return getNextReachTier(state.mycelialNetwork);
+    },
+    extendReach() {
+      return extendReach();
     },
     get currentHost() {
       return state.currentHostId;

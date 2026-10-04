@@ -1,3 +1,4 @@
+import { REACH_START } from '@mycosurge/config';
 import type { GameState } from './state';
 import { addBiomass } from './math';
 
@@ -168,5 +169,7 @@ export function completeTutorial(state: GameState): void {
     state.generators['enzymatic_exudates'] = 1;
   }
   state.gamePhase = 'active';
+  // Reach continues into the full game from the tutorial's 5 mm (even when skipped).
+  state.mycelialNetwork = Math.max(state.mycelialNetwork, REACH_START);
   _absorbCount = 0;
 }

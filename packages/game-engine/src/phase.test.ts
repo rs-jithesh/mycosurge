@@ -86,7 +86,7 @@ describe('getRecommendedPhase', () => {
 
   it('points at Hunt when stable but short on Lysate', () => {
     const state = activeState();
-    state.biomass = 100;
+    state.biomass = 50;
     expect(getRecommendedPhase(state)).toBe('hunt');
   });
 
@@ -102,7 +102,7 @@ describe('getRecommendedPhase', () => {
     const state = activeState();
     state.waterCap = 200; // ten expansions -> 576 Lysate
     state.water = 200;
-    state.biomass = 50;
+    state.biomass = 1; // reach is unaffordable too, so nothing can be expanded
     state.lysateBanked = 10; // enough for a fresh +10 cap, not the water one
     expect(getRecommendedPhase(state)).toBe('grow');
   });

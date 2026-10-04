@@ -27,11 +27,11 @@
 </script>
 
 <div class="core-mobile">
-  <StatusWarnings />
-
   <ModeHero {phase} {suggested}>
     <PhaseAction {phase} variant="hero" />
   </ModeHero>
+
+  <StatusWarnings />
 
   <ModeSelector {phase} {recommended} {onselect} />
 

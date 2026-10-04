@@ -6,12 +6,11 @@
     STARVATION_THRESHOLD,
     WATER_YIELD_THRESHOLD,
     resourceLabel,
-    resourceName,
   } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import CountUp from './CountUp.svelte';
   import ProgressBar from './ProgressBar.svelte';
-  import ResourceIcon from './ResourceIcon.svelte';
+  import ResourceSymbol from './ResourceSymbol.svelte';
 
   let {
     variant = 'full',
@@ -38,12 +37,11 @@
 
   type Meter = {
     resource: CapResource;
-    label: string;
-    icon: 'water' | 'nutrients' | 'biomass';
     tone: 'cyan' | 'violet' | 'amber';
     value: number;
     max: number;
     critical: boolean;
+    full: boolean;
     markers: number[];
     net: number;
     production?: number;
@@ -53,12 +51,11 @@
   let meters = $derived<Meter[]>([
     {
       resource: 'water',
-      label: resourceLabel('water'),
-      icon: 'water',
       tone: 'cyan',
       value: gs.water,
       max: gs.waterCap,
       critical: gs.waterCap > 0 && gs.water / gs.waterCap < 0.35,
+      full: gs.waterCap > 0 && gs.water >= gs.waterCap - 1e-6,
       markers: waterMarkers,
       net: gameStore.netResourceRate('water'),
       production: gameStore.resourceProduction('water'),
@@ -66,12 +63,11 @@
     },
     {
       resource: 'nutrients',
-      label: resourceLabel('nutrients'),
-      icon: 'nutrients',
       tone: 'violet',
       value: gs.nutrients,
       max: gs.nutrientsCap,
       critical: gs.nutrientsCap > 0 && gs.nutrients / gs.nutrientsCap < 0.4,
+      full: gs.nutrientsCap > 0 && gs.nutrients >= gs.nutrientsCap - 1e-6,
       markers: nutrientMarkers,
       net: gameStore.netResourceRate('nutrients'),
       production: gameStore.resourceProduction('nutrients'),
@@ -79,34 +75,35 @@
     },
     {
       resource: 'biomass',
-      label: resourceLabel('biomass'),
-      icon: 'biomass',
       tone: 'amber',
       value: gameStore.biomass,
       max: gameStore.maxBiomass,
       critical: false,
+      full: gameStore.maxBiomass > 0 && gameStore.biomass >= gameStore.maxBiomass - 1e-6,
       markers: [],
       net: gameStore.biomassPerSec,
     },
   ]);
 
-  let strainEffect = $derived(Math.round((1 - gameStore.ecologicalEfficiency) * 100));
+  // Reach is the network's expansion "resource": shown here so the Biomass sink is visible.
+  let reach = $derived(gameStore.reach);
+  let reachCost = $derived(gameStore.reachCost);
+  let nextReachTier = $derived(gameStore.nextReachTier);
+  let reachMax = $derived(nextReachTier ? nextReachTier.at : Math.max(1, reach));
 </script>
 
 <div class="panel resource-panel" class:compact={variant === 'compact'}>
   <div class="panel-header">
     <span class="text-label-caps">Resources</span>
-    <span class="text-data-mono strain" class:active={strainEffect > 0}
-      >−{strainEffect}% strain</span
-    >
   </div>
 
   <div class="res-list">
     {#each meters as m (m.resource)}
       <div class="res-row" data-tone={m.tone} class:is-critical={m.critical}>
         <div class="res-top">
-          <span class="res-name" title={resourceName(m.resource)}
-            ><ResourceIcon name={m.icon} size={20} round /> {m.label}</span
+          <span class="res-name"
+            ><ResourceSymbol id={m.resource} />
+            {#if m.full}<span class="full-tag text-label-caps">Full</span>{/if}</span
           >
           <span class="text-data-mono res-val">
             {#if m.resource === 'biomass'}
@@ -130,7 +127,8 @@
           </span>
           {#if m.production !== undefined}
             <span class="text-data-mono detail">
-              +{m.production.toFixed(1)} · −{(m.upkeep ?? 0).toFixed(1)} upkeep
+              +{m.production.toFixed(1)} produced
+              {#if (m.upkeep ?? 0) > 0}· −{(m.upkeep ?? 0).toFixed(1)} upkeep{/if}
             </span>
           {:else}
             <span class="text-data-mono detail">passive growth</span>
@@ -139,12 +137,29 @@
       </div>
     {/each}
 
+    <div class="res-row reach-row" data-tone="mint">
+      <div class="res-top">
+        <span class="res-name"><ResourceSymbol id="reach" /></span>
+        <span class="text-data-mono res-val">
+          <b>{reach}</b>
+          <span class="cap">/ {reachMax} mm</span>
+        </span>
+      </div>
+      <ProgressBar tone="mint" value={reach} max={reachMax} showValue={false} />
+      <div class="res-foot">
+        <span class="text-data-mono net">+1 mm · {reachCost} {resourceLabel('biomass')}</span>
+        {#if nextReachTier}
+          <span class="text-data-mono detail">Deeper signals at {nextReachTier.at} mm</span>
+        {:else}
+          <span class="text-data-mono detail">All hosts in range</span>
+        {/if}
+      </div>
+    </div>
+
     {#if showLysate}
-      <div class="res-row lysate">
+      <div class="res-row lysate" data-tone="amber">
         <div class="res-top">
-          <span class="res-name" title="Lysate"
-            ><ResourceIcon name="lysate" size={20} round /> {resourceLabel('lysate')}</span
-          >
+          <span class="res-name"><ResourceSymbol id="lysate" /></span>
           <span class="tag text-label-caps">Spendable</span>
         </div>
         <div class="lysate-rows">
@@ -168,10 +183,6 @@
     <div class="vital">
       <span class="text-label-caps vital-label">Echoes</span>
       <span class="text-data-mono vital-val">{gameStore.acquiredEchoes.length}</span>
-    </div>
-    <div class="vital">
-      <span class="text-label-caps vital-label">Strain</span>
-      <span class="text-data-mono vital-val">{Math.floor(gs.assimilationPercent)}%</span>
     </div>
     <div class="vital">
       <span class="text-label-caps vital-label">Hosts</span>
@@ -206,15 +217,6 @@
     background: var(--surface-container-low);
     border-bottom: 1px solid var(--border);
     color: var(--primary);
-  }
-
-  .strain {
-    color: var(--on-surface-variant);
-    font-size: 11px;
-  }
-
-  .strain.active {
-    color: var(--alert);
   }
 
   .res-list {
@@ -265,6 +267,16 @@
 
   .res-row.is-critical .res-name {
     color: var(--alert);
+  }
+
+  .full-tag {
+    margin-left: 4px;
+    padding: 1px 6px;
+    border: 1px solid color-mix(in srgb, var(--warning) 55%, transparent);
+    border-radius: var(--radius-pill);
+    color: var(--warning);
+    font-size: 9px;
+    line-height: 1.4;
   }
 
   .res-val {
@@ -350,7 +362,7 @@
   /* ── Vitals ── */
   .vitals {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     padding: 10px var(--space-panel-padding);
     border-top: 1px solid var(--border);

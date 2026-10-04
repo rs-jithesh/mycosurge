@@ -4,17 +4,10 @@ import {
   COMBAT_BIOMASS_PER_DIFFICULTY,
   LYSATE_BASE_REWARD,
   HOST_ASSIMILATION_TARGET,
-  GLOBAL_STRAIN_PER_WIN,
   getStrain,
 } from '@mycosurge/config';
 import type { GameState } from './state';
-import {
-  enterTrauma,
-  applyDepletion,
-  getCombatYieldMultiplier,
-  getEffectiveMaxBiomass,
-  addBiomass,
-} from './math';
+import { enterTrauma, getCombatYieldMultiplier, getEffectiveMaxBiomass, addBiomass } from './math';
 import { clearActiveEncounter } from './radar';
 
 export interface CombatResult {
@@ -55,9 +48,6 @@ export function calculateVictoryReward(state: GameState, hostId: string): Combat
 
   const lysateEarned = Math.floor(LYSATE_BASE_REWARD * host.difficulty * strain.lysateMult);
   const echoUnlocked = hostDefeated && !state.acquiredEchoes.includes(host.echoes.id);
-
-  // Ecological strain is its own slow meter, separate from this host's echo progress.
-  applyDepletion(state, GLOBAL_STRAIN_PER_WIN);
 
   return {
     victory: true,
