@@ -22,7 +22,9 @@
 
   let meta = $derived(phaseMeta(phase));
   let next = $derived(suggested && suggested !== phase ? phaseMeta(suggested) : null);
-  let showReason = $derived(Boolean(next && reason && maturity && maturity !== 'germinating'));
+  let showReason = $derived(
+    Boolean(reason && maturity && maturity !== 'germinating' && (next || variant === 'hero')),
+  );
 </script>
 
 <div class="core" class:is-hero={variant === 'hero'} data-tone={meta.tone}>
@@ -33,12 +35,10 @@
     {#if next}
       <span class="wish-chip" data-tone={next.tone}>Wants to {next.label.toLowerCase()}</span>
     {:else if variant === 'hero'}
-      <span class="wish-chip is-placeholder" aria-hidden="true">&nbsp;</span>
+      <span class="wish-chip is-aligned" data-tone={meta.tone}>In step with the organism</span>
     {/if}
     {#if showReason}
       <p class="wish-reason">{reason}</p>
-    {:else if variant === 'hero'}
-      <p class="wish-reason is-placeholder" aria-hidden="true">&nbsp;</p>
     {/if}
   </div>
 </div>
@@ -98,8 +98,8 @@
     color: var(--on-surface-variant);
   }
 
-  /* The wish chip + reason only appear when the organism wants a different phase.
-     Reserve their space so the card (and the tabs below it) never reflow on switch. */
+  /* The organism's read always occupies this slot — either "wants to X" or an
+     aligned note — so the card height never changes when switching phases. */
   .wish-slot {
     display: flex;
     flex-direction: column;
@@ -108,12 +108,10 @@
     width: 100%;
   }
 
-  .wish-slot.is-hero .wish-reason {
-    min-height: 2.8em;
-  }
-
-  .is-placeholder {
-    visibility: hidden;
+  .wish-chip.is-aligned {
+    border-color: color-mix(in srgb, var(--tone) 40%, transparent);
+    background: color-mix(in srgb, var(--tone) 10%, var(--surface-container-high));
+    opacity: 0.9;
   }
 
   .wish-chip {
@@ -176,6 +174,5 @@
   .core.is-hero .objective {
     font-size: 14px;
     max-width: 30ch;
-    min-height: 2.9em;
   }
 </style>
