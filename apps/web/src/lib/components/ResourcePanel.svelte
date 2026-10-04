@@ -11,6 +11,7 @@
   import CountUp from './CountUp.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import ResourceSymbol from './ResourceSymbol.svelte';
+  import LysateInfo from './LysateInfo.svelte';
 
   let {
     variant = 'full',
@@ -160,7 +161,10 @@
       <div class="res-row lysate" data-tone="amber">
         <div class="res-top">
           <span class="res-name"><ResourceSymbol id="lysate" /></span>
-          <span class="tag text-label-caps">Spendable</span>
+          <span class="lysate-head-right">
+            <span class="tag text-label-caps">Spendable</span>
+            <LysateInfo />
+          </span>
         </div>
         <div class="lysate-rows">
           <div class="lysate-cell">
@@ -357,6 +361,12 @@
   .tag {
     color: var(--warning);
     font-size: 9px;
+  }
+
+  .lysate-head-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
   /* ── Vitals ── */

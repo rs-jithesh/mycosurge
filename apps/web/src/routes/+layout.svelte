@@ -227,7 +227,9 @@
     isolation: isolate;
     display: flex;
     flex-direction: column;
+    /* dvh tracks the visible area as mobile browser chrome shows/hides; vh is the fallback. */
     height: 100vh;
+    height: 100dvh;
     width: 100%;
     background: transparent;
   }

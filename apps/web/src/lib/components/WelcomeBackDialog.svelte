@@ -161,11 +161,15 @@
 <style>
   .scrim {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     z-index: 250;
+    /* Track the visible mobile viewport and allow scrolling on short screens. */
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
     display: flex;
-    align-items: center;
-    justify-content: center;
     padding: var(--space-gutter);
     background: var(--overlay);
     backdrop-filter: blur(3px);
@@ -176,7 +180,9 @@
     flex-direction: column;
     gap: var(--space-gutter);
     width: min(92vw, 440px);
-    max-height: 90vh;
+    margin: auto;
+    max-height: calc(100vh - 2 * var(--space-gutter));
+    max-height: calc(100dvh - 2 * var(--space-gutter));
     overflow-y: auto;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);

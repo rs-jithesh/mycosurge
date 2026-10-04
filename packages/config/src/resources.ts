@@ -42,7 +42,8 @@ export const RESOURCES: Record<ResourceId, ResourceMeta> = {
     name: 'Lysate',
     symbol: 'λ',
     tone: 'amber',
-    description: 'Won in combat. Spend it to raise resource caps and evolve.',
+    description:
+      'Won in combat. Raw Lysate decays unless it stabilises, which spends Water and Nutrients. Banked Lysate buys capacity.',
   },
   reach: {
     id: 'reach',

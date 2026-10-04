@@ -1,6 +1,7 @@
 <script lang="ts">
   import { gameStore } from '$lib/stores/game.svelte';
   import ResourceSymbol from './ResourceSymbol.svelte';
+  import LysateInfo from './LysateInfo.svelte';
 
   let gs = $derived(gameStore.state);
 </script>
@@ -8,7 +9,10 @@
 <div class="panel lysate-panel">
   <div class="panel-header">
     <span class="text-label-caps name"><ResourceSymbol id="lysate" /></span>
-    <span class="tag text-label-caps">Spendable</span>
+    <span class="head-right">
+      <span class="tag text-label-caps">Spendable</span>
+      <LysateInfo />
+    </span>
   </div>
   <div class="lysate-body">
     <div class="lysate-rows">
@@ -55,6 +59,12 @@
   .tag {
     color: var(--warning);
     font-size: 9px;
+  }
+
+  .head-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
   .lysate-body {

@@ -67,18 +67,27 @@
 <style>
   .overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     z-index: 200;
-    display: grid;
-    place-items: center;
+    /* Track the visible mobile viewport and allow scrolling on short screens. */
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    display: flex;
     padding: var(--space-gutter);
     background: var(--overlay);
     backdrop-filter: blur(2px);
   }
 
   .sheet {
+    margin: auto;
     width: 100%;
     max-width: 460px;
+    max-height: calc(100vh - 2 * var(--space-gutter));
+    max-height: calc(100dvh - 2 * var(--space-gutter));
+    overflow-y: auto;
     background: var(--surface-container);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
