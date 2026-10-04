@@ -944,7 +944,7 @@
       animation: none;
     }
   }
-  @media (max-width: 767px) {
+  @media (max-width: 767px), (orientation: portrait) {
     /* Two rows: Back + title, then the tools; the status line truncates instead of
        wrapping one token per line. */
     .map-bar {

@@ -351,7 +351,7 @@
   }
 
   /* Desktop: resources + latest packed on the left, actions on the right. */
-  @media (min-width: 768px) {
+  @media (min-width: 768px) and (orientation: landscape) {
     .tutorial-frame {
       max-width: 840px;
     }

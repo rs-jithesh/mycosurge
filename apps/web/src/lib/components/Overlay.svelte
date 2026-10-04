@@ -130,7 +130,7 @@
     padding: var(--space-gutter);
   }
 
-  @media (max-width: 767px) {
+  @media (max-width: 767px), (orientation: portrait) {
     .scrim {
       justify-content: stretch;
     }
@@ -142,7 +142,7 @@
   }
 
   /* Bottom placement: full-screen sheets slide up from the bottom on mobile. */
-  @media (max-width: 767px) {
+  @media (max-width: 767px), (orientation: portrait) {
     .shell.slide-up {
       animation: sheet-up var(--duration-normal) var(--ease-out-soft);
     }
