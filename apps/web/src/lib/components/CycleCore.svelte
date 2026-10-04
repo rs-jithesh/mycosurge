@@ -35,7 +35,7 @@
     {#if next}
       <span class="wish-chip" data-tone={next.tone}>Wants to {next.label.toLowerCase()}</span>
     {:else if variant === 'hero'}
-      <span class="wish-chip is-aligned" data-tone={meta.tone}>In step with the organism</span>
+      <span class="wish-chip is-aligned" data-tone={meta.tone}>All steady</span>
     {/if}
     {#if showReason}
       <p class="wish-reason">{reason}</p>
@@ -152,6 +152,15 @@
     opacity: 0.85;
   }
 
+  /* Pin the mobile reason to two lines too, so its length can't shift the card. */
+  .wish-slot.is-hero .wish-reason {
+    min-height: 2.8em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   /* ── Hero: larger focal point for the mobile current-mode card ── */
   .core.is-hero {
     gap: 8px;
@@ -174,5 +183,11 @@
   .core.is-hero .objective {
     font-size: 14px;
     max-width: 30ch;
+    /* Pin to two lines so a longer/shorter objective never resizes the card. */
+    min-height: 2.9em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 </style>
