@@ -386,8 +386,13 @@
 
 <div class="map-overlay" role="dialog" aria-modal="true" aria-label="Network map">
   <header class="map-bar">
-    <button class="cmd-btn secondary bar-btn" onclick={onClose} aria-label="Back to Core">
-      ← Back
+    <button
+      class="cmd-btn secondary map-back"
+      onclick={onClose}
+      aria-label="Back to Core"
+      title="Back"
+    >
+      <span aria-hidden="true">←</span>
     </button>
     <div class="map-title">
       <span class="text-label-caps">Network</span>
@@ -773,6 +778,19 @@
 
   .zoom-btn {
     min-width: 34px;
+  }
+
+  /* Compact icon back button — matches the zoom controls instead of a wide pill. */
+  .map-back {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    font-size: 17px;
+    line-height: 1;
   }
 
   .extend-btn {
