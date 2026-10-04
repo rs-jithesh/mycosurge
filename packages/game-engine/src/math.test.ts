@@ -134,6 +134,13 @@ describe('getEffectiveMaxBiomass', () => {
     state.skillAllocations['mycelial_expansion'] = 1;
     expect(getEffectiveMaxBiomass(state)).toBeCloseTo(192.5);
   });
+
+  it('grows with network reach beyond the starting depth', () => {
+    const state = createInitialState();
+    state.mycelialNetwork = 20;
+    // 100 base + 24 per mm × (20 − 5) = 460
+    expect(getEffectiveMaxBiomass(state)).toBe(460);
+  });
 });
 
 describe('getGeneratorCost', () => {

@@ -88,9 +88,11 @@ export const SYNTHESIS_BRIM_BONUS = 0.5;
 /** Reach (mm) the network starts the full game with — the tutorial's 5 mm. */
 export const REACH_START = 5;
 /** Biomass cost of the first reach extension. */
-export const REACH_COST_BASE = 12;
+export const REACH_COST_BASE = 10;
 /** Each mm beyond the first costs this much more than the last. */
-export const REACH_COST_SCALE = 1.35;
+export const REACH_COST_SCALE = 1.16;
+/** Extra Biomass storage per mm of reach beyond the starting depth. */
+export const BIOMASS_CAP_PER_REACH = 24;
 
 // ── Offline progression ──
 /** Longest stretch of absence that still accrues progress. */

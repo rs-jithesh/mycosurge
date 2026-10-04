@@ -95,8 +95,8 @@ describe('reach upkeep', () => {
 describe('generator cost curve', () => {
   const gen = GENERATORS[0];
 
-  it('keeps the first six purchase steps within the base Biomass cap', () => {
-    for (let level = 0; level < 6; level++) {
+  it('keeps the first eight purchase steps within the base Biomass cap', () => {
+    for (let level = 0; level < 8; level++) {
       expect(getGeneratorCost(gen.baseCost, level, gen.costScale)).toBeLessThanOrEqual(
         MAX_BIOMASS_BASE,
       );
@@ -104,7 +104,7 @@ describe('generator cost curve', () => {
   });
 
   it('only asks for cap expansion beyond that', () => {
-    expect(getGeneratorCost(gen.baseCost, 6, gen.costScale)).toBeGreaterThan(MAX_BIOMASS_BASE);
+    expect(getGeneratorCost(gen.baseCost, 8, gen.costScale)).toBeGreaterThan(MAX_BIOMASS_BASE);
   });
 });
 

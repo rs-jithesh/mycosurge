@@ -19,6 +19,8 @@ import {
   LYSATE_CAP_EXPAND_AMOUNT,
   TRAUMA_BASE_DURATION,
   UPKEEP_PER_REACH,
+  BIOMASS_CAP_PER_REACH,
+  REACH_START,
   GENERATORS,
   getLysateCapExpandCost,
 } from '@mycosurge/config';
@@ -74,9 +76,14 @@ export function getNutrientFixationBonus(allocations: Record<string, number>): n
   return level * 0.5;
 }
 
+/**
+ * Biomass storage. Grows with network reach (a deeper network holds more) and with the
+ * Mycelial Expansion mutation, on top of any Lysate cap expansions.
+ */
 export function getEffectiveMaxBiomass(state: GameState): number {
   const bonus = getMaxBiomassBonus(state.skillAllocations);
-  return state.maxBiomass * (1 + bonus);
+  const reachCap = BIOMASS_CAP_PER_REACH * Math.max(0, state.mycelialNetwork - REACH_START);
+  return (state.maxBiomass + reachCap) * (1 + bonus);
 }
 
 /**
