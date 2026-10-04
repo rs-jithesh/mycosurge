@@ -97,6 +97,7 @@ export type { SynthesisResult } from './manual';
 export {
   TUTORIAL_HOST_ID,
   getUnlockedHosts,
+  getFarmPool,
   getRadarSlots,
   rollContact,
   pingSubstrate,

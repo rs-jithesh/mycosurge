@@ -1,13 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { previewCombatReward } from '@mycosurge/game-engine';
-  import {
-    HOSTS,
-    getStrain,
-    isHostUnlocked,
-    SCAN_WATER_COST,
-    resourceLabel,
-  } from '@mycosurge/config';
+  import { HOSTS, getStrain, SCAN_WATER_COST, resourceLabel } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
@@ -32,7 +26,14 @@
   let isInTrauma = $derived(gameStore.isInTrauma);
   let hasActiveHost = $derived(gameStore.currentHost !== null);
   let activeHost = $derived(HOSTS.find((h) => h.id === gameStore.currentHost));
-  let canPing = $derived(water >= SCAN_WATER_COST && contacts.length < gameStore.radarSlots);
+  let cataloguedCount = $derived(gameStore.cataloguedHosts.length);
+  let undiscovered = $derived(
+    HOSTS.filter((h) => h.id !== 'soil_nematode').length - cataloguedCount,
+  );
+  let noKnownSpecies = $derived(cataloguedCount === 0);
+  let canPing = $derived(
+    water >= SCAN_WATER_COST && contacts.length < gameStore.radarSlots && !noKnownSpecies,
+  );
 
   let pingBtn = $state<HTMLButtonElement | null>(null);
   const reduceMotion =
@@ -51,9 +52,6 @@
       { duration: 440, easing: 'ease-out' },
     );
   }
-  let lockedCount = $derived(
-    HOSTS.filter((h) => h.id !== 'soil_nematode' && !isHostUnlocked(h, gameStore.reach)).length,
-  );
 
   function engage(contactId: string) {
     const contact = contacts.find((c) => c.id === contactId);
@@ -173,12 +171,22 @@
   {:else}
     {#if contacts.length === 0}
       <div class="empty-hunt">
-        <p class="empty-title">No signals right now</p>
-        <p class="empty-sub">Wait for one to drift in, or ping the substrate.</p>
-        {#if contacts.length < gameStore.radarSlots}
-          <span class="text-data-mono sweep"
-            >Next sweep ~{Math.max(1, Math.ceil(gs.sonarTimer))}s</span
-          >
+        {#if noKnownSpecies}
+          <p class="empty-title">No species catalogued yet</p>
+          <p class="empty-sub">
+            Grow the network and meet a host at the frontier — drive it off and it joins the radar.
+          </p>
+          <button class="cmd-btn secondary map-link" onclick={() => uiStore.openPanel('map')}>
+            Open network map
+          </button>
+        {:else}
+          <p class="empty-title">No signals right now</p>
+          <p class="empty-sub">Wait for one to drift in, or ping the substrate.</p>
+          {#if contacts.length < gameStore.radarSlots}
+            <span class="text-data-mono sweep"
+              >Next sweep ~{Math.max(1, Math.ceil(gs.sonarTimer))}s</span
+            >
+          {/if}
         {/if}
       </div>
     {:else}
@@ -262,12 +270,19 @@
           Ping substrate · {SCAN_WATER_COST}
           {resourceLabel('water')}
         </button>
+        <button
+          class="cmd-btn secondary"
+          onclick={() => uiStore.openPanel('map')}
+          title="Open the network map"
+        >
+          Network map
+        </button>
       </div>
     {/if}
 
-    {#if lockedCount > 0}
+    {#if undiscovered > 0}
       <div class="locked-teaser text-label-caps">
-        {lockedCount} fainter signal{lockedCount === 1 ? '' : 's'} beyond your network's reach
+        {undiscovered} species still undiscovered — expand the network to uncover them
       </div>
     {/if}
   {/if}
@@ -501,6 +516,12 @@
     margin: 0;
     font-size: 12px;
     color: var(--on-surface-variant);
+  }
+
+  .map-link {
+    margin-top: 8px;
+    font-size: 12px;
+    padding: 8px 12px;
   }
 
   .sweep {

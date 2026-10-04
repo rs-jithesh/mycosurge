@@ -63,6 +63,7 @@ describe('extendReach', () => {
     state.gamePhase = 'active';
     state.mycelialNetwork = REACH_START;
     state.biomass = 1000;
+    state.cataloguedHosts = ['fallen_leaf'];
 
     const result = extendReach(state);
     expect(result.spawned).not.toBeNull();

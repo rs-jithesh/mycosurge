@@ -79,6 +79,16 @@ export function getUnlockedHosts(state: GameState): HostDef[] {
   return HOSTS.filter((h) => h.id !== TUTORIAL_HOST_ID && isHostUnlocked(h, state.mycelialNetwork));
 }
 
+/**
+ * Species the radar can farm: only hosts the player has already catalogued (first
+ * defeat). Expansion and the map unlock *discovery*; the catalogued pool is what the
+ * radar pulls repeatable, strained encounters from.
+ */
+export function getFarmPool(state: GameState): HostDef[] {
+  const known = new Set(state.cataloguedHosts);
+  return HOSTS.filter((h) => h.id !== TUTORIAL_HOST_ID && known.has(h.id));
+}
+
 /** How many contacts the radar can hold at once. */
 export function getRadarSlots(state: GameState): number {
   const bonus = state.skillAllocations['extended_range'] ?? 0;
@@ -86,7 +96,7 @@ export function getRadarSlots(state: GameState): number {
 }
 
 export function rollContact(state: GameState): RadarContact | null {
-  const pool = getUnlockedHosts(state);
+  const pool = getFarmPool(state);
   if (pool.length === 0) return null;
 
   const host = pickHost(pool, state.lastContactHostId);

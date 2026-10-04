@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   getUnlockedHosts,
+  getFarmPool,
   getRadarSlots,
   pingSubstrate,
   scanContact,
@@ -56,6 +57,24 @@ describe('getUnlockedHosts', () => {
   });
 });
 
+describe('getFarmPool', () => {
+  it('is empty until a host is catalogued', () => {
+    const state = createInitialState();
+    state.mycelialNetwork = 5;
+    expect(getFarmPool(state)).toEqual([]);
+  });
+
+  it('contains only catalogued, non-tutorial hosts', () => {
+    const state = createInitialState();
+    state.mycelialNetwork = 20;
+    state.cataloguedHosts = ['fallen_leaf', 'garden_beetle', 'soil_nematode'];
+    const ids = getFarmPool(state)
+      .map((h) => h.id)
+      .sort();
+    expect(ids).toEqual(['fallen_leaf', 'garden_beetle']);
+  });
+});
+
 describe('getRadarSlots', () => {
   it('defaults to 2 and grows with the extended_range mutation', () => {
     const state = createInitialState();
@@ -69,6 +88,7 @@ describe('pingSubstrate', () => {
   it('spends water and adds a blip', () => {
     const state = createInitialState();
     state.mycelialNetwork = 5;
+    state.cataloguedHosts = ['fallen_leaf'];
     state.water = 20;
     expect(pingSubstrate(state)).toBe(true);
     expect(state.water).toBe(15);
@@ -78,7 +98,16 @@ describe('pingSubstrate', () => {
 
   it('fails without enough water', () => {
     const state = createInitialState();
+    state.cataloguedHosts = ['fallen_leaf'];
     state.water = 3;
+    expect(pingSubstrate(state)).toBe(false);
+    expect(state.contacts).toHaveLength(0);
+  });
+
+  it('fails when no species has been catalogued yet', () => {
+    const state = createInitialState();
+    state.mycelialNetwork = 5;
+    state.water = 100;
     expect(pingSubstrate(state)).toBe(false);
     expect(state.contacts).toHaveLength(0);
   });
@@ -86,6 +115,7 @@ describe('pingSubstrate', () => {
   it('respects the radar slot limit', () => {
     const state = createInitialState();
     state.mycelialNetwork = 5;
+    state.cataloguedHosts = ['fallen_leaf'];
     state.water = 100;
     expect(pingSubstrate(state)).toBe(true);
     expect(pingSubstrate(state)).toBe(true);
@@ -117,6 +147,7 @@ describe('tickRadar', () => {
   it('spawns a contact once the timer elapses', () => {
     const state = createInitialState();
     state.mycelialNetwork = 5;
+    state.cataloguedHosts = ['fallen_leaf'];
     state.sonarTimer = 0;
     const spawned = tickRadar(state, 1);
     expect(spawned).not.toBeNull();
@@ -183,6 +214,7 @@ describe('contact id uniqueness', () => {
   it('does not reuse an id after the in-memory sequence resets (reload)', () => {
     const state = createInitialState();
     state.mycelialNetwork = 5;
+    state.cataloguedHosts = ['fallen_leaf'];
     state.water = 100;
     pingSubstrate(state);
     expect(state.contacts[0].id).toBe('contact-1');

@@ -58,6 +58,7 @@ import {
   getEcologicalEfficiency,
   getSystemUnlocks,
   applyOfflineProgress,
+  getFarmPool,
   evaluateAdvisor,
   observePlayerChoice,
   observePlayerAction,
@@ -206,6 +207,14 @@ function createGameStore() {
         // Reach replaced echo-gating; active saves continue from at least the tutorial's 5 mm.
         if (merged.gamePhase === 'active') {
           merged.mycelialNetwork = Math.max(merged.mycelialNetwork, REACH_START);
+        }
+
+        // Slice 2 migration: hosts already fought count as catalogued, so an existing
+        // save keeps its radar farm pool.
+        if (merged.cataloguedHosts.length === 0) {
+          merged.cataloguedHosts = Object.entries(merged.hostAssimilation)
+            .filter(([id, value]) => id !== 'soil_nematode' && value > 0)
+            .map(([id]) => id);
         }
 
         const elapsed = merged.lastSavedAt > 0 ? (Date.now() - merged.lastSavedAt) / 1000 : 0;
@@ -462,6 +471,10 @@ function createGameStore() {
   }
 
   function pingSubstrate(): boolean {
+    if (getFarmPool(state).length === 0) {
+      logStore.info('No known species to track yet — find one at the frontier.');
+      return false;
+    }
     const result = enginePingSubstrate(state);
     if (result) {
       logStore.info('A pulse travels out — the substrate answers.');

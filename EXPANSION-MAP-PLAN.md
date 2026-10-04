@@ -1,7 +1,6 @@
 # Expansion & Discovery Map — Plan
 
-Status: **concept approved; Slice 1 in progress.** Supersedes the earlier growable-node-graph
-draft in this file.
+Status: **Slices 1 & 2 shipped.** Supersedes the earlier growable-node-graph draft in this file.
 
 ## Concept
 
@@ -73,10 +72,15 @@ zoom (transform the `<g>`, never regenerate geometry), ≥44 px host hit areas, 
 
 **Offline**: reach does not change offline in this slice; seed/geometry are save-stable.
 
-## Slice 2 (next, not now)
+## Slice 2 (shipped)
 
-Catalogue-gate the radar farm pool (retire the reach gate for the pool), emit "new species
-available" hints, and surface radar contacts on the map.
+The radar farm pool is now **catalogue-gated**: `getFarmPool` returns only catalogued,
+non-tutorial species, and `rollContact`/`tickRadar`/`pingSubstrate` draw from it. Expansion
+and the map unlock _discovery_; the radar pulls repeatable, strained encounters from what you
+have catalogued. The Hunt panel points players to the map when nothing is catalogued yet, and
+existing saves are migrated so already-fought hosts stay in the pool.
+
+Still open for later: surfacing live radar contacts on the map itself.
 
 ## Follow-up task (separate)
 
@@ -87,7 +91,7 @@ and passive bonuses, genome-point budget, the Evolution page listing, and saved 
 
 - Seed/version stability — store a `mapVersion` so geometry params can change safely.
 - Redraw cost — memoize geometry; transform for pan/zoom; animate only reach-dependent parts.
-- Two discovery surfaces (map + radar) until Slice 2.
+- Two discovery surfaces were merged in Slice 2: the map discovers, the radar farms.
 - SVG labels/dashes scaling under zoom — counter-scale text.
 
 ## Open questions (later)
