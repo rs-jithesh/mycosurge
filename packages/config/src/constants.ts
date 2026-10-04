@@ -1,5 +1,13 @@
 export const BASE_BIOMASS_PER_SEC = 0.5;
 
+// ── Feature flags ──
+/**
+ * Expeditions are hidden until explicitly enabled. While false the system never
+ * unlocks, is never announced, and has no panel entry point. Flip to true to
+ * surface it again.
+ */
+export const EXPEDITIONS_ENABLED = false;
+
 export const MAX_BIOMASS_BASE = 100;
 
 export const ALERT_INCREASE_RATE = 0.5;

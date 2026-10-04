@@ -117,6 +117,9 @@ Send a host off to forage; it returns after real time for bonus Biomass. One slo
 default, two with the **Overmind** mutation. Rewards and duration scale with the Rapid
 Scouts and Resource Routing mutations.
 
+**Currently hidden** behind the `EXPEDITIONS_ENABLED` flag (off): while false the system
+never unlocks, is never announced, and has no panel entry point.
+
 ## Hosts & discovery
 
 Hosts are ordered along an **8-stage scale ladder**, from microbial grazers a few
@@ -198,7 +201,7 @@ tutorial unlocks the **core chain** — Core and Radar — alongside a one-time 
 unlocked" overlay.
 
 The remaining systems are **unfolded as the player reaches them** rather than dumped at once:
-**Evolution** and **Expeditions** both appear once the first host has been grown over. Locked
+**Evolution** appears once the first host has been grown over. Locked
 tabs are hidden, each new system announces itself once in the activity log, and
 its tab carries a "New" badge until first visited. Unlocks are based on lifetime totals, so a
 system never re-locks once reached.

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { EXPEDITIONS_ENABLED } from '@mycosurge/config';
 import { createInitialState } from './state';
 import { getSystemUnlocks } from './systems';
 
@@ -22,15 +23,15 @@ describe('getSystemUnlocks', () => {
     });
   });
 
-  it('reveals Evolution and Expeditions together at the first grown-over host', () => {
+  it('reveals Evolution once a host has been grown over', () => {
     const state = createInitialState();
     state.gamePhase = 'active';
     state.hostsDefeated = 1;
-    expect(getSystemUnlocks(state)).toEqual({
-      radar: true,
-      evolution: true,
-      expeditions: true,
-    });
+    const unlocks = getSystemUnlocks(state);
+    expect(unlocks.radar).toBe(true);
+    expect(unlocks.evolution).toBe(true);
+    // Expeditions stays hidden until explicitly enabled.
+    expect(unlocks.expeditions).toBe(EXPEDITIONS_ENABLED);
   });
 
   it('does not re-lock a system once a host has been grown over', () => {

@@ -89,13 +89,22 @@ import type {
   GrowthPhase,
   AdvisorResult,
 } from '@mycosurge/game-engine';
-import { HOSTS, SKILL_NODES, GENERATORS, REACH_START, ADVISOR_TUNING } from '@mycosurge/config';
+import {
+  HOSTS,
+  SKILL_NODES,
+  GENERATORS,
+  REACH_START,
+  ADVISOR_TUNING,
+  EXPEDITIONS_ENABLED,
+} from '@mycosurge/config';
 import { SYSTEM_META } from '$lib/content/systems';
 import { logStore } from './log.svelte';
 
 const SAVE_KEY = 'mycosurge_save';
 const REVEAL_KEY = 'mycosurge_reveals';
-const ALL_SYSTEM_IDS: SystemId[] = ['radar', 'evolution', 'expeditions'];
+const ALL_SYSTEM_IDS: SystemId[] = EXPEDITIONS_ENABLED
+  ? ['radar', 'evolution', 'expeditions']
+  : ['radar', 'evolution'];
 const TICK_INTERVAL = 1000;
 
 interface RevealState {
@@ -141,7 +150,9 @@ function createGameStore() {
   }
 
   function unlockedSystems(): SystemUnlocks {
-    if (allSystemsUnlocked) return { radar: true, evolution: true, expeditions: true };
+    if (allSystemsUnlocked) {
+      return { radar: true, evolution: true, expeditions: EXPEDITIONS_ENABLED };
+    }
     return getSystemUnlocks(state);
   }
 
