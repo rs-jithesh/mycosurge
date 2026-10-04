@@ -142,14 +142,13 @@
         <span class="res-name"><ResourceSymbol id="reach" info /></span>
         <span class="text-data-mono res-val">
           <b>{reach}</b>
-          <span class="cap">/ {reachMax} mm</span>
+          <span class="cap">mm</span>
         </span>
       </div>
       <ProgressBar tone="mint" value={reach} max={reachMax} showValue={false} />
       <div class="res-foot">
-        <span class="text-data-mono net">Deepest {reach} mm · grow on the map</span>
         {#if nextReachTier}
-          <span class="text-data-mono detail">Deeper signals at {nextReachTier.at} mm</span>
+          <span class="text-data-mono detail">Deeper hosts at {nextReachTier.at} mm</span>
         {:else}
           <span class="text-data-mono detail">All hosts in range</span>
         {/if}
