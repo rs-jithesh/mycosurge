@@ -27,9 +27,6 @@
   let hasActiveHost = $derived(gameStore.currentHost !== null);
   let activeHost = $derived(HOSTS.find((h) => h.id === gameStore.currentHost));
   let cataloguedCount = $derived(gameStore.cataloguedHosts.length);
-  let undiscovered = $derived(
-    HOSTS.filter((h) => h.id !== 'soil_nematode').length - cataloguedCount,
-  );
   let noKnownSpecies = $derived(cataloguedCount === 0);
   let canPing = $derived(
     water >= SCAN_WATER_COST && contacts.length < gameStore.radarSlots && !noKnownSpecies,
@@ -277,12 +274,6 @@
         >
           Network map
         </button>
-      </div>
-    {/if}
-
-    {#if undiscovered > 0}
-      <div class="locked-teaser text-label-caps">
-        {undiscovered} species still undiscovered — expand the network to uncover them
       </div>
     {/if}
   {/if}
@@ -647,12 +638,5 @@
   .recovery-note {
     color: var(--alert);
     font-size: 10px;
-  }
-
-  .locked-teaser {
-    color: var(--on-surface-variant);
-    text-align: center;
-    padding: var(--space-unit);
-    font-size: 11px;
   }
 </style>
