@@ -13,6 +13,7 @@
   import MapOverlay from '$lib/components/map/MapOverlay.svelte';
   import BestiaryPanel from '$lib/components/bestiary/BestiaryPanel.svelte';
   import CombatModal from '$lib/components/CombatModal.svelte';
+  import SystemsUnlocked from '$lib/components/SystemsUnlocked.svelte';
 
   let { children } = $props();
 
@@ -47,6 +48,34 @@
 
   let isFullGame = $derived(gameStore.state.gamePhase === 'active');
   let menuOpen = $state(false);
+
+  // The post-tutorial "systems unlocked" welcome lives at the layout root (not
+  // inside the page) so it is a single instance that always appears — the page is
+  // rendered in both the desktop and mobile containers.
+  const UNLOCK_SEEN_KEY = 'mycosurge_unlock_seen';
+  let showUnlock = $state(false);
+  let unlockSeen = $state(true);
+
+  onMount(() => {
+    try {
+      unlockSeen = localStorage.getItem(UNLOCK_SEEN_KEY) === '1';
+    } catch {
+      unlockSeen = true;
+    }
+  });
+
+  $effect(() => {
+    if (isFullGame && !unlockSeen) showUnlock = true;
+  });
+
+  function dismissUnlock() {
+    try {
+      localStorage.setItem(UNLOCK_SEEN_KEY, '1');
+    } catch {
+      // ignore
+    }
+    showUnlock = false;
+  }
 
   // Arm once, after the router has initialised, so Back reaches our handler.
   let historyArmed = false;
@@ -267,6 +296,11 @@
     {/if}
   </div>
 </div>
+
+<!-- One-time welcome after the tutorial; rendered at the root so both layouts see it. -->
+{#if showUnlock}
+  <SystemsUnlocked onClose={dismissUnlock} />
+{/if}
 
 <!-- System drawers -->
 {#if uiStore.activePanel === 'evolution'}
