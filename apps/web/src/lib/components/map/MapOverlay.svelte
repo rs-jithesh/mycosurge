@@ -27,6 +27,9 @@
 
   let { onClose }: { onClose: () => void } = $props();
 
+  /** Screen-space radius of the drawn colony core; hover/taps inside it are ignored. */
+  const CORE_HIT_PX = 13;
+
   // The viewport is measured in CSS pixels (1 viewBox unit == 1px), so panning is
   // direct. The map always shows the network's current scale band, in band-local mm.
   let viewW = $state(1000);
@@ -282,8 +285,7 @@
     const rect = (event.currentTarget as Element).getBoundingClientRect();
     const wx = (event.clientX - rect.left - (cx + panX)) / k;
     const wy = (event.clientY - rect.top - (cy + panY)) / k;
-    const radius = Math.hypot(wx, wy);
-    if (radius < 1) {
+    if (Math.hypot(wx, wy) * k < CORE_HIT_PX) {
       selectedSector = null;
       return;
     }
@@ -307,7 +309,7 @@
     const rect = (event.currentTarget as Element).getBoundingClientRect();
     const wx = (event.clientX - rect.left - (cx + panX)) / k;
     const wy = (event.clientY - rect.top - (cy + panY)) / k;
-    if (Math.hypot(wx, wy) < 1) {
+    if (Math.hypot(wx, wy) * k < CORE_HIT_PX) {
       hoverSector = null;
       return;
     }
