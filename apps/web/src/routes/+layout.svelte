@@ -75,6 +75,32 @@
     gameStore.announceNewSystems();
   });
 
+  // Chrome can mark pushState entries made without a user gesture as "skippable",
+  // so a system Back on Android may leave the page before our popstate guard runs.
+  // While a fight is live, require the browser to confirm before unloading at all.
+  $effect(() => {
+    if (uiStore.combatHostId === null) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  });
+
+  // Push a sentinel when a fight opens (from the player's tap) so an in-app Back is
+  // intercepted rather than skipped.
+  let fightHistoryArmed = false;
+  $effect(() => {
+    const active = uiStore.combatHostId !== null;
+    if (active && !fightHistoryArmed) {
+      fightHistoryArmed = true;
+      armHistory();
+    } else if (!active) {
+      fightHistoryArmed = false;
+    }
+  });
+
   function handleReset() {
     if (confirm('Reset all progress and restart from the tutorial?')) {
       gameStore.resetGame();
