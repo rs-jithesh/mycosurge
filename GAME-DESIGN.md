@@ -138,16 +138,16 @@ A host joins the sonar pool when its **stage** is in reach (`host.stage`), and t
 **boss** sits on the outer ring as a gate — driving it off opens the next scale.
 `Soil Nematode` remains the tutorial encounter, excluded from the pool and the bestiary.
 
-| Stage | Reach band | Unit | Biome               | Hosts (boss in **bold**)                                                                                              |
-| ----- | ---------- | ---- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| 1     | 5–10 mm    | mm   | Leaf litter & soil  | Bacterial Film, Yeast Bloom, Ciliate, Vampire Amoeba, Rotifer, Fallen Leaf, **Nematode Brood**                         |
-| 2     | 1–5 cm     | cm   | Leaf litter & soil  | Oribatid Mite, Springtail, Tardigrade, Fungus Gnat Larva, Aphid, Pseudoscorpion, Compost Worm, **Mite Colony**         |
-| 3     | 5–20 cm    | cm   | Leaf litter & soil  | Termite Worker, Termite Soldier, Ant Worker, Carpenter Ant, Leafcutter Ant, Beetle Grub, **Termite Queen's Chamber**  |
-| 4     | 20–60 cm   | cm   | Rotting log         | Garden Beetle                                                                                                          |
-| 5     | 60 cm–1 m  | cm   | Forest floor        | Pond Frog                                                                                                              |
-| 6     | 1–5 m      | m    | Forest floor        | Field Mouse, Backyard Squirrel, Urban Pigeon, Feral Raccoon, Stray Cat, **Laboratory Rat**                             |
-| 7     | 5–50 m     | m    | Living forest       | _(not yet authored)_                                                                                                   |
-| 8     | 50 m+      | m    | Living forest       | _(not yet authored)_                                                                                                   |
+| Stage | Reach band | Unit | Biome              | Hosts (boss in **bold**)                                                                                                                              |
+| ----- | ---------- | ---- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | 5–10 mm    | mm   | Leaf litter & soil | Bacterial Film, Yeast Bloom, Ciliate, Vampire Amoeba, Rotifer, Fallen Leaf, **Nematode Brood**                                                        |
+| 2     | 1–5 cm     | cm   | Leaf litter & soil | Oribatid Mite, Springtail, Tardigrade, Fungus Gnat Larva, Aphid, Pseudoscorpion, Compost Worm, **Mite Colony**                                        |
+| 3     | 5–20 cm    | cm   | Leaf litter & soil | Termite Worker, Termite Soldier, Ant Worker, Carpenter Ant, Leafcutter Ant, Beetle Grub, **Termite Queen's Chamber**                                  |
+| 4     | 20–60 cm   | cm   | Rotting log        | Garden Beetle, Cricket, Caterpillar, Wolf Spider, Cicada Nymph, Snail, Centipede, **Tarantula**                                                       |
+| 5     | 60 cm–1 m  | cm   | Forest floor       | Pond Frog, Millipede, Earthworm, Common Frog, Shrew, Bat, **Snake**                                                                                   |
+| 6     | 1–5 m      | m    | Forest floor       | Field Mouse, Backyard Squirrel, Urban Pigeon, Feral Raccoon, Stray Cat, Rat Pack, Crow, Fox, Wild Boar, Deer, **Wolf Pack Alpha**, **Laboratory Rat** |
+| 7     | 5–50 m     | m    | Living forest      | Bear, Termite Mound City, Ancient Stag, Ant Supercolony, **Elder Tree**                                                                               |
+| 8     | 50 m+      | m    | Living forest      | Canopy, Rival Giant Fungus, Hive Mind, **Apex Mycelium**                                                                                              |
 
 Each host carries one or more **attack patterns** (see `COMBAT.md`) and may carry behaviour
 **traits** drawn from the roster vocabulary (`armored`, `splits`, `revives`, `leech`,

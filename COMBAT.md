@@ -103,8 +103,8 @@ each host's stage band on the map ends with such a boss.
 
 | Trait      | Intent                                                                |
 | ---------- | --------------------------------------------------------------------- |
-| `armored`  | A plated front; damage from the side or a specific arc is reduced.     |
-| `shielded` | A carried/raised shield (e.g. a leaf) that must be broken or flanked.  |
+| `armored`  | A plated front; damage from the side or a specific arc is reduced.    |
+| `shielded` | A carried/raised shield (e.g. a leaf) that must be broken or flanked. |
 | `splits`   | Splits into smaller nodes when damaged.                               |
 | `clones`   | Clones itself if left alive too long.                                 |
 | `revives`  | Survives one lethal hit and returns.                                  |

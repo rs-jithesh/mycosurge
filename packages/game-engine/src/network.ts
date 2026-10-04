@@ -178,8 +178,10 @@ export function generateHostPlacements(seed: number): HostPlacement[] {
     const index = peers.indexOf(host);
     const spread = peers.length > 1 ? index / (peers.length - 1) : 0.5;
     const jitter = rng() * cfg.hostJitterFraction;
+    const bossPeers = peers.filter((p) => p.isBoss);
+    const bossRank = bossPeers.indexOf(host);
     const fraction = host.isBoss
-      ? cfg.bossFraction
+      ? Math.max(0.55, cfg.bossFraction - bossRank * 0.12)
       : Math.min(0.82, cfg.hostOffsetFraction + spread * 0.72 + jitter);
     const localMm = fraction * bandWidth;
     const angle = rng() * TAU;

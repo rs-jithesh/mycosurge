@@ -79,6 +79,13 @@ describe('generateHostPlacements', () => {
       expect(placement.distanceMm).toBeLessThan(10);
     }
   });
+
+  it('populates every stage band', () => {
+    const placements = generateHostPlacements(555);
+    for (let stage = 1; stage <= 8; stage++) {
+      expect(placements.some((p) => p.stage === stage)).toBe(true);
+    }
+  });
 });
 
 describe('host visibility', () => {
