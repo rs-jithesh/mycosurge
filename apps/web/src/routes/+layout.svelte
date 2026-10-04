@@ -59,6 +59,7 @@
   onMount(() => {
     gameStore.startTick();
     window.addEventListener('popstate', handlePopState);
+    window.addEventListener('keydown', handleRepeatActivation, true);
     logStore.info('Hyphae taste the dark — the network is awake.');
     if (import.meta.env.PROD && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register(`${base}/sw.js`).catch(() => {});
@@ -66,8 +67,27 @@
     return () => {
       gameStore.stopTick();
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('keydown', handleRepeatActivation, true);
     };
   });
+
+  // Holding Enter/Space on a focused control fires its click repeatedly (key
+  // repeat), turning a tap into a rapid-fire "hold to generate". Swallow the
+  // repeated activations; the first press still works normally. Movement keys
+  // (WASD/arrows) are untouched.
+  function handleRepeatActivation(event: KeyboardEvent) {
+    if (!event.repeat) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const target = event.target as HTMLElement | null;
+    if (
+      target?.closest(
+        'button, a[href], [role="button"], [role="menuitem"], input, select, textarea',
+      )
+    ) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }
 
   // Announce each system once as it is reached.
   $effect(() => {
