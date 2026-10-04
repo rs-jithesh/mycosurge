@@ -19,7 +19,7 @@ import { createInitialState, type GameState, type RadarContact } from './state';
 function makeContact(overrides: Partial<RadarContact> = {}): RadarContact {
   return {
     id: 'test-contact',
-    hostId: 'fallen_leaf',
+    hostId: 'bacterial_film',
     strainId: 'normal',
     revealed: false,
     timeRemaining: 120,
@@ -42,7 +42,6 @@ describe('getUnlockedHosts', () => {
     expect(ids).toEqual([
       'bacterial_film',
       'ciliate',
-      'fallen_leaf',
       'nematode_brood',
       'rotifer',
       'vampire_amoeba',
@@ -55,15 +54,15 @@ describe('getUnlockedHosts', () => {
     const state = createInitialState();
     state.mycelialNetwork = 10;
     expect(getUnlockedHosts(state).some((h) => h.id === 'oribatid_mite')).toBe(true);
-    expect(getUnlockedHosts(state).some((h) => h.id === 'urban_pigeon')).toBe(false);
+    expect(getUnlockedHosts(state).some((h) => h.id === 'rat_pack')).toBe(false);
   });
 
   it('gates the boss until its stage is in reach', () => {
     const state = createInitialState();
     state.mycelialNetwork = 24;
-    expect(getUnlockedHosts(state).some((h) => h.id === 'lab_rat')).toBe(false);
+    expect(getUnlockedHosts(state).some((h) => h.id === 'wolf_alpha')).toBe(false);
     state.mycelialNetwork = 1000;
-    expect(getUnlockedHosts(state).some((h) => h.id === 'lab_rat')).toBe(true);
+    expect(getUnlockedHosts(state).some((h) => h.id === 'wolf_alpha')).toBe(true);
   });
 });
 
@@ -77,11 +76,11 @@ describe('getFarmPool', () => {
   it('contains only catalogued, non-tutorial hosts', () => {
     const state = createInitialState();
     state.mycelialNetwork = 20;
-    state.cataloguedHosts = ['fallen_leaf', 'garden_beetle', 'soil_nematode'];
+    state.cataloguedHosts = ['bacterial_film', 'springtail', 'soil_nematode'];
     const ids = getFarmPool(state)
       .map((h) => h.id)
       .sort();
-    expect(ids).toEqual(['fallen_leaf', 'garden_beetle']);
+    expect(ids).toEqual(['bacterial_film', 'springtail']);
   });
 });
 
@@ -98,7 +97,7 @@ describe('pingSubstrate', () => {
   it('spends water and adds a blip', () => {
     const state = createInitialState();
     state.mycelialNetwork = 5;
-    state.cataloguedHosts = ['fallen_leaf'];
+    state.cataloguedHosts = ['bacterial_film'];
     state.water = 20;
     expect(pingSubstrate(state)).toBe(true);
     expect(state.water).toBe(15);
@@ -108,7 +107,7 @@ describe('pingSubstrate', () => {
 
   it('fails without enough water', () => {
     const state = createInitialState();
-    state.cataloguedHosts = ['fallen_leaf'];
+    state.cataloguedHosts = ['bacterial_film'];
     state.water = 3;
     expect(pingSubstrate(state)).toBe(false);
     expect(state.contacts).toHaveLength(0);
@@ -125,7 +124,7 @@ describe('pingSubstrate', () => {
   it('respects the radar slot limit', () => {
     const state = createInitialState();
     state.mycelialNetwork = 5;
-    state.cataloguedHosts = ['fallen_leaf'];
+    state.cataloguedHosts = ['bacterial_film'];
     state.water = 100;
     expect(pingSubstrate(state)).toBe(true);
     expect(pingSubstrate(state)).toBe(true);
@@ -157,7 +156,7 @@ describe('tickRadar', () => {
   it('spawns a contact once the timer elapses', () => {
     const state = createInitialState();
     state.mycelialNetwork = 5;
-    state.cataloguedHosts = ['fallen_leaf'];
+    state.cataloguedHosts = ['bacterial_film'];
     state.sonarTimer = 0;
     const spawned = tickRadar(state, 1);
     expect(spawned).not.toBeNull();
@@ -166,7 +165,7 @@ describe('tickRadar', () => {
 
   it('does not spawn while a host is engaged', () => {
     const state = createInitialState();
-    state.currentHostId = 'fallen_leaf';
+    state.currentHostId = 'bacterial_film';
     state.sonarTimer = 0;
     expect(tickRadar(state, 1)).toBeNull();
     expect(state.contacts).toHaveLength(0);
@@ -174,7 +173,7 @@ describe('tickRadar', () => {
 
   it('expires contacts past their linger time', () => {
     const state = createInitialState();
-    state.currentHostId = 'fallen_leaf';
+    state.currentHostId = 'bacterial_film';
     state.contacts = [makeContact({ timeRemaining: 5 })];
     tickRadar(state, 10);
     expect(state.contacts).toHaveLength(0);
@@ -188,7 +187,7 @@ describe('engageContact', () => {
     expect(engageContact(state, 'test-contact')).toBe(false);
     state.contacts[0].revealed = true;
     expect(engageContact(state, 'test-contact')).toBe(true);
-    expect(state.currentHostId).toBe('fallen_leaf');
+    expect(state.currentHostId).toBe('bacterial_film');
     expect(state.currentContactId).toBe('test-contact');
   });
 
@@ -224,7 +223,7 @@ describe('contact id uniqueness', () => {
   it('does not reuse an id after the in-memory sequence resets (reload)', () => {
     const state = createInitialState();
     state.mycelialNetwork = 5;
-    state.cataloguedHosts = ['fallen_leaf'];
+    state.cataloguedHosts = ['bacterial_film'];
     state.water = 100;
     pingSubstrate(state);
     expect(state.contacts[0].id).toBe('contact-1');
@@ -259,22 +258,22 @@ describe('per-host assimilation', () => {
     const state: GameState = createInitialState();
     state.water = state.waterCap;
     state.nutrients = state.nutrientsCap;
-    calculateVictoryReward(state, 'fallen_leaf');
-    expect(state.hostAssimilation['fallen_leaf']).toBe(15);
-    expect(state.hostAssimilation['compost_worm']).toBeUndefined();
+    calculateVictoryReward(state, 'bacterial_film');
+    expect(state.hostAssimilation['bacterial_film']).toBe(15);
+    expect(state.hostAssimilation['tardigrade']).toBeUndefined();
   });
 
-  it('unlocks the echo once and bumps hostsDefeated once', () => {
+  it('grows a host over once and bumps hostsDefeated once', () => {
     const state: GameState = createInitialState();
     state.water = state.waterCap;
     state.nutrients = state.nutrientsCap;
     for (let i = 0; i < 7; i++) {
-      applyVictory(state, 'fallen_leaf');
+      applyVictory(state, 'bacterial_film');
     }
-    expect(state.acquiredEchoes).toContain('echo_leaf');
+    expect(state.grownOverHosts).toContain('bacterial_film');
     expect(state.hostsDefeated).toBe(1);
 
-    applyVictory(state, 'fallen_leaf');
+    applyVictory(state, 'bacterial_film');
     expect(state.hostsDefeated).toBe(1);
   });
 });
@@ -285,7 +284,7 @@ describe('strain rewards', () => {
     state.water = state.waterCap;
     state.nutrients = state.nutrientsCap;
     state.activeStrainId = 'bloated';
-    const result = calculateVictoryReward(state, 'fallen_leaf');
+    const result = calculateVictoryReward(state, 'bacterial_film');
     expect(result.biomassEarned).toBe(64);
     expect(result.lysateEarned).toBe(7);
   });

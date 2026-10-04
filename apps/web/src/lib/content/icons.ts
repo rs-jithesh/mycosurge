@@ -11,7 +11,6 @@ export type IconKey =
   | 'nutrients'
   | 'biomass'
   | 'lysate'
-  | 'echo'
   | 'core'
   | 'radar'
   | 'evolution'
@@ -34,17 +33,7 @@ export type IconKey =
   | 'swift'
   | 'armored'
   | 'bloated'
-  | 'soil_nematode'
-  | 'fallen_leaf'
-  | 'garden_beetle'
-  | 'field_mouse'
-  | 'urban_pigeon'
-  | 'stray_cat'
-  | 'lab_rat'
-  | 'compost_worm'
-  | 'pond_frog'
-  | 'backyard_squirrel'
-  | 'feral_raccoon';
+  | 'soil_nematode';
 
 export interface IconMeta {
   file: string;
@@ -58,7 +47,6 @@ export const ICON_META: Record<IconKey, IconMeta> = {
   nutrients: { file: 'nutrients.png', glyph: 'ν', label: 'Nutrients', tone: 'violet' },
   biomass: { file: 'biomass.png', glyph: 'β', label: 'Biomass', tone: 'mint' },
   lysate: { file: 'lysate.png', glyph: 'λ', label: 'Lysate', tone: 'amber' },
-  echo: { file: 'echo.png', glyph: '❂', label: 'Echo', tone: 'amber' },
   core: { file: 'core.png', glyph: '◎', label: 'Core', tone: 'mint' },
 
   radar: { file: 'radar.png', glyph: '◎', label: 'Radar', tone: 'cyan' },
@@ -95,38 +83,11 @@ export const ICON_META: Record<IconKey, IconMeta> = {
   bloated: { file: 'bloated.png', glyph: '⬤', label: 'Bloated strain', tone: 'violet' },
 
   soil_nematode: { file: 'soil_nematode.png', glyph: 'N', label: 'Soil Nematode', tone: 'coral' },
-  fallen_leaf: { file: 'fallen_leaf.png', glyph: 'L', label: 'Fallen Leaf', tone: 'mint' },
-  garden_beetle: { file: 'garden_beetle.png', glyph: 'B', label: 'Garden Beetle', tone: 'amber' },
-  field_mouse: { file: 'field_mouse.png', glyph: 'M', label: 'Field Mouse', tone: 'coral' },
-  urban_pigeon: { file: 'urban_pigeon.png', glyph: 'P', label: 'Urban Pigeon', tone: 'cyan' },
-  stray_cat: { file: 'stray_cat.png', glyph: 'C', label: 'Stray Cat', tone: 'amber' },
-  lab_rat: { file: 'lab_rat.png', glyph: 'R', label: 'Laboratory Rat', tone: 'coral' },
-  compost_worm: { file: 'compost_worm.png', glyph: 'W', label: 'Compost Worm', tone: 'mint' },
-  pond_frog: { file: 'pond_frog.png', glyph: 'F', label: 'Pond Frog', tone: 'cyan' },
-  backyard_squirrel: {
-    file: 'backyard_squirrel.png',
-    glyph: 'S',
-    label: 'Backyard Squirrel',
-    tone: 'amber',
-  },
-  feral_raccoon: { file: 'feral_raccoon.png', glyph: 'K', label: 'Feral Raccoon', tone: 'coral' },
 };
 
 export const ICON_KEYS = Object.keys(ICON_META) as IconKey[];
 
-const HOST_ICON_KEYS = [
-  'soil_nematode',
-  'fallen_leaf',
-  'garden_beetle',
-  'field_mouse',
-  'urban_pigeon',
-  'stray_cat',
-  'lab_rat',
-  'compost_worm',
-  'pond_frog',
-  'backyard_squirrel',
-  'feral_raccoon',
-] as const;
+const HOST_ICON_KEYS = ['soil_nematode'] as const;
 
 const HOST_ICON_SET: ReadonlySet<string> = new Set(HOST_ICON_KEYS);
 

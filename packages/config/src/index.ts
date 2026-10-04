@@ -2,7 +2,7 @@ export { SKILL_TREES, SKILL_NODES, SKILL_TREE_ORDER } from './skill-trees';
 export type { SkillTree, SkillNodeDef } from './skill-trees';
 
 export { HOSTS, TUTORIAL_HOST_ID, isHostUnlocked } from './hosts';
-export type { HostDef, HostAiDef, HostEchoDef, HostTrait, Mobility } from './hosts';
+export type { HostDef, HostAiDef, HostTrait, Mobility } from './hosts';
 
 export {
   STAGES,

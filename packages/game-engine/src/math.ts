@@ -26,7 +26,6 @@ import {
 } from '@mycosurge/config';
 import type { GameState } from './state';
 import { tickGenerators } from './generators';
-import { getEchoEffects } from './echoes';
 import { getCoverage } from './sectors';
 
 export function getAlertMultiplier(alertLevel: number): number {
@@ -115,9 +114,8 @@ export function getEffectiveBiomassPerSec(state: GameState): number {
 
   const efficiency = getEcologicalEfficiency(state);
   const skillBonus = getProliferationBonus(state.skillAllocations);
-  const echoBonus = getEchoEffects(state.acquiredEchoes).biomassMult;
 
-  return state.baseBiomassPerSec * efficiency * (1 + skillBonus + echoBonus);
+  return state.baseBiomassPerSec * efficiency * (1 + skillBonus);
 }
 
 export function getWaterPercent(state: GameState): number {

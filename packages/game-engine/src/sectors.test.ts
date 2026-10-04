@@ -94,7 +94,7 @@ describe('per-sector visibility', () => {
   function placement(angle: number, distanceMm: number): HostPlacement {
     return {
       id: 'host-x',
-      hostId: 'fallen_leaf',
+      hostId: 'bacterial_film',
       stage: 1,
       isBoss: false,
       angle,

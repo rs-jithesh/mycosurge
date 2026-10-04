@@ -195,11 +195,7 @@
 
   <div class="vitals">
     <div class="vital">
-      <span class="text-label-caps vital-label">Echoes</span>
-      <span class="text-data-mono vital-val">{gameStore.acquiredEchoes.length}</span>
-    </div>
-    <div class="vital">
-      <span class="text-label-caps vital-label">Hosts</span>
+      <span class="text-label-caps vital-label">Grown over</span>
       <span class="text-data-mono vital-val">{gameStore.hostsDefeated}</span>
     </div>
   </div>

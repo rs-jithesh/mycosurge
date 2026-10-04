@@ -92,7 +92,7 @@ describe('host visibility', () => {
   const catalogued = new Set<string>();
   const placement = {
     id: 'host-x',
-    hostId: 'fallen_leaf',
+    hostId: 'bacterial_film',
     stage: 1,
     isBoss: false,
     angle: 0,
@@ -103,7 +103,7 @@ describe('host visibility', () => {
   };
 
   it('resolves catalogued > encountered > sensed > hidden', () => {
-    expect(getHostVisibility(placement, 10, new Set(['fallen_leaf']))).toBe('catalogued');
+    expect(getHostVisibility(placement, 10, new Set(['bacterial_film']))).toBe('catalogued');
     expect(getHostVisibility(placement, 10, catalogued)).toBe('encountered');
     expect(getHostVisibility(placement, 5, catalogued)).toBe('sensed');
     expect(getHostVisibility(placement, 1, catalogued)).toBe('hidden');
@@ -113,11 +113,11 @@ describe('host visibility', () => {
 describe('catalogue + first contact', () => {
   it('catalogues a host once and ignores the tutorial host', () => {
     const state = createInitialState();
-    catalogueHost(state, 'fallen_leaf');
-    catalogueHost(state, 'fallen_leaf');
+    catalogueHost(state, 'bacterial_film');
+    catalogueHost(state, 'bacterial_film');
     catalogueHost(state, 'soil_nematode');
-    expect(state.cataloguedHosts).toEqual(['fallen_leaf']);
-    expect(isCatalogued(state, 'fallen_leaf')).toBe(true);
+    expect(state.cataloguedHosts).toEqual(['bacterial_film']);
+    expect(isCatalogued(state, 'bacterial_film')).toBe(true);
     expect(isCatalogued(state, 'soil_nematode')).toBe(false);
   });
 
@@ -160,8 +160,8 @@ describe('contact markers', () => {
   const placements = generateHostPlacements(555);
 
   it('places a contact at its species location', () => {
-    const markers = getContactMarkers([makeContact('contact-1', 'fallen_leaf')], placements);
-    const placement = placements.find((p) => p.hostId === 'fallen_leaf')!;
+    const markers = getContactMarkers([makeContact('contact-1', 'bacterial_film')], placements);
+    const placement = placements.find((p) => p.hostId === 'bacterial_film')!;
     expect(markers).toHaveLength(1);
     expect(markers[0].distanceMm).toBeCloseTo(placement.distanceMm);
     expect(markers[0].revealed).toBe(false);
@@ -170,8 +170,8 @@ describe('contact markers', () => {
   it('fans out repeated species and skips unknown hosts', () => {
     const markers = getContactMarkers(
       [
-        makeContact('contact-1', 'fallen_leaf', { revealed: true }),
-        makeContact('contact-2', 'fallen_leaf'),
+        makeContact('contact-1', 'bacterial_film', { revealed: true }),
+        makeContact('contact-2', 'bacterial_film'),
         makeContact('contact-3', 'not_a_host'),
       ],
       placements,

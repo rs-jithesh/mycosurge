@@ -57,10 +57,7 @@ import {
   tickManualCooldown,
   isStarving as engineIsStarving,
   getRecommendedPhase,
-  getEchoEffects,
   getEffectiveCombatStats,
-  getEchoName,
-  getEchoDescription,
   getUpkeepRate,
   getResourceProduction,
   getNetResourceRate,
@@ -186,7 +183,7 @@ function createGameStore() {
           hostAssimilation: { ...(parsed.hostAssimilation ?? {}) },
           contacts: parsed.contacts ?? [],
           expeditions: parsed.expeditions ?? [],
-          acquiredEchoes: parsed.acquiredEchoes ?? [],
+          grownOverHosts: parsed.grownOverHosts ?? [],
           networkSeed: parsed.networkSeed ?? initial.networkSeed,
           cordBranchId: parsed.cordBranchId ?? initial.cordBranchId,
           cataloguedHosts: parsed.cataloguedHosts ?? initial.cataloguedHosts,
@@ -215,7 +212,7 @@ function createGameStore() {
         if (migrateSkillAllocations(merged)) didResetSkills = true;
         // Repair duplicate radar-contact ids from older saves (they crash keyed lists).
         ensureUniqueContactIds(merged);
-        // Reach replaced echo-gating; active saves continue from at least the tutorial's 5 mm.
+        // Reach drives progression; active saves continue from at least the tutorial's 5 mm.
         if (merged.gamePhase === 'active') {
           merged.mycelialNetwork = Math.max(merged.mycelialNetwork, REACH_START);
         }
@@ -604,7 +601,7 @@ function createGameStore() {
         `The ${host?.name ?? hostId} stills — ${result.biomassEarned} Biomass harvested.`,
       );
       if (result.hostDefeated) {
-        logStore.success('Its pattern sinks in — a new echo joins the network.');
+        logStore.success(`Its pattern sinks in — ${host?.name ?? hostId} is fully grown over.`);
       }
       const wasKnown = state.cataloguedHosts.includes(hostId);
       catalogueHost(state, hostId);
@@ -822,12 +819,6 @@ function createGameStore() {
     capExpandCost(resource: CapResource) {
       return getCapExpandCost(state, resource);
     },
-    get acquiredEchoes() {
-      return state.acquiredEchoes;
-    },
-    get echoEffects() {
-      return getEchoEffects(state.acquiredEchoes);
-    },
     get genomePointsSpent() {
       return getSpentGenomePoints(state);
     },
@@ -842,12 +833,6 @@ function createGameStore() {
     },
     get respecCost() {
       return getRespecCost(state);
-    },
-    echoName(echoId: string) {
-      return getEchoName(echoId);
-    },
-    echoDescription(echoId: string) {
-      return getEchoDescription(echoId);
     },
     get expeditions() {
       return state.expeditions;

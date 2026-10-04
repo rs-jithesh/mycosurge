@@ -62,7 +62,7 @@ describe('applyOfflineProgress', () => {
     const state = activeState();
     state.expeditions = [
       {
-        hostId: 'fallen_leaf',
+        hostId: 'bacterial_film',
         timeRemaining: 60,
         duration: 60,
         completed: false,
@@ -79,7 +79,7 @@ describe('applyOfflineProgress', () => {
     state.contacts = [
       {
         id: 'c1',
-        hostId: 'fallen_leaf',
+        hostId: 'bacterial_film',
         strainId: 'normal',
         revealed: false,
         timeRemaining: 30,

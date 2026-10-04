@@ -227,7 +227,7 @@
                 {#if cstrain.id !== 'normal'}
                   <span class="strain-tag text-label-caps">{cstrain.name}</span>
                 {/if}
-                <span class="text-data-mono contact-assim">Echo {Math.floor(assim)}/100</span>
+                <span class="text-data-mono contact-assim">Grown {Math.floor(assim)}/100</span>
               </div>
               <div class="contact-reward text-data-mono">
                 +{preview.biomassEarned}

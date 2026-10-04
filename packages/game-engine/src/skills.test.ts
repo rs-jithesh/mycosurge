@@ -25,10 +25,13 @@ describe('genome point budget', () => {
     expect(getAvailableGenomePoints(state)).toBe(6);
   });
 
-  it('grows with acquired echoes', () => {
+  it('grows as the network climbs the scale ladder', () => {
     const state = createInitialState();
-    state.acquiredEchoes = ['a', 'b'];
-    // 6 base + 2 per echo.
+    // Stage 1: no stages yet reached.
+    state.mycelialNetwork = 5;
+    expect(getTotalGenomePoints(state)).toBe(6);
+    // Stage 3 reached → 2 stages beyond the first × 2 points.
+    state.mycelialNetwork = 50;
     expect(getTotalGenomePoints(state)).toBe(10);
   });
 

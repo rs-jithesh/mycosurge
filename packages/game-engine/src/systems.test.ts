@@ -22,10 +22,10 @@ describe('getSystemUnlocks', () => {
     });
   });
 
-  it('reveals Evolution and Expeditions together at the first echo', () => {
+  it('reveals Evolution and Expeditions together at the first grown-over host', () => {
     const state = createInitialState();
     state.gamePhase = 'active';
-    state.acquiredEchoes = ['echo_leaf'];
+    state.hostsDefeated = 1;
     expect(getSystemUnlocks(state)).toEqual({
       radar: true,
       evolution: true,
@@ -33,10 +33,10 @@ describe('getSystemUnlocks', () => {
     });
   });
 
-  it('does not re-lock a system once an echo has been banked', () => {
+  it('does not re-lock a system once a host has been grown over', () => {
     const state = createInitialState();
     state.gamePhase = 'active';
-    state.acquiredEchoes = ['echo_leaf'];
+    state.hostsDefeated = 1;
     state.biomass = 0;
     expect(getSystemUnlocks(state).evolution).toBe(true);
   });

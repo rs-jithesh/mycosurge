@@ -11,16 +11,16 @@ export interface SystemUnlocks {
 
 /**
  * Which full-game systems the player has reached. Triggers use cumulative
- * counters (lifetime Biomass, echoes collected) so a system never re-locks once
- * the player has invested in it. Evolution and Expeditions both open at the
- * first echo, once the player has actually banked combat progress.
+ * counters (lifetime Biomass, hosts grown over) so a system never re-locks once
+ * the player has invested in it. Evolution and Expeditions both open once the
+ * first host has been fully grown over.
  */
 export function getSystemUnlocks(state: GameState): SystemUnlocks {
   const active = state.gamePhase === 'active';
-  const hasEcho = state.acquiredEchoes.length >= 1;
+  const hasProgress = state.hostsDefeated >= 1;
   return {
     radar: active,
-    evolution: active && hasEcho,
-    expeditions: active && hasEcho,
+    evolution: active && hasProgress,
+    expeditions: active && hasProgress,
   };
 }

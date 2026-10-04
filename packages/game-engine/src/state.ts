@@ -105,7 +105,8 @@ export interface GameState {
   generators: Record<string, number>;
   lysateRaw: number;
   lysateBanked: number;
-  acquiredEchoes: string[];
+  /** Host ids fully grown over (assimilation reached its target). */
+  grownOverHosts: string[];
   expeditions: Expedition[];
   maxExpeditionSlots: number;
   totalBiomassEarned: number;
@@ -179,7 +180,7 @@ export function createInitialState(): GameState {
     generators: {},
     lysateRaw: 0,
     lysateBanked: 0,
-    acquiredEchoes: [],
+    grownOverHosts: [],
     expeditions: [],
     maxExpeditionSlots: 1,
     totalBiomassEarned: 0,

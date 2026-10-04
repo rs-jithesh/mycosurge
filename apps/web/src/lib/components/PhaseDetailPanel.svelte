@@ -26,12 +26,8 @@
   let meta = $derived(phaseMeta(phase));
   let gs = $derived(gameStore.state);
   let isMobile = $derived(variant === 'mobile');
-  let echoOverride = $state<boolean | null>(null);
-  let echoesOpen = $derived(echoOverride ?? !isMobile);
 
   let activeGenerators = $derived(GENERATORS.filter((g) => (gs.generators[g.id] ?? 0) > 0).length);
-
-  let echoes = $derived(gameStore.acquiredEchoes);
 
   let capRows = $derived([
     {
@@ -224,42 +220,6 @@
             Reinforce cord · {gameStore.cordCost}
             {resourceLabel('biomass')}
           </button>
-        {/if}
-      </div>
-      <div class="echo-section">
-        {#if isMobile}
-          <button
-            class="echo-head echo-toggle"
-            aria-expanded={echoesOpen}
-            onclick={() => (echoOverride = !echoesOpen)}
-          >
-            <span class="text-label-caps">Echoes</span>
-            <span class="echo-head-right">
-              <span class="text-data-mono echo-count">{echoes.length} collected</span>
-              <span class="chev" class:up={echoesOpen} aria-hidden="true">⌄</span>
-            </span>
-          </button>
-        {:else}
-          <div class="echo-head">
-            <span class="text-label-caps">Echoes</span>
-            <span class="text-data-mono echo-count">{echoes.length} collected</span>
-          </div>
-        {/if}
-        {#if echoesOpen}
-          {#if echoes.length === 0}
-            <p class="hint">
-              Defeat hosts to acquire echoes. Each echo permanently enhances the network.
-            </p>
-          {:else}
-            <ul class="echo-list">
-              {#each echoes as id (id)}
-                <li class="echo-chip">
-                  <ResourceIcon name="echo" size={18} round />
-                  <span>{gameStore.echoName(id)}</span>
-                </li>
-              {/each}
-            </ul>
-          {/if}
         {/if}
       </div>
 
@@ -621,46 +581,6 @@
     flex-shrink: 0;
   }
 
-  /* ── Evolve: echoes ── */
-  .echo-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .echo-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: var(--on-surface-variant);
-  }
-
-  .echo-count {
-    color: var(--warning);
-    font-size: 11px;
-  }
-
-  .echo-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .echo-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-pill);
-    background: var(--surface-container-high);
-    color: var(--on-surface);
-    font-size: 12px;
-  }
-
   .genome-available {
     color: var(--primary);
     font-size: 12px;
@@ -682,31 +602,5 @@
   .detail-panel.is-mobile .panel-body {
     padding: 12px;
     gap: 12px;
-  }
-
-  .echo-head-right {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .echo-toggle {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    padding: 0;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  .chev {
-    color: var(--on-surface-variant);
-    font-size: 14px;
-    line-height: 1;
-    transition: transform var(--duration-fast) var(--ease-out-soft);
-  }
-
-  .chev.up {
-    transform: rotate(180deg);
   }
 </style>

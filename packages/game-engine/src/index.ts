@@ -160,12 +160,11 @@ export {
   calculateVictoryReward,
   previewCombatReward,
   getCombatDifficultyMultiplier,
+  getEffectiveCombatStats,
 } from './combat';
-export { getEchoEffects, getEffectiveCombatStats, getEchoName, getEchoDescription } from './echoes';
-export type { EchoEffects } from './echoes';
+export type { CombatResult } from './combat';
 export { applyOfflineProgress, getOfflineRate } from './offline';
 export type { OfflineReport } from './offline';
-export type { CombatResult } from './combat';
 export {
   resolveAiProfile,
   createAgent,

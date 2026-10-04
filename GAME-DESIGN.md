@@ -51,8 +51,8 @@ generator's `costScale`).
 The two tutorial generators become permanent at the end of onboarding.
 
 Generators also carry **metabolic upkeep**, a gentle continuous drain on Water and Nutrients
-that scales with network complexity: a small charge per generator level, per acquired echo,
-and per capacity expansion. It is charged only in the full game (the tutorial runs its own
+that scales with network complexity: a small charge per generator level and per capacity
+expansion. It is charged only in the full game (the tutorial runs its own
 economy). Upkeep trims a fully grown network to a modest net surplus, so Synthesize stays a
 real decision instead of a free conversion, without ever forcing a well-tended colony to
 starve. The Core's Gather panel shows the net rate (`produced · upkeep · net`).
@@ -97,8 +97,8 @@ buys `+10` to the Water, Nutrients, or Biomass cap, at a rising cost per expansi
 ### Mutations (skill tree)
 
 Bought with a limited budget of **genome points** on the Evolution page — not Biomass — so you
-cannot own every node and builds diverge. The budget is `6 + 2 × echoes collected` (plus `+3` for
-the Experimental DNA echo); most nodes cost `1` point per level and the capstones (Chain Reaction,
+cannot own every node and builds diverge. The budget is `6 + 2 × scale stages reached` (max
+~20); most nodes cost `1` point per level and the capstones (Chain Reaction,
 Emergency Evac, Overmind) cost `3`. Each node has levels and prerequisites, and a prerequisite
 only needs **level 1** (not a full level-up) to unlock the next node. A **Respec** (free the first
 time, then 40 Biomass) clears all mutations, but is unavailable during combat or while recovering
@@ -116,14 +116,6 @@ from trauma. Three trees:
 Send a host off to forage; it returns after real time for bonus Biomass. One slot by
 default, two with the **Overmind** mutation. Rewards and duration scale with the Rapid
 Scouts and Resource Routing mutations.
-
-### Evolutionary echoes
-
-Defeating a host for the first time grants its permanent **echo** — a passive trait (e.g.
-passive generation, poison damage, fire rate, dodge window). Echoes are listed on the
-Evolution page and their effects apply everywhere: passive Biomass, spore fire rate and
-damage, poison over time, HP regen, arena movement speed, the post-hit dodge window,
-projectile evasion, and bonus genome points.
 
 ## Hosts & discovery
 
@@ -154,16 +146,13 @@ Each host carries one or more **attack patterns** (see `COMBAT.md`) and may carr
 `summoner`, `dasher`, `shielded`, `clones`); bosses combine traits the player has already
 met. Traits are being wired into combat incrementally.
 
-Echoes are **unchanged for now** and are being reworked separately — new hosts omit an echo
-until that policy lands, and victory handling skips hosts without one.
-
 ### Radar (sonar)
 
 The Radar is a scanning instrument, not a host menu. **Blips** drift in over time (roughly
 every 20s) while you are idle, up to your contact-slot limit (2, or 3 with the **Extended
 Range** mutation). Spend 5 Water to **scan** a blip and reveal the host, or **ping
 the substrate** (5 Water) to force a new blip onto a free slot. Revealed contacts show
-level, strain, reward, and how far that host is from yielding its echo. Contacts drift
+level, strain, reward, and how far that host is from being fully grown over. Contacts drift
 away after two minutes if left alone.
 
 ### Strains
@@ -180,19 +169,17 @@ Any contact can carry a **strain**, a light per-encounter modifier:
 ### Assimilation
 
 Each victory assimilates **that host** by `10 + difficulty × 5`. At 100 the host is fully
-grown over: if it has an echo, the echo joins your network; `hostsDefeated` rises once, and
-it no longer grants an echo. Hosts enter the pool as **reach** opens their stage band — the
-band boss is what gates the next scale (see "Hosts & discovery").
+**grown over**: `hostsDefeated` rises once and the host counts toward progression. Hosts
+enter the pool as **reach** opens their stage band — the band boss is what gates the next
+scale (see "Hosts & discovery").
 
 Separately, every victory adds a small, fixed amount of **ecological strain** (`2` per win)
-to a global meter, independent of the per-host echo progress. Strain — together with the
-combat **alert level** — slowly reduces raw passive Biomass efficiency. The two drags are
+to a global meter, independent of the per-host assimilation progress. Strain — together with
+the combat **alert level** — slowly reduces raw passive Biomass efficiency. The two drags are
 **added and then capped** (`ECOLOGICAL_DRAG_CAP`, max `−50%`), so a string of wins can't
 compound into an income cliff; the win screen reports the current strain/alert and the drag.
-The Core's Grow panel shows the strain percentage and its current drag (`passive −N%`); the
-Evolution page lists the aggregated echo bonuses, so the trade is legible: **more complexity
-means lower raw efficiency but greater capability**, and the echoes repay the drag many times
-over.
+The Core's Grow panel shows the strain percentage and its current drag (`passive −N%`), so
+the trade is legible: **more complexity means lower raw efficiency but greater capability**.
 
 ## Onboarding
 
@@ -211,8 +198,8 @@ tutorial unlocks the **core chain** — Core and Radar — alongside a one-time 
 unlocked" overlay.
 
 The remaining systems are **unfolded as the player reaches them** rather than dumped at once:
-**Evolution** and **Expeditions** both appear once the first host has been grown over (its echo
-acquired). Locked tabs are hidden, each new system announces itself once in the activity log, and
+**Evolution** and **Expeditions** both appear once the first host has been grown over. Locked
+tabs are hidden, each new system announces itself once in the activity log, and
 its tab carries a "New" badge until first visited. Unlocks are based on lifetime totals, so a
 system never re-locks once reached.
 
@@ -223,7 +210,7 @@ system never re-locks once reached.
 - **No terminal jargon** in player-facing copy — no `SYS:`/`EXE:` prefixes, no
   "neutralize"/"assimilate"; say "drive off", "grow over", "recover".
 - **Consistent terms**: Water, Nutrients, Biomass, Lysate, Core, Radar, Evolution,
-  Expeditions, Generators, Mutations, Echoes, Hosts.
+  Expeditions, Generators, Mutations, Hosts.
 
 ## Persistence & QA
 

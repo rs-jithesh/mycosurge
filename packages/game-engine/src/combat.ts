@@ -6,7 +6,7 @@ import {
   HOST_ASSIMILATION_TARGET,
   getStrain,
 } from '@mycosurge/config';
-import type { GameState } from './state';
+import type { CombatStats, GameState } from './state';
 import { enterTrauma, getCombatYieldMultiplier, getEffectiveMaxBiomass, addBiomass } from './math';
 import { clearActiveEncounter } from './radar';
 
@@ -16,7 +16,6 @@ export interface CombatResult {
   assimilationGained: number;
   lysateEarned: number;
   hostDefeated: boolean;
-  echoUnlocked: boolean;
 }
 
 export function calculateVictoryReward(state: GameState, hostId: string): CombatResult {
@@ -28,7 +27,6 @@ export function calculateVictoryReward(state: GameState, hostId: string): Combat
       assimilationGained: 0,
       lysateEarned: 0,
       hostDefeated: false,
-      echoUnlocked: false,
     };
   }
 
@@ -47,8 +45,6 @@ export function calculateVictoryReward(state: GameState, hostId: string): Combat
   const hostDefeated = next >= HOST_ASSIMILATION_TARGET;
 
   const lysateEarned = Math.floor(LYSATE_BASE_REWARD * host.difficulty * strain.lysateMult);
-  const echoUnlocked =
-    hostDefeated && !!host.echoes && !state.acquiredEchoes.includes(host.echoes.id);
 
   return {
     victory: true,
@@ -56,7 +52,6 @@ export function calculateVictoryReward(state: GameState, hostId: string): Combat
     assimilationGained,
     lysateEarned,
     hostDefeated,
-    echoUnlocked,
   };
 }
 
@@ -88,9 +83,7 @@ export function previewCombatReward(
 }
 
 export function applyVictory(state: GameState, hostId: string): CombatResult {
-  const host = HOSTS.find((h) => h.id === hostId);
-  const echoId = host?.echoes?.id;
-  const alreadyAcquired = echoId ? state.acquiredEchoes.includes(echoId) : false;
+  const alreadyGrownOver = state.grownOverHosts.includes(hostId);
 
   const result = calculateVictoryReward(state, hostId);
 
@@ -98,8 +91,8 @@ export function applyVictory(state: GameState, hostId: string): CombatResult {
   state.totalBiomassEarned += result.biomassEarned;
   state.lysateRaw += result.lysateEarned;
 
-  if (echoId && result.hostDefeated && !alreadyAcquired) {
-    state.acquiredEchoes.push(echoId);
+  if (result.hostDefeated && !alreadyGrownOver) {
+    state.grownOverHosts = [...state.grownOverHosts, hostId];
     state.hostsDefeated += 1;
   }
 
@@ -115,4 +108,12 @@ export function applyDefeat(state: GameState): void {
 
 export function getCombatDifficultyMultiplier(alertLevel: number): number {
   return 1 + (alertLevel / 100) * 0.5;
+}
+
+/**
+ * Combat stats used by the arena. Mutation effects are already baked into
+ * `state.combatStats`, so this is a defensive copy for the renderer.
+ */
+export function getEffectiveCombatStats(state: GameState): CombatStats {
+  return { ...state.combatStats };
 }

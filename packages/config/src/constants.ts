@@ -20,10 +20,11 @@ export const COMBAT_BIOMASS_PER_DIFFICULTY = 15;
 
 // ── Genome points (mutation budget) ──
 // Mutations are paid with a limited point budget, not Biomass, so a player
-// cannot own every node and builds diverge. Total points grow with echoes.
+// cannot own every node and builds diverge. The budget grows as the network
+// climbs the scale ladder.
 export const GENOME_BASE_POINTS = 6;
-/** Extra genome points granted per acquired echo. */
-export const GENOME_POINTS_PER_ECHO = 2;
+/** Extra genome points granted for each scale stage the network has reached. */
+export const GENOME_POINTS_PER_STAGE = 2;
 /** Biomass cost of every respec after the first (free) one. */
 export const RESPEC_BIOMASS_COST = 40;
 
@@ -49,7 +50,6 @@ export const STARVATION_STATE_THRESHOLD = 0.05;
 export const UPKEEP_PER_REACH = 0.02;
 /** Legacy complexity-based upkeep (disabled while reach drives upkeep). */
 export const UPKEEP_PER_LEVEL = 0.1;
-export const UPKEEP_PER_ECHO = 0.1;
 export const UPKEEP_PER_EXPANSION = 0.05;
 
 // ── Lysate ──
@@ -71,7 +71,7 @@ export const MAX_CONTACT_SLOTS = 3;
 // ── Assimilation ──
 export const HOST_ASSIMILATION_TARGET = 100;
 // Ecological strain added to `assimilationPercent` per victory. Kept small and
-// separate from the per-host echo progress so the two meters mean different things.
+// separate from the per-host assimilation progress so the two meters mean different things.
 export const GLOBAL_STRAIN_PER_WIN = 2;
 
 // ── Manual actions (full game) ──

@@ -1,13 +1,13 @@
 import {
   SKILL_NODES,
   GENOME_BASE_POINTS,
-  GENOME_POINTS_PER_ECHO,
+  GENOME_POINTS_PER_STAGE,
   RESPEC_BIOMASS_COST,
 } from '@mycosurge/config';
 import type { SkillNodeDef } from '@mycosurge/config';
 import type { GameState } from './state';
 import { getEffectiveMaxBiomass } from './math';
-import { getEchoEffects } from './echoes';
+import { getReachBand } from './reach';
 
 const DEFAULT_POINT_COST = 1;
 
@@ -28,10 +28,13 @@ export function getCurrentLevel(state: GameState, skillId: string): number {
   return state.skillAllocations[skillId] ?? 0;
 }
 
-/** Total genome points the player can spend (base + echoes + echo bonuses). */
+/**
+ * Total genome points the player can spend: the base budget plus two per scale
+ * stage the network has reached. Growing into a new band widens the genome.
+ */
 export function getTotalGenomePoints(state: GameState): number {
-  const echoBonus = getEchoEffects(state.acquiredEchoes).genomePoints;
-  return GENOME_BASE_POINTS + GENOME_POINTS_PER_ECHO * state.acquiredEchoes.length + echoBonus;
+  const stagesReached = Math.max(0, getReachBand(state.mycelialNetwork) - 1);
+  return GENOME_BASE_POINTS + GENOME_POINTS_PER_STAGE * stagesReached;
 }
 
 /** Genome points currently tied up in allocated mutation levels. */

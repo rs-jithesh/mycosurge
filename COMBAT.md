@@ -143,7 +143,7 @@ retreat).
 ## Assimilation
 
 Assimilation is tracked **per host** in `hostAssimilation`. Each victory adds
-`10 + difficulty × 5` to that host; reaching 100 unlocks its echo and raises
+`10 + difficulty × 5` to that host; reaching 100 grows it fully over and raises
 `hostsDefeated` once. A separate global `assimilationPercent` still accumulates as
 ecological strain and is what `getDepletionMultiplier` reads.
 
