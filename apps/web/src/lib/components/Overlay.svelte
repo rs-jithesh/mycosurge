@@ -5,14 +5,11 @@
     title,
     subtitle,
     onClose,
-    variant = 'full',
     children,
   }: {
     title: string;
     subtitle?: string;
     onClose: () => void;
-    /** `full` covers the width on mobile; `sheet` stays an inset side drawer. */
-    variant?: 'full' | 'sheet';
     children: Snippet;
   } = $props();
 
@@ -26,7 +23,6 @@
 <div class="scrim" role="presentation" onclick={onClose} onwheel={onScrimWheel}>
   <div
     class="shell"
-    class:sheet={variant === 'sheet'}
     role="dialog"
     tabindex="-1"
     aria-modal="true"
@@ -120,13 +116,6 @@
     .shell {
       width: 100%;
       border-left: none;
-    }
-
-    /* Inset side sheet (e.g. Resources): keeps part of the Core visible behind it. */
-    .shell.sheet {
-      width: min(420px, 86%);
-      border-left: 1px solid var(--border);
-      border-radius: 20px 0 0 20px;
     }
   }
 </style>
