@@ -70,7 +70,9 @@
           class:is-success={entry.level === 'success'}
         >
           <span class="time">{formatTime(entry.timestamp)}</span>
-          <span class="msg">{entry.text}</span>
+          <span class="msg"
+            >{entry.text}{#if entry.count > 1}<span class="count">×{entry.count}</span>{/if}</span
+          >
         </p>
       {/each}
     </div>
@@ -173,6 +175,12 @@
   .time {
     color: var(--secondary);
     margin-right: var(--space-unit);
+  }
+
+  .count {
+    margin-left: 6px;
+    color: var(--on-surface-variant);
+    opacity: 0.75;
   }
 
   .is-info .msg {

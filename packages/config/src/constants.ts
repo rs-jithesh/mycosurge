@@ -94,6 +94,12 @@ export const REACH_COST_SCALE = 1.16;
 /** Extra Biomass storage per mm of reach beyond the starting depth. */
 export const BIOMASS_CAP_PER_REACH = 24;
 
+// ── Observation log ──
+/** Most recent entries kept in the activity log. */
+export const LOG_MAX_ENTRIES = 100;
+/** Identical consecutive lines within this window collapse into one `×N` entry. */
+export const LOG_REPEAT_WINDOW_SECONDS = 30;
+
 // ── Offline progression ──
 /** Longest stretch of absence that still accrues progress. */
 export const OFFLINE_MAX_SECONDS = 8 * 60 * 60;

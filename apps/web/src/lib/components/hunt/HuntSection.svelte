@@ -61,7 +61,7 @@
     if (gameStore.engageContact(contactId)) {
       uiStore.openCombat(contact.hostId);
     } else {
-      logStore.warn("You can't engage right now — you may be recovering.");
+      logStore.warn('The network is still raw — wait before engaging.');
     }
   }
 
@@ -82,7 +82,7 @@
   function startScan() {
     if (!canAffordScan || scanState !== 'idle') return;
     gs.water -= 5;
-    logStore.info('Scanning the substrate for signs of life...');
+    logStore.info('Sensing the substrate...');
     scanState = 'scanning';
     scanTimeout = setTimeout(() => {
       scanState = 'complete';

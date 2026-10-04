@@ -195,13 +195,9 @@ function createGameStore() {
 
     if (didResetSkills) {
       didResetSkills = false;
-      logStore.error(
-        'Your mutations were reset to fit the new genome budget. Rebuild your network.',
-      );
+      logStore.error('Some mutations unravel — the genome overreached. Rebuild the network.');
     }
 
-    let prevBiomass = state.biomass;
-    let prevAlert = state.alertLevel;
     let wasInTrauma = state.isInTrauma;
     let wasStarving = engineIsStarving(state);
 
@@ -213,37 +209,24 @@ function createGameStore() {
         tickManualCooldown(state, 1);
         const spawned = engineTickRadar(state, 1);
         if (spawned) {
-          const contactHost = HOSTS.find((h) => h.id === spawned.hostId);
-          logStore.info(
-            `Sonar contact: ${contactHost?.name ?? spawned.hostId} — scan to identify.`,
-          );
+          logStore.info('A tremor in the substrate — a signal drifts in. Scan to identify.');
         }
         if (!state.currentHostId && !state.isInTrauma) {
           tickAlertDecay(state, 1);
         }
         const starving = engineIsStarving(state);
         if (starving && !wasStarving) {
-          logStore.error('Starving — passive growth has stopped. Restore Water and Nutrients.');
+          logStore.error('The substrate runs dry. Growth holds its breath.');
         } else if (!starving && wasStarving) {
-          logStore.success('Reserves recovered — passive growth has resumed.');
+          logStore.success('Moisture returns — the hyphae breathe again.');
         }
         wasStarving = starving;
       }
 
       if (!state.isInTrauma && wasInTrauma) {
-        logStore.info('You recovered — the network is stable again.');
+        logStore.info('The wounds close. The network steadies.');
       }
       wasInTrauma = state.isInTrauma;
-
-      if (Math.floor(state.biomass / 50) > Math.floor(prevBiomass / 50)) {
-        logStore.info(`Biomass reserves: ${Math.floor(state.biomass)}`);
-      }
-      prevBiomass = state.biomass;
-
-      if (state.alertLevel > prevAlert + 5) {
-        logStore.warn(`The host is fighting back. Threat ${Math.floor(state.alertLevel)}%`);
-      }
-      prevAlert = state.alertLevel;
 
       saveState();
     }, TICK_INTERVAL);
@@ -260,17 +243,17 @@ function createGameStore() {
     const host = HOSTS.find((h) => h.id === hostId);
     if (!host) return;
     if (state.isInTrauma) {
-      logStore.warn("You're still recovering — give it a moment.");
+      logStore.warn('The network is still raw — wait before engaging.');
       return;
     }
     if (state.currentHostId) {
-      logStore.warn("You're already fighting a host.");
+      logStore.warn('A host is already entangled.');
       return;
     }
 
     state.currentHostId = hostId;
     state.combatStats.hp = state.combatStats.maxHp;
-    logStore.info(`Engaging ${host.name}. Spores auto-fire — focus on dodging.`);
+    logStore.info(`You close on ${host.name}. Spores fire on their own — dodge.`);
   }
 
   function purchaseSkill(skillId: string): boolean {
@@ -279,7 +262,7 @@ function createGameStore() {
       const def = SKILL_NODES.find((s) => s.id === skillId);
       if (def) {
         const level = state.skillAllocations[skillId] ?? 0;
-        logStore.success(`Mutation unlocked: ${def.name} (Lv.${level})`);
+        logStore.success(`A new pattern settles in: ${def.name} (Lv.${level}).`);
       }
       saveState();
     }
@@ -289,7 +272,7 @@ function createGameStore() {
   function respecSkills(): boolean {
     const result = engineRespecSkills(state);
     if (result) {
-      logStore.info('Mutations reset — genome points refunded.');
+      logStore.info('The patterns unwind; their points scatter back.');
       saveState();
     }
     return result;
@@ -299,7 +282,7 @@ function createGameStore() {
     const host = HOSTS.find((h) => h.id === hostId);
     const result = engineStartExpedition(state, hostId);
     if (result && host) {
-      logStore.info(`Expedition started to ${host.name}.`);
+      logStore.info(`${host.name} sets out to forage.`);
       saveState();
     }
     return result;
@@ -308,7 +291,7 @@ function createGameStore() {
   function collectExpedition(index: number): number {
     const reward = engineCollectExpedition(state, index);
     if (reward > 0) {
-      logStore.success(`Expedition returned — +${reward} Biomass.`);
+      logStore.success(`The forager returns, heavy with ${reward} Biomass.`);
       saveState();
     }
     return reward;
@@ -317,7 +300,7 @@ function createGameStore() {
   function expandWaterCap(): boolean {
     const result = engineExpandWaterCap(state);
     if (result) {
-      logStore.success(`Water capacity increased to ${Math.floor(state.waterCap)}.`);
+      logStore.success(`The membrane stretches — Water capacity ${Math.floor(state.waterCap)}.`);
       saveState();
     }
     return result;
@@ -326,7 +309,9 @@ function createGameStore() {
   function expandNutrientCap(): boolean {
     const result = engineExpandNutrientCap(state);
     if (result) {
-      logStore.success(`Nutrients capacity increased to ${Math.floor(state.nutrientsCap)}.`);
+      logStore.success(
+        `The membrane stretches — Nutrients capacity ${Math.floor(state.nutrientsCap)}.`,
+      );
       saveState();
     }
     return result;
@@ -335,7 +320,9 @@ function createGameStore() {
   function expandBiomassCap(): boolean {
     const result = engineExpandBiomassCap(state);
     if (result) {
-      logStore.success(`Biomass capacity increased to ${Math.floor(state.maxBiomass)}.`);
+      logStore.success(
+        `The membrane stretches — Biomass capacity ${Math.floor(state.maxBiomass)}.`,
+      );
       saveState();
     }
     return result;
@@ -349,7 +336,7 @@ function createGameStore() {
         nutrients: 'Nutrients',
         biomass: 'Biomass',
       };
-      logStore.success(`${labels[resource]} capacity expanded (+10).`);
+      logStore.success(`The membrane stretches — ${labels[resource]} (+10).`);
       saveState();
     }
     return result;
@@ -358,7 +345,7 @@ function createGameStore() {
   function manualAbsorb(): boolean {
     const result = engineManualAbsorb(state);
     if (result) {
-      logStore.info('You draw in a burst of moisture and minerals.');
+      logStore.info('Dew beads along the hyphae and sinks in.');
       saveState();
     }
     return result;
@@ -367,15 +354,15 @@ function createGameStore() {
   function manualSynthesize(): boolean {
     const result = engineManualSynthesize(state);
     if (!result.success) {
-      logStore.warn('You need 10 Water and 10 Nutrients to synthesize.');
+      logStore.warn('Not enough stored to shape Biomass.');
       return false;
     }
     if (result.yield >= 1) {
-      logStore.success('Biomass formed from stored Water and Nutrients.');
+      logStore.success('Mass gathers — a knot of self thickens.');
     } else if (result.yield > 0) {
-      logStore.warn('Low reserves — the conversion only yielded 0.5 Biomass.');
+      logStore.warn('Reserves thin — only half a unit forms.');
     } else {
-      logStore.error('Reserves too low — the synthesis was wasted.');
+      logStore.error('Too little to hold — the conversion slips away.');
     }
     saveState();
     return true;
@@ -384,18 +371,18 @@ function createGameStore() {
   function extendReach(): boolean {
     const result = engineExtendReach(state);
     if (!result.success) {
-      logStore.warn(`You need ${result.cost} Biomass to extend your reach.`);
+      logStore.warn('The network cannot stretch that far yet.');
       return false;
     }
-    logStore.success(`Reach extended to ${result.reach}mm.`);
+    logStore.success('New filaments press deeper into the dark.');
     if (result.unlockedTier !== null) {
       const names = HOSTS.filter((h) => h.tier === result.unlockedTier)
         .map((h) => h.name)
         .join(', ');
-      logStore.info(`Deeper signals detected — ${names} are now in range.`);
+      logStore.info(`Deeper down, new shapes stir: ${names}.`);
     }
     if (result.spawned) {
-      logStore.info('A new signal drifts in from the frontier.');
+      logStore.info('A signal blooms at the frontier.');
     }
     saveState();
     return true;
@@ -404,14 +391,14 @@ function createGameStore() {
   function pingSubstrate(): boolean {
     const result = enginePingSubstrate(state);
     if (result) {
-      logStore.info('You ping the substrate — a new contact drifts in.');
+      logStore.info('A pulse travels out — the substrate answers.');
       saveState();
       return true;
     }
     if (state.contacts.length >= getRadarSlots(state)) {
-      logStore.warn('The radar is full. Engage or dismiss a contact first.');
+      logStore.warn('The array is full — engage or dismiss a signal.');
     } else {
-      logStore.warn('You need 5 Water to ping the substrate.');
+      logStore.warn('Not enough Water to ping the substrate.');
     }
     return false;
   }
@@ -421,11 +408,11 @@ function createGameStore() {
     const result = engineScanContact(state, contactId);
     if (result) {
       const host = contact ? HOSTS.find((h) => h.id === contact.hostId) : undefined;
-      logStore.info(`Contact identified: ${host?.name ?? 'unknown host'}.`);
+      logStore.info(`Something surfaces from the noise: ${host?.name ?? 'unknown host'}.`);
       saveState();
       return true;
     }
-    logStore.warn('You need 5 Water to scan a signal.');
+    logStore.warn('Not enough Water to scan a signal.');
     return false;
   }
 
@@ -433,7 +420,7 @@ function createGameStore() {
     const result = engineEngageContact(state, contactId);
     if (result) {
       const host = HOSTS.find((h) => h.id === state.currentHostId);
-      logStore.info(`Engaging ${host?.name ?? 'host'}. Spores auto-fire — focus on dodging.`);
+      logStore.info(`You close on ${host?.name ?? 'the host'}. Spores fire on their own — dodge.`);
       saveState();
     }
     return result;
@@ -448,7 +435,7 @@ function createGameStore() {
     const result = enginePurchaseGenerator(state, genId);
     if (result) {
       const genName = GENERATORS.find((g) => g.id === genId)?.name ?? 'Generator';
-      logStore.success(`${genName} upgraded.`);
+      logStore.success(`${genName} deepens.`);
       saveState();
     }
     return result;
@@ -473,17 +460,18 @@ function createGameStore() {
     if (outcome === 'victory') {
       const result = engineApplyVictory(state, hostId);
       const host = HOSTS.find((h) => h.id === hostId);
-      logStore.success(`You drove off ${host?.name ?? hostId}.`);
-      logStore.info(`+${result.biomassEarned} Biomass harvested.`);
+      logStore.success(
+        `The ${host?.name ?? hostId} stills — ${result.biomassEarned} Biomass harvested.`,
+      );
       if (result.hostDefeated) {
-        logStore.success('Host fully grown over — a new echo joined your network.');
+        logStore.success('Its pattern sinks in — a new echo joins the network.');
       }
       state.currentHostId = null;
       saveState();
       return result;
     }
     engineApplyDefeat(state);
-    logStore.warn('You had to retreat — the network is in recovery.');
+    logStore.warn('The network recoils — retreat, and recover.');
     state.currentHostId = null;
     saveState();
     return null;
@@ -499,7 +487,7 @@ function createGameStore() {
     allSystemsUnlocked = false;
     resetAbsorbCount();
     logStore.clear();
-    logStore.info('Reset — starting a fresh network.');
+    logStore.info('A fresh spore. The network begins again.');
   }
 
   // ── Tutorial Methods ──
@@ -508,7 +496,7 @@ function createGameStore() {
     const message = engineAbsorb(state);
     logStore.info(message);
     if (state.gamePhase === 'manager') {
-      logStore.info('You have enough to grow. Biomass synthesis is now available.');
+      logStore.info('Reserves brim — Biomass can now be shaped.');
     }
     saveState();
   }
@@ -518,7 +506,7 @@ function createGameStore() {
     if (result.success) {
       logStore.info(result.message);
       if (state.biomass >= 2) {
-        logStore.info('You can now install a generator to make resources automatically.');
+        logStore.info('A generator can now be grown to feed you.');
       }
     }
     saveState();
@@ -529,7 +517,7 @@ function createGameStore() {
     if (result.success) {
       logStore.success(result.message);
       if (state.tutorialUpgrades.osmoticPump || state.tutorialUpgrades.enzymaticExudates) {
-        logStore.info('Automation online — you can now grow your network.');
+        logStore.info('Automation stirs. The network can grow on its own.');
       }
     }
     saveState();
@@ -556,7 +544,7 @@ function createGameStore() {
     revealState = { announced: [...ALL_SYSTEM_IDS], seen: [...ALL_SYSTEM_IDS] };
     persistReveals();
     saveState();
-    logStore.info('Skipped the intro — systems online, reserves topped up.');
+    logStore.info('The intro is skipped; the network wakes fully grown.');
   }
 
   return {
