@@ -375,12 +375,6 @@ function createGameStore() {
       return false;
     }
     logStore.success('New filaments press deeper into the dark.');
-    if (result.unlockedTier !== null) {
-      const names = HOSTS.filter((h) => h.tier === result.unlockedTier)
-        .map((h) => h.name)
-        .join(', ');
-      logStore.info(`Deeper down, new shapes stir: ${names}.`);
-    }
     if (result.spawned) {
       logStore.info('A signal blooms at the frontier.');
     }
