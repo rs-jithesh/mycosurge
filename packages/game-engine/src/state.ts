@@ -117,6 +117,12 @@ export interface GameState {
   nutrientsCap: number;
   manualCooldown: number;
   mycelialNetwork: number;
+  /**
+   * Per-wedge growth beyond the base circle, newest design. Empty = a uniform
+   * circle at `mycelialNetwork` (legacy/tutorial); otherwise each entry is the
+   * extra mm grown in that sector (see `sectors.ts`).
+   */
+  reachSectors: number[];
   /** Seed for the deterministic expansion-map geometry (0 = not yet assigned). */
   networkSeed: number;
   /** Branch id reinforced into a rhizomorph cord, or null. */
@@ -183,6 +189,7 @@ export function createInitialState(): GameState {
     nutrientsCap: MAX_NUTRIENT_BASE,
     manualCooldown: 0,
     mycelialNetwork: 0,
+    reachSectors: [],
     networkSeed: 0,
     cordBranchId: null,
     cataloguedHosts: [],

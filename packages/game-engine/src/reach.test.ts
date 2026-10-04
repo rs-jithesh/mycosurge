@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { REACH_COST_BASE, REACH_START } from '@mycosurge/config';
+import { EVEN_GROW_MM, REACH_COST_BASE, REACH_START, SECTOR_GROW_MM } from '@mycosurge/config';
 import { createInitialState } from './state';
-import { getReachCost, getReachBand, getNextReachTier, canExtendReach, extendReach } from './reach';
+import { getReachCost, getReachBand, getNextReachTier } from './reach';
+import { canExtendReach, extendReach, growSector, getSectorDepths } from './sectors';
 import { resetRadarSeq } from './radar';
 
 beforeEach(() => {
@@ -31,7 +32,7 @@ describe('reach bands', () => {
 });
 
 describe('extendReach', () => {
-  it('spends Biomass and pushes reach one mm deeper', () => {
+  it('spends Biomass and nudges the whole network outward', () => {
     const state = createInitialState();
     state.gamePhase = 'active';
     state.mycelialNetwork = REACH_START;
@@ -41,8 +42,24 @@ describe('extendReach', () => {
     const result = extendReach(state);
 
     expect(result.success).toBe(true);
-    expect(state.mycelialNetwork).toBe(REACH_START + 1);
+    expect(state.mycelialNetwork).toBeCloseTo(REACH_START + EVEN_GROW_MM);
     expect(state.biomass).toBe(before - result.cost);
+  });
+
+  it('grows a single wedge a full step', () => {
+    const state = createInitialState();
+    state.gamePhase = 'active';
+    state.mycelialNetwork = REACH_START;
+    state.biomass = 1000;
+
+    const result = growSector(state, 0);
+
+    expect(result.success).toBe(true);
+    expect(result.sector).toBe(0);
+    expect(state.mycelialNetwork).toBeCloseTo(REACH_START + SECTOR_GROW_MM);
+    const depths = getSectorDepths(state);
+    expect(depths[0]).toBeCloseTo(REACH_START + SECTOR_GROW_MM);
+    expect(depths[1]).toBeCloseTo(REACH_START);
   });
 
   it('refuses when Biomass is short', () => {

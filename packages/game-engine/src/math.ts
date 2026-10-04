@@ -27,6 +27,7 @@ import {
 import type { GameState } from './state';
 import { tickGenerators } from './generators';
 import { getEchoEffects } from './echoes';
+import { getCoverage } from './sectors';
 
 export function getAlertMultiplier(alertLevel: number): number {
   return 1 - (alertLevel / 100) * ALERT_EFFECT_CAP;
@@ -82,7 +83,7 @@ export function getNutrientFixationBonus(allocations: Record<string, number>): n
  */
 export function getEffectiveMaxBiomass(state: GameState): number {
   const bonus = getMaxBiomassBonus(state.skillAllocations);
-  const reachCap = BIOMASS_CAP_PER_REACH * Math.max(0, state.mycelialNetwork - REACH_START);
+  const reachCap = BIOMASS_CAP_PER_REACH * getCoverage(state);
   return (state.maxBiomass + reachCap) * (1 + bonus);
 }
 
@@ -170,7 +171,7 @@ export function getCapExpansionTotal(state: GameState): number {
  */
 export function getUpkeepRate(state: GameState, _resource: PoolResource): number {
   if (state.gamePhase !== 'active') return 0;
-  return UPKEEP_PER_REACH * state.mycelialNetwork;
+  return UPKEEP_PER_REACH * (REACH_START + getCoverage(state));
 }
 
 /** Passive production from a pool's generator, plus any mutation trickle, before drain. */

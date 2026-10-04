@@ -1,6 +1,7 @@
 import { EXPANSION_MAP, HOSTS, HOST_TIER_REACH } from '@mycosurge/config';
 import type { GameState, RadarContact } from './state';
 import { getReachCost } from './reach';
+import { getSectorDepths, sectorIndexForAngle } from './sectors';
 
 /**
  * The expansion/discovery map is generated deterministically from a persisted seed.
@@ -149,15 +150,21 @@ export function generateHostPlacements(seed: number): HostPlacement[] {
   });
 }
 
+/** Reached depth for a host's direction: a scalar (uniform) or per-wedge array. */
+function depthFor(reach: number | readonly number[], angle: number): number {
+  return Array.isArray(reach) ? (reach[sectorIndexForAngle(angle)] ?? 0) : (reach as number);
+}
+
 /** Catalogued hosts stay known; in-reach hosts are encountered; near ones are sensed. */
 export function getHostVisibility(
   placement: HostPlacement,
-  reachMm: number,
+  reach: number | readonly number[],
   catalogued: ReadonlySet<string>,
 ): HostVisibility {
+  const depth = depthFor(reach, placement.angle);
   if (catalogued.has(placement.hostId)) return 'catalogued';
-  if (placement.distanceMm <= reachMm) return 'encountered';
-  if (placement.distanceMm <= reachMm + EXPANSION_MAP.senseRangeMm) return 'sensed';
+  if (placement.distanceMm <= depth) return 'encountered';
+  if (placement.distanceMm <= depth + EXPANSION_MAP.senseRangeMm) return 'sensed';
   return 'hidden';
 }
 
@@ -167,10 +174,12 @@ export function getFirstContact(
   placements: HostPlacement[],
 ): HostPlacement | null {
   const catalogued = new Set(state.cataloguedHosts);
+  const depths = getSectorDepths(state);
   let best: HostPlacement | null = null;
   for (const placement of placements) {
     if (catalogued.has(placement.hostId)) continue;
-    if (placement.distanceMm > state.mycelialNetwork) continue;
+    const depth = depthFor(depths, placement.angle);
+    if (placement.distanceMm > depth) continue;
     if (!best || placement.distanceMm < best.distanceMm) best = placement;
   }
   return best;

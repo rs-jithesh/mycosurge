@@ -88,7 +88,6 @@
 
   // Reach is the network's expansion "resource": shown here so the Biomass sink is visible.
   let reach = $derived(gameStore.reach);
-  let reachCost = $derived(gameStore.reachCost);
   let nextReachTier = $derived(gameStore.nextReachTier);
   let reachMax = $derived(nextReachTier ? nextReachTier.at : Math.max(1, reach));
 </script>
@@ -148,7 +147,7 @@
       </div>
       <ProgressBar tone="mint" value={reach} max={reachMax} showValue={false} />
       <div class="res-foot">
-        <span class="text-data-mono net">+1 mm · {reachCost} {resourceLabel('biomass')}</span>
+        <span class="text-data-mono net">Deepest {reach} mm · grow on the map</span>
         {#if nextReachTier}
           <span class="text-data-mono detail">Deeper signals at {nextReachTier.at} mm</span>
         {:else}

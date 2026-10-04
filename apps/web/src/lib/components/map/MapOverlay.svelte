@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { EXPANSION_MAP, HOSTS, getStrain, resourceLabel } from '@mycosurge/config';
+  import { EXPANSION_MAP, HOSTS, REACH_SECTORS, getStrain, resourceLabel } from '@mycosurge/config';
   import {
     generateNetwork,
     generateHostPlacements,
     getHostVisibility,
     getFirstContact,
     getContactMarkers,
+    sectorIndexForAngle,
   } from '@mycosurge/game-engine';
   import type { HostPlacement, ContactMarker } from '@mycosurge/game-engine';
   import { gameStore } from '$lib/stores/game.svelte';
@@ -28,6 +29,7 @@
 
   let gs = $derived(gameStore.state);
   let reach = $derived(gameStore.reach);
+  let depths = $derived(gameStore.sectorDepths);
   let seed = $derived(gameStore.networkSeed);
   let geometry = $derived(generateNetwork(seed));
   let placements = $derived(generateHostPlacements(seed));
@@ -59,52 +61,84 @@
     return out;
   });
 
-  // ── Reach easing ──
-  let current = 0;
-  let drawnReach = $state(0);
+  // ── Reach easing (per wedge) ──
+  let current: number[] = [];
+  let drawnDepths = $state<number[]>([]);
   let firstRun = true;
   let raf = 0;
 
   $effect(() => {
-    const target = reach;
+    const target = depths;
     if (firstRun) {
       firstRun = false;
-      current = target;
-      drawnReach = target;
+      current = target.slice();
+      drawnDepths = target.slice();
       return;
     }
     if (typeof window === 'undefined') return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      current = target;
-      drawnReach = target;
+      current = target.slice();
+      drawnDepths = target.slice();
       return;
     }
     cancelAnimationFrame(raf);
-    const from = current;
+    const from = current.slice();
     const start = performance.now();
     const tick = (t: number) => {
       const p = Math.min(1, (t - start) / EXPANSION_MAP.reachAnimMs);
       const eased = 1 - Math.pow(1 - p, 3);
-      current = from + (target - from) * eased;
-      drawnReach = current;
+      const next = target.map((value, i) => from[i] + (value - from[i]) * eased);
+      current = next;
+      drawnDepths = next;
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   });
 
-  let solidSegments = $derived(geometry.segments.filter((s) => s.endMm <= drawnReach + 1e-6));
-  let ghostSegments = $derived(
-    geometry.segments.filter(
-      (s) => s.endMm > drawnReach && s.endMm <= drawnReach + EXPANSION_MAP.ghostMm,
-    ),
+  function drawnDepthAt(angle: number): number {
+    return drawnDepths[sectorIndexForAngle(angle)] ?? 0;
+  }
+
+  let solidSegments = $derived(
+    geometry.segments.filter((s) => s.endMm <= drawnDepthAt(Math.atan2(s.y2, s.x2)) + 1e-6),
   );
+  let ghostSegments = $derived(
+    geometry.segments.filter((s) => {
+      const depth = drawnDepthAt(Math.atan2(s.y2, s.x2));
+      return s.endMm > depth && s.endMm <= depth + EXPANSION_MAP.ghostMm;
+    }),
+  );
+
+  /** SVG pie-slice path for one wedge out to `radiusMm`. */
+  function wedgePath(index: number, radiusMm: number): string {
+    const step = (Math.PI * 2) / sectorCount;
+    const a0 = index * step;
+    const a1 = a0 + step;
+    const x0 = Math.cos(a0) * radiusMm;
+    const y0 = Math.sin(a0) * radiusMm;
+    const x1 = Math.cos(a1) * radiusMm;
+    const y1 = Math.sin(a1) * radiusMm;
+    return `M 0 0 L ${x0.toFixed(2)} ${y0.toFixed(2)} A ${radiusMm.toFixed(2)} ${radiusMm.toFixed(
+      2,
+    )} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`;
+  }
+
+  const sectorCount = REACH_SECTORS;
+
+  function wedgeAngle(index: number): number {
+    return (index / sectorCount) * Math.PI * 2;
+  }
 
   // ── Pan / pinch-zoom ──
   const pointers = new Map<number, { x: number; y: number }>();
   let last = { x: 0, y: 0 };
   let pinchDist = 0;
   let pinchZoom = 1;
+  let tapPointer: number | null = null;
+  let tapStartX = 0;
+  let tapStartY = 0;
+  let tapMoved = false;
 
   function clamp(v: number, min: number, max: number): number {
     return v < min ? min : v > max ? max : v;
@@ -118,7 +152,15 @@
   function onDown(event: PointerEvent) {
     (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    if (pointers.size === 1) last = { x: event.clientX, y: event.clientY };
+    if (pointers.size === 1) {
+      last = { x: event.clientX, y: event.clientY };
+      tapPointer = event.pointerId;
+      tapStartX = event.clientX;
+      tapStartY = event.clientY;
+      tapMoved = false;
+    } else {
+      tapPointer = null;
+    }
     if (pointers.size === 2) {
       pinchDist = pointerDistance();
       pinchZoom = zoom;
@@ -132,6 +174,7 @@
       panX += event.clientX - last.x;
       panY += event.clientY - last.y;
       last = { x: event.clientX, y: event.clientY };
+      if (Math.hypot(event.clientX - tapStartX, event.clientY - tapStartY) > 8) tapMoved = true;
     } else if (pointers.size >= 2 && pinchDist > 0) {
       // Damped so a pinch feels less twitchy than raw distance ratio.
       zoom = clamp(pinchZoom * Math.pow(pointerDistance() / pinchDist, 0.55), 0.2, 3.5);
@@ -139,10 +182,23 @@
   }
 
   function onUp(event: PointerEvent) {
+    const wasTap = tapPointer === event.pointerId && !tapMoved;
     pointers.delete(event.pointerId);
     if (pointers.size < 2) pinchDist = 0;
     const remaining = [...pointers.values()][0];
     if (remaining) last = { x: remaining.x, y: remaining.y };
+    if (wasTap) growAtPointer(event);
+    if (tapPointer === event.pointerId) tapPointer = null;
+  }
+
+  /** A tap on a wedge grows it; taps on the colony core are ignored. */
+  function growAtPointer(event: PointerEvent) {
+    const rect = (event.currentTarget as Element).getBoundingClientRect();
+    const wx = (event.clientX - rect.left - (cx + panX)) / k;
+    const wy = (event.clientY - rect.top - (cy + panY)) / k;
+    const radius = Math.hypot(wx, wy);
+    if (radius < 1) return;
+    gameStore.growSector(sectorIndexForAngle(Math.atan2(wy, wx)));
   }
 
   function onWheel(event: WheelEvent) {
@@ -171,10 +227,11 @@
   }
 
   function tapHost(placement: HostPlacement) {
-    const vis = getHostVisibility(placement, reach, catalogued);
+    const vis = getHostVisibility(placement, depths, catalogued);
     if (vis === 'hidden') return;
-    if (vis === 'sensed' || placement.distanceMm > reach) {
-      logStore.info('Something moves beyond the edge. Extend the network to identify it.');
+    const depth = depths[sectorIndexForAngle(placement.angle)] ?? 0;
+    if (vis === 'sensed' || placement.distanceMm > depth) {
+      logStore.info('Something moves beyond the edge. Grow the network toward it.');
       return;
     }
     gameStore.engageHost(placement.hostId);
@@ -197,7 +254,7 @@
     return getStrain(strainId).name;
   }
 
-  const canExtend = $derived(gs.biomass >= gameStore.reachCost);
+  const canExtend = $derived(gs.biomass >= gameStore.evenCost);
 </script>
 
 <div class="map-overlay" role="dialog" aria-modal="true" aria-label="Network map">
@@ -223,9 +280,9 @@
       <button
         class="cmd-btn extend-btn"
         disabled={!canExtend}
-        onclick={() => gameStore.extendReach()}
+        onclick={() => gameStore.growEvenly()}
       >
-        +1 mm · {gameStore.reachCost}
+        Grow evenly · {gameStore.evenCost}
         {resourceLabel('biomass')}
       </button>
       <button class="cmd-btn secondary bar-btn" onclick={fit} title="Fit network">Fit</button>
@@ -257,11 +314,24 @@
       aria-label="Expansion network"
     >
       <g transform={`translate(${cx + panX} ${cy + panY}) scale(${k})`}>
-        <circle
-          r={Math.max(0, drawnReach)}
-          fill="var(--primary)"
-          opacity={EXPANSION_MAP.territoryOpacity}
-        />
+        {#each drawnDepths as radius, i (i)}
+          <path
+            d={wedgePath(i, Math.max(0, radius))}
+            fill="var(--primary)"
+            opacity={EXPANSION_MAP.territoryOpacity}
+          />
+        {/each}
+        {#each drawnDepths as radius, i (i)}
+          <line
+            x1={0}
+            y1={0}
+            x2={Math.cos(wedgeAngle(i)) * Math.max(0, radius)}
+            y2={Math.sin(wedgeAngle(i)) * Math.max(0, radius)}
+            stroke="var(--outline-variant)"
+            stroke-width={inv}
+            opacity="0.25"
+          />
+        {/each}
 
         {#each rings as mm (mm)}
           {@const major = Math.abs(mm % MAJOR_MM) < 1e-6}
@@ -323,7 +393,7 @@
         <circle r={4 * inv} fill="var(--primary)" />
 
         {#each placements as p (p.id)}
-          {@const vis = getHostVisibility(p, reach, catalogued)}
+          {@const vis = getHostVisibility(p, depths, catalogued)}
           {#if vis !== 'hidden'}
             {@const isFirst = firstContact?.hostId === p.hostId}
             {@const r = (p.isBoss ? 9 : vis === 'sensed' ? 4.5 : 6) * inv}
@@ -441,7 +511,7 @@
       </g>
     </svg>
 
-    <p class="map-legend text-label-caps">Signals drift in and fade — tap to scan or engage</p>
+    <p class="map-legend text-label-caps">Tap a wedge to grow it · tap signals to scan or engage</p>
   </div>
 </div>
 

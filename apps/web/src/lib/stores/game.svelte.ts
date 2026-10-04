@@ -34,7 +34,12 @@ import {
   tickRadar as engineTickRadar,
   ensureUniqueContactIds,
   extendReach as engineExtendReach,
-  getReachCost,
+  growSector as engineGrowSector,
+  growEvenly as engineGrowEvenly,
+  getSectorDepths,
+  getGrowCost,
+  getEvenCost,
+  getMaxReach,
   getNextReachTier,
   pingSubstrate as enginePingSubstrate,
   scanContact as engineScanContact,
@@ -182,6 +187,7 @@ function createGameStore() {
           networkSeed: parsed.networkSeed ?? initial.networkSeed,
           cordBranchId: parsed.cordBranchId ?? initial.cordBranchId,
           cataloguedHosts: parsed.cataloguedHosts ?? initial.cataloguedHosts,
+          reachSectors: parsed.reachSectors ?? initial.reachSectors,
           advisor: {
             ...initial.advisor,
             ...(parsed.advisor ?? {}),
@@ -471,6 +477,36 @@ function createGameStore() {
     return true;
   }
 
+  function growSector(index: number): boolean {
+    const result = engineGrowSector(state, index);
+    if (!result.success) {
+      logStore.warn('The network cannot stretch that far yet.');
+      return false;
+    }
+    logStore.success('New filaments press deeper into the dark.');
+    if (result.spawned) {
+      logStore.info('A signal blooms at the frontier.');
+    }
+    observeAction('expand.reach');
+    saveState();
+    return true;
+  }
+
+  function growEvenly(): boolean {
+    const result = engineGrowEvenly(state);
+    if (!result.success) {
+      logStore.warn('The network cannot stretch that far yet.');
+      return false;
+    }
+    logStore.success('The network thickens all around.');
+    if (result.spawned) {
+      logStore.info('A signal blooms at the frontier.');
+    }
+    observeAction('expand.reach');
+    saveState();
+    return true;
+  }
+
   function pingSubstrate(): boolean {
     if (getFarmPool(state).length === 0) {
       logStore.info('No known species to track yet — find one at the frontier.');
@@ -683,16 +719,28 @@ function createGameStore() {
       return state.isInTrauma;
     },
     get reach() {
-      return state.mycelialNetwork;
+      return getMaxReach(state);
+    },
+    get sectorDepths() {
+      return getSectorDepths(state);
     },
     get reachCost() {
-      return getReachCost(state.mycelialNetwork);
+      return getGrowCost(state);
+    },
+    get evenCost() {
+      return getEvenCost(state);
     },
     get nextReachTier() {
-      return getNextReachTier(state.mycelialNetwork);
+      return getNextReachTier(getMaxReach(state));
     },
     extendReach() {
       return extendReach();
+    },
+    growSector(index: number) {
+      return growSector(index);
+    },
+    growEvenly() {
+      return growEvenly();
     },
     get networkSeed() {
       return state.networkSeed;

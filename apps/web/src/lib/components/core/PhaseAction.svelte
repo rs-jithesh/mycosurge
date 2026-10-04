@@ -25,8 +25,8 @@
     gs.water >= SCAN_WATER_COST && gameStore.contacts.length < gameStore.radarSlots,
   );
 
-  let reachCost = $derived(gameStore.reachCost);
-  let canExtendReach = $derived(gs.biomass >= reachCost);
+  let evenCost = $derived(gameStore.evenCost);
+  let canGrowEvenly = $derived(gs.biomass >= evenCost);
 
   function resumeFight() {
     const host = gameStore.currentHost;
@@ -94,15 +94,16 @@
   <button
     class="cmd-btn action-btn"
     class:hero
-    disabled={!canExtendReach}
-    onclick={() => gameStore.extendReach()}
+    disabled={!canGrowEvenly}
+    onclick={() => gameStore.growEvenly()}
   >
-    <span class="action-verb">Extend Reach</span>
+    <span class="action-verb">Grow evenly</span>
     <span class="action-sub">
-      {canExtendReach
-        ? `${reachCost} ${resourceLabel('biomass')} → +1 mm deeper`
-        : `Need ${reachCost} ${resourceLabel('biomass')}`}
+      {canGrowEvenly
+        ? `${evenCost} ${resourceLabel('biomass')} → all directions`
+        : `Need ${evenCost} ${resourceLabel('biomass')}`}
     </span>
+    <span class="action-sub">Open the map to grow a single direction</span>
   </button>
 {/if}
 

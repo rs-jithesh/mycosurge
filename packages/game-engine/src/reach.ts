@@ -1,6 +1,4 @@
 import { HOST_TIER_REACH, REACH_COST_BASE, REACH_COST_SCALE, REACH_START } from '@mycosurge/config';
-import type { GameState, RadarContact } from './state';
-import { spawnBlip } from './radar';
 
 /** Biomass needed to extend the network by one more mm. Rises with each mm. */
 export function getReachCost(reach: number): number {
@@ -24,50 +22,4 @@ export function getNextReachTier(reach: number): { tier: number; at: number } | 
     .filter((t) => t.at > reach)
     .sort((a, b) => a.at - b.at);
   return upcoming[0] ?? null;
-}
-
-export function canExtendReach(state: GameState): boolean {
-  return state.gamePhase === 'active' && state.biomass >= getReachCost(state.mycelialNetwork);
-}
-
-export interface ReachResult {
-  success: boolean;
-  cost: number;
-  reach: number;
-  /** A blip that drifted in on the new frontier, if a radar slot was free. */
-  spawned: RadarContact | null;
-  /** A host tier newly opened by this extension, if any. */
-  unlockedTier: number | null;
-}
-
-/**
- * Spend Biomass to push the network one mm deeper. Deeper reach opens a stronger host
- * pool, and the extension itself may draw a signal in from the new frontier.
- */
-export function extendReach(state: GameState): ReachResult {
-  const cost = getReachCost(state.mycelialNetwork);
-  const beforeBand = getReachBand(state.mycelialNetwork);
-
-  if (state.biomass < cost) {
-    return {
-      success: false,
-      cost,
-      reach: state.mycelialNetwork,
-      spawned: null,
-      unlockedTier: null,
-    };
-  }
-
-  state.biomass -= cost;
-  state.mycelialNetwork += 1;
-  const afterBand = getReachBand(state.mycelialNetwork);
-  const spawned = spawnBlip(state);
-
-  return {
-    success: true,
-    cost,
-    reach: state.mycelialNetwork,
-    spawned,
-    unlockedTier: afterBand > beforeBand ? afterBand : null,
-  };
 }

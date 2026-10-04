@@ -111,8 +111,23 @@ export {
   ensureUniqueContactIds,
   spawnBlip,
 } from './radar';
-export { getReachCost, getReachBand, getNextReachTier, canExtendReach, extendReach } from './reach';
-export type { ReachResult } from './reach';
+export { getReachCost, getReachBand, getNextReachTier } from './reach';
+export {
+  canExtendReach,
+  extendReach,
+  growSector,
+  growEvenly,
+  getSectorDepths,
+  getMaxReach,
+  getCoverage,
+  getGrowCost,
+  getEvenCost,
+  canGrowSector,
+  canGrowEvenly,
+  sectorCentres,
+  sectorIndexForAngle,
+} from './sectors';
+export type { ReachResult, SectorGrowResult } from './sectors';
 export {
   generateNetwork,
   generateHostPlacements,
