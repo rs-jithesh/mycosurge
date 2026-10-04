@@ -607,6 +607,7 @@
                 transform="rotate(-90)"
               />
               <circle
+                class="contact-ring"
                 r={7}
                 fill="none"
                 stroke={m.revealed ? 'var(--warning)' : 'var(--secondary)'}
@@ -726,6 +727,7 @@
     height: 100%;
     touch-action: none;
     user-select: none;
+    -webkit-user-select: none;
     background: radial-gradient(
       circle at center,
       transparent 45%,
@@ -800,11 +802,21 @@
     color: var(--on-surface-variant);
   }
 
-  .host:focus-visible {
+  /* The UA focus box on an SVG marker renders as a big rectangle around its
+     bounding box (which includes the label). Suppress it and draw a tidy ring. */
+  .host:focus,
+  .host:focus-visible,
+  .contact:focus,
+  .contact:focus-visible {
     outline: none;
   }
 
   .host:focus-visible .host-marker {
+    stroke: var(--primary);
+    stroke-width: 3px;
+  }
+
+  .contact:focus-visible .contact-ring {
     stroke: var(--primary);
     stroke-width: 3px;
   }
