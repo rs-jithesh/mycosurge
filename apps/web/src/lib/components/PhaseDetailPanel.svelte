@@ -4,7 +4,6 @@
     GENERATORS,
     getGeneratorCost,
     LYSATE_CAP_EXPAND_AMOUNT,
-    SECTOR_LABELS,
     resourceLabel,
   } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
@@ -30,10 +29,8 @@
 
   let activeGenerators = $derived(GENERATORS.filter((g) => (gs.generators[g.id] ?? 0) > 0).length);
 
-  /** The wedge the organism suggests growing, and the cost of one focused step. */
-  let focusSector = $derived(gameStore.advisor.sector);
+  /** Cost of one focused step, shown on the button that opens the map. */
   let focusedCost = $derived(gameStore.reachCost);
-  let canGrowFocused = $derived(focusSector !== null && gameStore.biomass >= focusedCost);
 
   let capRows = $derived([
     {
@@ -189,15 +186,11 @@
       {/if}
 
       <div class="focused-grow">
-        <button
-          class="cmd-btn secondary focused-btn"
-          disabled={!canGrowFocused}
-          onclick={() => focusSector !== null && gameStore.growSector(focusSector)}
-        >
-          Grow focused{focusSector !== null ? ` ${SECTOR_LABELS[focusSector]}` : ''} · {focusedCost}
+        <button class="cmd-btn secondary focused-btn" onclick={() => uiStore.openPanel('map')}>
+          Grow focused · {focusedCost}
           {resourceLabel('biomass')}
         </button>
-        <p class="hint">Open the map to grow in a single direction.</p>
+        <p class="hint">Open the map, then tap a wedge to grow in that direction.</p>
       </div>
 
       <div class="map-section">
