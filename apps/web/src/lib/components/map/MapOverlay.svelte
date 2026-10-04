@@ -46,13 +46,25 @@
   let contactMarkers = $derived(getContactMarkers(gs.contacts, placements));
   let adviceSector = $derived(gameStore.advisor.sector);
 
-  // Desktop hover: highlight the wedge under the cursor and show its cost.
+  // Desktop hover (fine pointer) and mobile select-then-grow both preview a wedge.
   let finePointer = $state(
     typeof window !== 'undefined' && (window.matchMedia?.('(pointer: fine)').matches ?? false),
   );
   let hoverSector = $state<number | null>(null);
-  let hoverX = $state(0);
-  let hoverY = $state(0);
+  let selectedSector = $state<number | null>(null);
+  let activeSector = $derived(hoverSector ?? selectedSector);
+  let tipPos = $derived.by(() => {
+    const s = activeSector;
+    if (s === null) return null;
+    const a = sectorCentreAngle(s);
+    const r = Math.max(0, drawnDepths[s] ?? 0) + SECTOR_GROW_MM + 0.6;
+    const x = cx + panX + Math.cos(a) * r * k;
+    const y = cy + panY + Math.sin(a) * r * k;
+    return {
+      x: Math.min(Math.max(x, 74), Math.max(74, viewW - 74)),
+      y: Math.min(Math.max(y, 28), Math.max(28, viewH - 28)),
+    };
+  });
   let cordBranch = $derived(
     gameStore.cordBranchId ? Number(gameStore.cordBranchId.split('-')[1]) : -1,
   );
@@ -222,8 +234,22 @@
     const wx = (event.clientX - rect.left - (cx + panX)) / k;
     const wy = (event.clientY - rect.top - (cy + panY)) / k;
     const radius = Math.hypot(wx, wy);
-    if (radius < 1) return;
-    gameStore.growSector(sectorIndexForAngle(Math.atan2(wy, wx)));
+    if (radius < 1) {
+      selectedSector = null;
+      return;
+    }
+    const sector = sectorIndexForAngle(Math.atan2(wy, wx));
+    if (!finePointer) {
+      // Touch: first tap previews the wedge, a second tap on it grows.
+      if (selectedSector === sector) {
+        selectedSector = null;
+        gameStore.growSector(sector);
+      } else {
+        selectedSector = sector;
+      }
+      return;
+    }
+    gameStore.growSector(sector);
   }
 
   /** Highlight the wedge under a mouse cursor (desktop only). */
@@ -237,8 +263,6 @@
       return;
     }
     hoverSector = sectorIndexForAngle(Math.atan2(wy, wx));
-    hoverX = event.clientX - rect.left;
-    hoverY = event.clientY - rect.top;
   }
 
   function onWheel(event: WheelEvent) {
@@ -365,11 +389,11 @@
             opacity={EXPANSION_MAP.territoryOpacity}
           />
         {/each}
-        {#if hoverSector !== null}
-          {@const hoverDepth = Math.max(0, drawnDepths[hoverSector] ?? 0)}
-          <path d={wedgePath(hoverSector, hoverDepth)} fill="var(--primary)" opacity="0.1" />
+        {#if activeSector !== null}
+          {@const hoverDepth = Math.max(0, drawnDepths[activeSector] ?? 0)}
+          <path d={wedgePath(activeSector, hoverDepth)} fill="var(--primary)" opacity="0.1" />
           <path
-            d={wedgePath(hoverSector, hoverDepth + SECTOR_GROW_MM)}
+            d={wedgePath(activeSector, hoverDepth + SECTOR_GROW_MM)}
             fill="none"
             stroke={gs.biomass >= gameStore.reachCost ? 'var(--primary)' : 'var(--warning)'}
             stroke-width={1.6 * inv}
@@ -613,16 +637,24 @@
       </g>
     </svg>
 
-    <p class="map-legend text-label-caps">Tap a wedge to grow it · tap signals to scan or engage</p>
+    <p class="map-legend text-label-caps">
+      {finePointer
+        ? 'Hover a wedge for its cost · click to grow · tap signals to engage'
+        : 'Tap a wedge to preview, tap again to grow · tap signals to engage'}
+    </p>
 
-    {#if hoverSector !== null}
-      <div class="sector-tip" style="left: {hoverX + 14}px; top: {hoverY + 14}px;">
+    {#if activeSector !== null && tipPos}
+      <div class="sector-tip" style="left: {tipPos.x}px; top: {tipPos.y}px;">
         <span class="tip-dir">
-          {SECTOR_LABELS[hoverSector]} · {Math.floor(drawnDepths[hoverSector] ?? 0)} mm
+          {SECTOR_LABELS[activeSector]} · {Math.floor(drawnDepths[activeSector] ?? 0)} mm
         </span>
         <span class="tip-cost">{gameStore.reachCost} {resourceLabel('biomass')}</span>
         <span class="tip-sub">
-          {gs.biomass >= gameStore.reachCost ? 'Click to grow here' : 'Not enough Biomass'}
+          {gs.biomass >= gameStore.reachCost
+            ? finePointer
+              ? 'Click to grow here'
+              : 'Tap again to grow here'
+            : 'Not enough Biomass'}
         </span>
       </div>
     {/if}
@@ -751,6 +783,7 @@
     box-shadow: var(--shadow-sm);
     white-space: nowrap;
     pointer-events: none;
+    transform: translate(-50%, 8px);
   }
 
   .tip-dir {
