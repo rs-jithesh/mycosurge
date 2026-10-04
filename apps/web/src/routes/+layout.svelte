@@ -162,6 +162,16 @@
               </button>
             {/if}
             <button
+              class="menu-item"
+              role="menuitem"
+              onclick={() => {
+                menuOpen = false;
+                devStore.set(!devStore.enabled);
+              }}
+            >
+              {devStore.enabled ? 'Disable developer tools' : 'Enable developer tools'}
+            </button>
+            <button
               class="menu-item danger-item"
               role="menuitem"
               onclick={() => {
