@@ -31,6 +31,9 @@ export * from './constants';
 export { EXPANSION_MAP } from './expansion-map';
 export type { ExpansionMapTuning } from './expansion-map';
 
+export { EXPANSION_NODES } from './expansion-nodes';
+export type { ExpansionNodeDef, NodeReward } from './expansion-nodes';
+
 export { ADVISOR_ACTIONS, ADVISOR_EMERGENCY, ADVISOR_TUNING } from './advisor';
 export type {
   AdvisorActionDef,

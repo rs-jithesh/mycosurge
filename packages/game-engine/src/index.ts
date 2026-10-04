@@ -129,6 +129,8 @@ export {
   sectorIndexForAngle,
 } from './sectors';
 export type { ReachResult, SectorGrowResult } from './sectors';
+export { getNodeMarkers, claimReachedNodes, describeReward } from './nodes';
+export type { NodeMarker } from './nodes';
 export {
   generateNetwork,
   generateHostPlacements,

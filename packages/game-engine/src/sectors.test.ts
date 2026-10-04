@@ -61,6 +61,13 @@ describe('growing a wedge', () => {
     expect(canGrowSector(state, 0)).toBe(false);
     expect(growSector(state, 0).success).toBe(false);
   });
+
+  it('charges the same per mm for wedge and even growth', () => {
+    const state = activeState();
+    const unit = getGrowCost(state);
+    const evenMm = EVEN_GROW_MM * REACH_SECTORS;
+    expect(Math.abs(getEvenCost(state) - unit * evenMm)).toBeLessThanOrEqual(0.5);
+  });
 });
 
 describe('growing evenly', () => {

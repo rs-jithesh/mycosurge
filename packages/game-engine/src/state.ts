@@ -129,6 +129,8 @@ export interface GameState {
   cordBranchId: string | null;
   /** Host ids uncovered (first defeat); drives the bestiary and farming pool. */
   cataloguedHosts: string[];
+  /** Expansion landmark nodes claimed by growing past their depth. */
+  claimedNodes: string[];
   advisor: AdvisorState;
   tutorialUpgrades: TutorialUpgrades;
   tutorialShockTimer: number;
@@ -193,6 +195,7 @@ export function createInitialState(): GameState {
     networkSeed: 0,
     cordBranchId: null,
     cataloguedHosts: [],
+    claimedNodes: [],
     advisor: {
       memory: {
         observations: 0,

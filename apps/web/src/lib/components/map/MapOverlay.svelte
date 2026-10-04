@@ -429,6 +429,20 @@
         />
         <circle r={4 * inv} fill="var(--primary)" />
 
+        {#each gameStore.nodeMarkers as node (node.id)}
+          {@const a = sectorCentreAngle(node.sector)}
+          {@const nx = Math.cos(a) * node.depthMm}
+          {@const ny = Math.sin(a) * node.depthMm}
+          {@const s = 4 * inv}
+          <path
+            d={`M ${nx} ${ny - s} L ${nx + s} ${ny} L ${nx} ${ny + s} L ${nx - s} ${ny} Z`}
+            fill={node.claimed ? 'var(--primary)' : 'transparent'}
+            stroke={node.claimed ? 'var(--primary)' : 'var(--warning)'}
+            stroke-width={1.4 * inv}
+            opacity={node.claimed ? 0.9 : 0.7}
+          />
+        {/each}
+
         {#each placements as p (p.id)}
           {@const vis = getHostVisibility(p, depths, catalogued)}
           {#if vis !== 'hidden'}

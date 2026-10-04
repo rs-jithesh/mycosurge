@@ -40,6 +40,9 @@ import {
   getGrowCost,
   getEvenCost,
   getMaxReach,
+  claimReachedNodes,
+  describeReward,
+  getNodeMarkers,
   getNextReachTier,
   pingSubstrate as enginePingSubstrate,
   scanContact as engineScanContact,
@@ -187,6 +190,7 @@ function createGameStore() {
           networkSeed: parsed.networkSeed ?? initial.networkSeed,
           cordBranchId: parsed.cordBranchId ?? initial.cordBranchId,
           cataloguedHosts: parsed.cataloguedHosts ?? initial.cataloguedHosts,
+          claimedNodes: parsed.claimedNodes ?? initial.claimedNodes,
           reachSectors: parsed.reachSectors ?? initial.reachSectors,
           advisor: {
             ...initial.advisor,
@@ -462,12 +466,19 @@ function createGameStore() {
     return true;
   }
 
+  function announceClaimed() {
+    for (const node of claimReachedNodes(state)) {
+      logStore.success(`${node.name} reached — ${describeReward(node.reward)}.`);
+    }
+  }
+
   function extendReach(): boolean {
     const result = engineExtendReach(state);
     if (!result.success) {
       logStore.warn('The network cannot stretch that far yet.');
       return false;
     }
+    announceClaimed();
     logStore.success('New filaments press deeper into the dark.');
     if (result.spawned) {
       logStore.info('A signal blooms at the frontier.');
@@ -483,6 +494,7 @@ function createGameStore() {
       logStore.warn('The network cannot stretch that far yet.');
       return false;
     }
+    announceClaimed();
     logStore.success('New filaments press deeper into the dark.');
     if (result.spawned) {
       logStore.info('A signal blooms at the frontier.');
@@ -498,6 +510,7 @@ function createGameStore() {
       logStore.warn('The network cannot stretch that far yet.');
       return false;
     }
+    announceClaimed();
     logStore.success('The network thickens all around.');
     if (result.spawned) {
       logStore.info('A signal blooms at the frontier.');
@@ -723,6 +736,9 @@ function createGameStore() {
     },
     get sectorDepths() {
       return getSectorDepths(state);
+    },
+    get nodeMarkers() {
+      return getNodeMarkers(state);
     },
     get reachCost() {
       return getGrowCost(state);
