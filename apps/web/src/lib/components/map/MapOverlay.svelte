@@ -507,7 +507,11 @@
             opacity={node.claimed ? 0.9 : 0.7}
           />
         {/each}
+      </g>
 
+      <!-- Markers live in a screen-space group (no zoom scale) so their geometry stays
+           in screen pixels — no inverse-scaled coordinates to blow up in tooling. -->
+      <g transform={`translate(${cx + panX} ${cy + panY})`}>
         {#each placements as p (p.id)}
           {@const vis = getHostVisibility(p, depths, catalogued)}
           {#if vis !== 'hidden'}
@@ -516,12 +520,12 @@
             <line
               x1={0}
               y1={0}
-              x2={p.x}
-              y2={p.y}
+              x2={p.x * k}
+              y2={p.y * k}
               stroke={vis === 'sensed' ? 'var(--secondary)' : 'var(--outline-variant)'}
-              stroke-width={inv}
+              stroke-width={1}
               opacity={vis === 'sensed' ? 0.35 : 0.18}
-              stroke-dasharray={vis === 'sensed' ? `${2 * inv} ${4 * inv}` : 'none'}
+              stroke-dasharray={vis === 'sensed' ? '2 4' : 'none'}
             />
             <g
               class="host"
@@ -535,10 +539,11 @@
                 if (e.key === 'Enter' || e.key === ' ') tapHost(p);
               }}
             >
-              <!-- Counter-scaled so marker geometry stays in screen px (see contacts). -->
-              <g transform={`translate(${p.x} ${p.y}) scale(${inv})`}>
+              <!-- Markers are in a screen-space group; position by px, radius in px. -->
+              <g transform={`translate(${p.x * k} ${p.y * k})`}>
                 <circle r={22} fill="transparent" />
                 <circle
+                  class="host-marker"
                   {r}
                   fill={vis === 'sensed'
                     ? 'transparent'
@@ -589,8 +594,8 @@
               if (e.key === 'Enter' || e.key === ' ') tapContact(m);
             }}
           >
-            <!-- Counter-scaled group: geometry stays in screen px, so no huge user-space shapes. -->
-            <g transform={`translate(${m.x} ${m.y}) scale(${inv})`}>
+            <!-- Screen-space marker: position by px, radius in px. -->
+            <g transform={`translate(${m.x * k} ${m.y * k})`}>
               <circle r={22} fill="transparent" />
               <circle
                 r={10}
@@ -799,12 +804,12 @@
     outline: none;
   }
 
-  .host:focus-visible circle:nth-child(2) {
+  .host:focus-visible .host-marker {
     stroke: var(--primary);
     stroke-width: 3px;
   }
 
-  .host.first circle:nth-child(2) {
+  .host.first .host-marker {
     animation: host-pulse 1.4s ease-in-out infinite;
   }
 
@@ -819,7 +824,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .host.first circle:nth-child(2) {
+    .host.first .host-marker {
       animation: none;
     }
 
