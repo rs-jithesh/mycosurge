@@ -29,6 +29,8 @@
 
   /** Screen-space radius of the drawn colony core; hover/taps inside it are ignored. */
   const CORE_HIT_PX = 13;
+  const MIN_ZOOM = 0.2;
+  const MAX_ZOOM = 6;
 
   // The viewport is measured in CSS pixels (1 viewBox unit == 1px), so panning is
   // direct. The map always shows the network's current scale band, in band-local mm.
@@ -70,6 +72,8 @@
 
   /** Per-wedge depth clamped to the current band, in local mm. */
   let localDepths = $derived(depths.map((d) => Math.max(0, Math.min(bandWidth, d - stage.minMm))));
+  /** The network's drawn radius — the deepest wedge, in local mm. */
+  let localReach = $derived(Math.max(0, Math.min(bandWidth, reach - stage.minMm)));
 
   // Desktop hover (fine pointer) and mobile select-then-grow both preview a wedge.
   let finePointer = $state(
@@ -270,7 +274,7 @@
       if (Math.hypot(event.clientX - tapStartX, event.clientY - tapStartY) > 8) tapMoved = true;
     } else if (pointers.size >= 2 && pinchDist > 0) {
       // Damped so a pinch feels less twitchy than raw distance ratio.
-      zoom = clamp(pinchZoom * Math.pow(pointerDistance() / pinchDist, 0.55), 0.2, 3.5);
+      zoom = clamp(pinchZoom * Math.pow(pointerDistance() / pinchDist, 0.55), MIN_ZOOM, MAX_ZOOM);
     }
   }
 
@@ -322,12 +326,16 @@
 
   function onWheel(event: WheelEvent) {
     event.preventDefault();
-    zoom = clamp(zoom * (event.deltaY < 0 ? 1.05 : 0.952), 0.2, 3.5);
+    zoom = clamp(zoom * (event.deltaY < 0 ? 1.05 : 0.952), MIN_ZOOM, MAX_ZOOM);
   }
 
   function fit() {
-    // The base scale already fits one full stage band; Fit just recentres.
-    zoom = 1;
+    // Fit the network the player actually has, not the whole band: show the deepest
+    // wedge plus a little breathing room so opening the map starts zoomed in.
+    const margin = Math.max(growStepMm * 2, bandWidth * 0.1);
+    const networkR = Math.max(localReach, bandWidth * 0.15);
+    const viewMm = Math.max(networkR + margin, bandWidth * 0.2);
+    zoom = clamp(bandWidth / viewMm, MIN_ZOOM, MAX_ZOOM);
     panX = 0;
     panY = 0;
   }
@@ -411,12 +419,12 @@
       <button
         class="cmd-btn secondary zoom-btn"
         aria-label="Zoom in"
-        onclick={() => (zoom = clamp(zoom * 1.15, 0.2, 3.5))}>+</button
+        onclick={() => (zoom = clamp(zoom * 1.15, MIN_ZOOM, MAX_ZOOM))}>+</button
       >
       <button
         class="cmd-btn secondary zoom-btn"
         aria-label="Zoom out"
-        onclick={() => (zoom = clamp(zoom / 1.15, 0.2, 3.5))}>−</button
+        onclick={() => (zoom = clamp(zoom / 1.15, MIN_ZOOM, MAX_ZOOM))}>−</button
       >
     </div>
   </header>
