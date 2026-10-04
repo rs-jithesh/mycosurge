@@ -574,6 +574,11 @@
       display: none;
     }
 
+    /* Drop the decorative online dot on mobile — it adds no info and clutters the bar. */
+    .top-bar-status {
+      display: none;
+    }
+
     .mobile-bestiary-wrap {
       display: flex;
       justify-content: center;
