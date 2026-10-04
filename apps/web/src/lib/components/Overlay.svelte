@@ -40,8 +40,13 @@
     onclick={(e) => e.stopPropagation()}
   >
     <header class="bar">
-      <button class="cmd-btn secondary back-btn" onclick={onClose} aria-label="Back to Core">
-        ← Back
+      <button
+        class="cmd-btn secondary back-btn"
+        onclick={onClose}
+        aria-label="Back to Core"
+        title="Back"
+      >
+        <span aria-hidden="true">←</span>
       </button>
       <div class="titles">
         <span class="title text-label-caps">{title}</span>
@@ -91,8 +96,15 @@
 
   .back-btn {
     flex-shrink: 0;
-    padding: 4px 10px;
-    font-size: 11px;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    font-size: 17px;
+    line-height: 1;
   }
 
   .titles {
