@@ -183,32 +183,6 @@
       {/if}
 
       <div class="map-section">
-        <button class="map-open-btn" onclick={() => uiStore.openPanel('map')}>
-          <span class="map-open-icon" aria-hidden="true">
-            <svg
-              viewBox="0 0 24 24"
-              width="26"
-              height="26"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <circle cx="12" cy="12" r="6" stroke-dasharray="2 2" opacity="0.65" />
-              <circle cx="12" cy="12" r="2.4" />
-              <path d="M12 12 L12 3.4 M12 12 L19.4 16.3 M12 12 L4.6 16.3" />
-              <circle cx="12" cy="3.4" r="1.3" fill="currentColor" stroke="none" />
-              <circle cx="19.4" cy="16.3" r="1.3" fill="currentColor" stroke="none" />
-              <circle cx="4.6" cy="16.3" r="1.3" fill="currentColor" stroke="none" />
-            </svg>
-          </span>
-          <span class="map-open-text">
-            <span class="map-open-title">Network map</span>
-            <span class="map-open-sub">Hyphae, signals and the frontier</span>
-          </span>
-          <span class="map-open-arrow" aria-hidden="true">→</span>
-        </button>
         {#if gameStore.cordBranchId}
           <span class="cord-status text-data-mono">Rhizomorph cord: active</span>
         {:else}
@@ -222,6 +196,9 @@
           </button>
         {/if}
       </div>
+      <p class="hint">
+        Grow the network from the radar in the top bar — reach works from every stage.
+      </p>
 
       {#if gameStore.unlockedSystems.evolution}
         <div class="genome-available text-data-mono">
@@ -315,76 +292,11 @@
     gap: 14px;
   }
 
-  /* ── Expand: map + cord ── */
+  /* ── Expand: cord ── */
   .map-section {
     display: flex;
     flex-direction: column;
     gap: 8px;
-  }
-
-  .map-open-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-height: 60px;
-    padding: 12px 14px;
-    border: 1px solid color-mix(in srgb, var(--primary) 55%, var(--border));
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--primary) 14%, var(--surface-container-high));
-    color: var(--on-surface);
-    text-align: left;
-    cursor: pointer;
-    transition:
-      background-color var(--duration-fast) var(--ease-out-soft),
-      border-color var(--duration-fast) var(--ease-out-soft),
-      transform var(--duration-fast) var(--ease-out-soft);
-  }
-
-  .map-open-btn:hover {
-    background: color-mix(in srgb, var(--primary) 22%, var(--surface-container-high));
-    border-color: var(--primary);
-  }
-
-  .map-open-btn:active {
-    transform: translateY(1px);
-  }
-
-  .map-open-btn:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-  }
-
-  .map-open-icon {
-    display: grid;
-    place-items: center;
-    color: var(--primary);
-    flex: none;
-  }
-
-  .map-open-text {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .map-open-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--on-surface);
-  }
-
-  .map-open-sub {
-    font-size: 11px;
-    color: var(--on-surface-variant);
-  }
-
-  .map-open-arrow {
-    flex: none;
-    color: var(--primary);
-    font-weight: 700;
   }
 
   .cord-btn {

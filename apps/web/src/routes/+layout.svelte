@@ -11,6 +11,7 @@
   import EvolutionPanel from '$lib/components/panels/EvolutionPanel.svelte';
   import ExpeditionsPanel from '$lib/components/panels/ExpeditionsPanel.svelte';
   import MapOverlay from '$lib/components/map/MapOverlay.svelte';
+  import MiniRadar from '$lib/components/map/MiniRadar.svelte';
   import BestiaryPanel from '$lib/components/bestiary/BestiaryPanel.svelte';
   import CombatModal from '$lib/components/CombatModal.svelte';
   import SystemsUnlocked from '$lib/components/SystemsUnlocked.svelte';
@@ -211,6 +212,9 @@
     </div>
 
     <div class="top-bar-actions">
+      {#if isFullGame}
+        <MiniRadar />
+      {/if}
       <span class="top-bar-status text-label-caps">● Online</span>
 
       <div class="overflow-wrap">
