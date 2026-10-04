@@ -1,6 +1,7 @@
 <script lang="ts">
   import { HOSTS, getStageByIndex } from '@mycosurge/config';
   import Overlay from '$lib/components/Overlay.svelte';
+  import ProgressBar from '$lib/components/ProgressBar.svelte';
   import { gameStore } from '$lib/stores/game.svelte';
 
   let { onClose }: { onClose: () => void } = $props();
@@ -35,9 +36,7 @@
           {#if found}
             <span class="entry-name">{host.name}</span>
             <span class="entry-meta text-data-mono">
-              {getStageByIndex(host.stage).name}{host.isBoss ? ' · Boss' : ''} · {Math.round(
-                gs.hostAssimilation[host.id] ?? 0,
-              )}% grown over
+              {getStageByIndex(host.stage).name}{host.isBoss ? ' · Boss' : ''}
             </span>
           {:else}
             <span class="entry-name locked">???</span>
@@ -45,6 +44,14 @@
               Something stronger in {getStageByIndex(host.stage).biome}
             </span>
           {/if}
+          <div class="entry-progress" class:locked={!found}>
+            <ProgressBar
+              value={found ? (gs.hostAssimilation[host.id] ?? 0) : 0}
+              max={100}
+              tone="mint"
+              showValue={found}
+            />
+          </div>
         </div>
       </li>
     {/each}
@@ -118,6 +125,15 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    flex: 1;
+  }
+
+  .entry-progress {
+    margin-top: 6px;
+  }
+
+  .entry-progress.locked {
+    opacity: 0.3;
   }
 
   .entry-name {
