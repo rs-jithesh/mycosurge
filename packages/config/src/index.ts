@@ -1,8 +1,24 @@
 export { SKILL_TREES, SKILL_NODES, SKILL_TREE_ORDER } from './skill-trees';
 export type { SkillTree, SkillNodeDef } from './skill-trees';
 
-export { HOSTS, HOST_TIER_REACH, isHostUnlocked } from './hosts';
-export type { HostDef, HostAiDef, Mobility } from './hosts';
+export { HOSTS, TUTORIAL_HOST_ID, isHostUnlocked } from './hosts';
+export type { HostDef, HostAiDef, HostEchoDef, HostTrait, Mobility } from './hosts';
+
+export {
+  STAGES,
+  STAGE_BY_INDEX,
+  FIRST_STAGE_INDEX,
+  LAST_STAGE_INDEX,
+  STEPS_PER_STAGE,
+  HOST_STAGE_REACH,
+  getStageForReach,
+  getStageByIndex,
+  getStageBandWidth,
+  getStageGrowMm,
+  mmToUnit,
+  formatReach,
+} from './stages';
+export type { StageDef, StageUnit } from './stages';
 
 export { STRAINS, getStrain, NORMAL_STRAIN_ID } from './strains';
 export type { StrainDef, StrainId } from './strains';

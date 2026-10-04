@@ -1,25 +1,35 @@
-import { HOST_TIER_REACH, REACH_COST_BASE, REACH_COST_SCALE, REACH_START } from '@mycosurge/config';
+import {
+  REACH_COST_BASE,
+  REACH_COST_SCALE,
+  REACH_START,
+  STAGES,
+  getStageForReach,
+  getStageGrowMm,
+} from '@mycosurge/config';
 
-/** Biomass needed to extend the network by one more mm. Rises with each mm. */
+/**
+ * Biomass needed to extend the network by one more step. The curve re-bases at
+ * every scale band: within a stage the price climbs, but crossing into a new
+ * band starts fresh, so each stage is a self-contained push. This is what keeps
+ * a 5 mm → 50 km ladder affordable instead of exploding exponentially in mm.
+ */
 export function getReachCost(reach: number): number {
-  const steps = Math.max(0, reach - REACH_START);
+  const stage = getStageForReach(reach);
+  const growMm = getStageGrowMm(stage);
+  const steps = Math.max(0, (reach - stage.minMm) / growMm);
   return Math.floor(REACH_COST_BASE * Math.pow(REACH_COST_SCALE, steps));
 }
 
-/** Highest host tier unlocked at this reach (0 when nothing is in range yet). */
+/** Highest stage unlocked at this reach (1 once the network is out of the tutorial). */
 export function getReachBand(reach: number): number {
-  let band = 0;
-  for (const [tier, at] of Object.entries(HOST_TIER_REACH)) {
-    if (reach >= at) band = Math.max(band, Number(tier));
-  }
-  return band;
+  return getStageForReach(reach).index;
 }
 
-/** The next host tier and the reach that opens it, or null once everything is in range. */
+/** The next stage and the reach that opens it, or null once every band is open. */
 export function getNextReachTier(reach: number): { tier: number; at: number } | null {
-  const upcoming = Object.entries(HOST_TIER_REACH)
-    .map(([tier, at]) => ({ tier: Number(tier), at }))
-    .filter((t) => t.at > reach)
-    .sort((a, b) => a.at - b.at);
-  return upcoming[0] ?? null;
+  const next = STAGES.find((stage) => stage.minMm > reach);
+  return next ? { tier: next.index, at: next.minMm } : null;
 }
+
+/** Reach the network starts the full game with — the tutorial's 5 mm. */
+export { REACH_START };

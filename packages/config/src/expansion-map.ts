@@ -1,30 +1,18 @@
 /**
  * Expansion & discovery map tuning. Every value the map geometry, host placement,
  * sensing and cord upgrade depend on lives here so the engine stays pure math.
+ *
+ * Since reach now spans an 8-stage scale ladder (mm → m), the spatial values are
+ * expressed as **fractions of the current band width**, not absolute millimetres.
+ * The map layer multiplies them by `getStageBandWidth(stage)`.
  */
 
 export const EXPANSION_MAP = {
-  // ── Ring grid (mm from the colony centre) ──
-  /** A faint dashed ring every this many mm. */
-  ringStepMm: 2.5,
-  /** Every Nth ring is a labelled major ring (2 → 5 mm, 10 mm, …). */
-  majorRingEvery: 2,
-  /** Minimum view radius drawn, so early rings are never cramped. */
-  baseViewMm: 12,
-  /** Hard geometry extent. Must exceed the deepest host tier threshold. */
-  maxMm: 36,
-
-  // ── Sensing ──
-  /** Hosts beyond reach but within this range are sensed (dashed, unnamed). */
-  senseRangeMm: 3,
-  /** How far past the reach edge the dotted "ghost" growth is shown. */
-  ghostMm: 1.5,
-
-  // ── Hyphae generation (all deterministic from the seed) ──
+  // ── Hyphae generation (deterministic from the seed) ──
   /** Number of primary branches radiating from the colony. */
   branchCount: 7,
-  /** Length of one growth step (mm). */
-  stepMm: 0.9,
+  /** Growth steps per branch. Constant, so cost is independent of band size. */
+  networkSteps: 34,
   /** Per-step angular wobble (radians). */
   branchJitter: 0.22,
   /** Per-branch starting-angle wobble (radians). */
@@ -43,11 +31,23 @@ export const EXPANSION_MAP = {
   widthBase: 3.4,
   widthDecay: 0.7,
 
-  // ── Host placement ──
-  /** A host sits this far past its tier's reach threshold. */
-  hostTierOffsetMm: 0.5,
-  /** Extra seeded distance spread so same-tier hosts differ. */
-  hostDistanceJitterMm: 2.5,
+  // ── Sensing (fractions of the band width) ──
+  /** Hosts beyond reach but within this fraction of the band are sensed. */
+  senseFraction: 0.25,
+  /** How far past the reach edge the dotted "ghost" growth is shown. */
+  ghostFraction: 0.08,
+
+  // ── Ring grid ──
+  /** Number of labelled rings drawn across a band. */
+  ringCount: 5,
+
+  // ── Host placement (fractions of the band width) ──
+  /** A host sits this fraction past its band's inner edge (plus seeded spread). */
+  hostOffsetFraction: 0.04,
+  /** Extra seeded distance spread so same-band hosts differ. */
+  hostJitterFraction: 0.12,
+  /** The band boss sits near the outer ring, as a gate. */
+  bossFraction: 0.9,
 
   // ── Territory ──
   /** Flat fill opacity of the claimed-territory wash. */
@@ -62,6 +62,8 @@ export const EXPANSION_MAP = {
   // ── Rendering ──
   /** Milliseconds the drawn reach takes to ease toward its target. */
   reachAnimMs: 320,
+  /** Milliseconds the stage-cross "zoom out" ceremony takes. */
+  stageAnimMs: 900,
 } as const;
 
 export type ExpansionMapTuning = typeof EXPANSION_MAP;

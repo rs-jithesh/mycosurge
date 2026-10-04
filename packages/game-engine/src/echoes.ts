@@ -104,12 +104,12 @@ export function getEffectiveCombatStats(state: GameState): CombatStats {
 
 /** Display name for an echo id (falls back to the raw id). */
 export function getEchoName(echoId: string): string {
-  const host = HOSTS.find((h) => h.echoes.id === echoId);
-  return host?.echoes.name ?? echoId;
+  const host = HOSTS.find((h) => h.echoes?.id === echoId);
+  return host?.echoes?.name ?? echoId;
 }
 
 /** Description of the trait an echo grants (falls back to an empty string). */
 export function getEchoDescription(echoId: string): string {
-  const host = HOSTS.find((h) => h.echoes.id === echoId);
-  return host?.echoes.description ?? '';
+  const host = HOSTS.find((h) => h.echoes?.id === echoId);
+  return host?.echoes?.description ?? '';
 }

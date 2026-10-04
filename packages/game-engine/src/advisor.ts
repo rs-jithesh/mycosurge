@@ -5,6 +5,8 @@ import {
   EXPANSION_MAP,
   GENERATORS,
   getGeneratorCost,
+  getStageBandWidth,
+  getStageForReach,
   MANUAL_SYNTH_NUTRIENT_COST,
   MANUAL_SYNTH_WATER_COST,
   SCAN_WATER_COST,
@@ -153,6 +155,7 @@ export function getSectorAdvice(state: GameState): SectorAdvice {
   const catalogued = new Set(state.cataloguedHosts);
   const maxReach = getMaxReach(state);
   const nextTier = getNextReachTier(maxReach);
+  const senseMm = getStageBandWidth(getStageForReach(maxReach)) * EXPANSION_MAP.senseFraction;
   const affordable = state.biomass >= getGrowCost(state);
 
   let index = 0;
@@ -168,17 +171,17 @@ export function getSectorAdvice(state: GameState): SectorAdvice {
       if (sectorIndexForAngle(placement.angle) !== i) continue;
       const ahead = placement.distanceMm - depth;
       if (ahead <= 0) signal = Math.max(signal, 0.4);
-      else if (ahead <= EXPANSION_MAP.senseRangeMm) {
-        signal = Math.max(signal, 1 - ahead / EXPANSION_MAP.senseRangeMm);
+      else if (ahead <= senseMm) {
+        signal = Math.max(signal, 1 - ahead / senseMm);
       }
     }
 
     let tier = 0;
     const gap = nextTier ? nextTier.at - maxReach : Infinity;
-    // Only pull toward a tier when it is genuinely close, so this never overrides
-    // the resting economy from a standing start.
-    if (Math.abs(depth - maxReach) < 1e-6 && gap <= 3) {
-      tier = clamp01(1 - gap / 3);
+    // Only pull toward a stage boundary when it is genuinely close, so this never
+    // overrides the resting economy from a standing start.
+    if (Math.abs(depth - maxReach) < 1e-6 && gap <= senseMm) {
+      tier = clamp01(1 - gap / senseMm);
     }
 
     if (Math.max(signal, tier) > Math.max(bestSignal, bestTier) + 1e-9) {

@@ -97,10 +97,10 @@ export const BIOMASS_CAP_PER_REACH = 24;
 // ── Directional reach (sectors) ──
 /** Number of wedges the network grows into. Each has its own depth. */
 export const REACH_SECTORS = 6;
-/** mm added to the chosen wedge by a targeted growth. */
-export const SECTOR_GROW_MM = 1;
-/** mm added to every wedge by a single "grow evenly" action. */
-export const EVEN_GROW_MM = 0.5;
+/**
+ * Growth per action is stage-relative now (see `STEPS_PER_STAGE` in `stages.ts`):
+ * a targeted step is one `getStageGrowMm`, an even step is half of that.
+ */
 /** Compass labels for the six wedges, in sector order (0 = east, clockwise). */
 export const SECTOR_LABELS = ['E', 'SE', 'SW', 'W', 'NW', 'NE'] as const;
 

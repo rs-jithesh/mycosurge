@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { HOSTS, HOST_TIER_REACH } from '@mycosurge/config';
+  import { HOSTS, getStageByIndex } from '@mycosurge/config';
   import Overlay from '$lib/components/Overlay.svelte';
   import { gameStore } from '$lib/stores/game.svelte';
 
   let { onClose }: { onClose: () => void } = $props();
 
   const hosts = HOSTS.filter((h) => h.id !== 'soil_nematode').sort(
-    (a, b) => a.tier - b.tier || a.name.localeCompare(b.name),
+    (a, b) => a.stage - b.stage || a.name.localeCompare(b.name),
   );
 
   let gs = $derived(gameStore.state);
@@ -23,21 +23,21 @@
     {#each hosts as host (host.id)}
       {@const found = catalogued.has(host.id)}
       <li class="entry" class:found>
-        <span class="glyph" data-tier={host.tier} data-boss={host.isBoss} aria-hidden="true">
-          {found ? host.tier : '?'}
+        <span class="glyph" data-stage={host.stage} data-boss={host.isBoss} aria-hidden="true">
+          {found ? host.stage : '?'}
         </span>
         <div class="entry-text">
           {#if found}
             <span class="entry-name">{host.name}</span>
             <span class="entry-meta text-data-mono">
-              Tier {host.tier}{host.isBoss ? ' · Boss' : ''} · {Math.round(
+              {getStageByIndex(host.stage).name}{host.isBoss ? ' · Boss' : ''} · {Math.round(
                 gs.hostAssimilation[host.id] ?? 0,
-              )}% assimilated
+              )}% grown over
             </span>
           {:else}
             <span class="entry-name locked">???</span>
             <span class="entry-meta text-data-mono">
-              Something stronger past {HOST_TIER_REACH[host.tier]} mm
+              Something stronger in {getStageByIndex(host.stage).biome}
             </span>
           {/if}
         </div>

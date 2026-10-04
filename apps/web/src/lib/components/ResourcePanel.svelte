@@ -5,6 +5,9 @@
     STARVATION_STATE_THRESHOLD,
     STARVATION_THRESHOLD,
     WATER_YIELD_THRESHOLD,
+    formatReach,
+    getStageBandWidth,
+    getStageForReach,
     resourceLabel,
   } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
@@ -89,7 +92,9 @@
   // Reach is the network's expansion "resource": shown here so the Biomass sink is visible.
   let reach = $derived(gameStore.reach);
   let nextReachTier = $derived(gameStore.nextReachTier);
-  let reachMax = $derived(nextReachTier ? nextReachTier.at : Math.max(1, reach));
+  let stage = $derived(getStageForReach(reach));
+  let stageLocal = $derived(Math.max(0, Math.min(getStageBandWidth(stage), reach - stage.minMm)));
+  let reachLabel = $derived(formatReach(reach));
 </script>
 
 <div class="panel resource-panel" class:compact={variant === 'compact'}>
@@ -141,16 +146,23 @@
       <div class="res-top">
         <span class="res-name"><ResourceSymbol id="reach" info /></span>
         <span class="text-data-mono res-val">
-          <b>{reach}</b>
-          <span class="cap">mm</span>
+          <b>{reachLabel.value}</b>
+          <span class="cap">{reachLabel.unit}</span>
         </span>
       </div>
-      <ProgressBar tone="mint" value={reach} max={reachMax} showValue={false} />
+      <ProgressBar
+        tone="mint"
+        value={stageLocal}
+        max={getStageBandWidth(stage)}
+        showValue={false}
+      />
       <div class="res-foot">
         {#if nextReachTier}
-          <span class="text-data-mono detail">Deeper hosts at {nextReachTier.at} mm</span>
+          <span class="text-data-mono detail">
+            Next stage at {formatReach(nextReachTier.at).label}
+          </span>
         {:else}
-          <span class="text-data-mono detail">All hosts in range</span>
+          <span class="text-data-mono detail">Every scale reached</span>
         {/if}
       </div>
     </div>

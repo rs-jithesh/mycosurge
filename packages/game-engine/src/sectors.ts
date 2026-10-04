@@ -1,4 +1,4 @@
-import { EVEN_GROW_MM, REACH_SECTORS, REACH_START, SECTOR_GROW_MM } from '@mycosurge/config';
+import { REACH_SECTORS, REACH_START, getStageForReach, getStageGrowMm } from '@mycosurge/config';
 import type { GameState, RadarContact } from './state';
 import { getReachBand, getReachCost } from './reach';
 import { spawnBlip } from './radar';
@@ -59,14 +59,24 @@ function syncMaxReach(state: GameState): void {
   state.mycelialNetwork = getMaxReach(state);
 }
 
-/** Biomass cost of growing one wedge by `SECTOR_GROW_MM`. */
+/** mm added to one wedge by a targeted growth, for the network's current band. */
+export function getGrowStepMm(state: GameState): number {
+  return getStageGrowMm(getStageForReach(getMaxReach(state)));
+}
+
+/** mm added to every wedge by a "grow evenly" action (half a targeted step). */
+export function getEvenStepMm(state: GameState): number {
+  return getGrowStepMm(state) / 2;
+}
+
+/** Biomass cost of growing one wedge by a full stage-relative step. */
 export function getGrowCost(state: GameState): number {
   return getReachCost(getMaxReach(state));
 }
 
 /** Biomass cost of a single "grow evenly" action across every wedge. */
 export function getEvenCost(state: GameState): number {
-  return Math.round(getGrowCost(state) * EVEN_GROW_MM * REACH_SECTORS);
+  return Math.round(getGrowCost(state) * getEvenStepMm(state) * REACH_SECTORS);
 }
 
 export function canGrowSector(state: GameState, sector: number): boolean {
@@ -106,7 +116,7 @@ export function growSector(state: GameState, sector: number): SectorGrowResult {
   }
   const beforeBand = getReachBand(getMaxReach(state));
   materializeReach(state);
-  state.reachSectors[sector] += SECTOR_GROW_MM;
+  state.reachSectors[sector] += getGrowStepMm(state);
   state.biomass -= cost;
   return { success: true, cost, sector, ...afterGrowth(state, beforeBand) };
 }
@@ -120,7 +130,7 @@ export function growEvenly(state: GameState): SectorGrowResult {
   const beforeBand = getReachBand(getMaxReach(state));
   materializeReach(state);
   for (let i = 0; i < state.reachSectors.length; i++) {
-    state.reachSectors[i] += EVEN_GROW_MM;
+    state.reachSectors[i] += getEvenStepMm(state);
   }
   state.biomass -= cost;
   return { success: true, cost, sector: null, ...afterGrowth(state, beforeBand) };

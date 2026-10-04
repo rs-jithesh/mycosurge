@@ -123,6 +123,8 @@ export {
   getCoverage,
   getGrowCost,
   getEvenCost,
+  getGrowStepMm,
+  getEvenStepMm,
   canGrowSector,
   canGrowEvenly,
   sectorCentres,

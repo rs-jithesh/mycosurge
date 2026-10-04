@@ -127,32 +127,35 @@ projectile evasion, and bonus genome points.
 
 ## Hosts & discovery
 
-Eleven hosts, each with an echo and one to three attack patterns (see `COMBAT.md`). A host
-joins the sonar pool only once you have collected enough **echoes** (`acquiredEchoes`):
+Hosts are ordered along an **8-stage scale ladder**, from microbial grazers a few
+millimetres across to apex organisms tens of metres across. Reach (mm — the single economy
+unit) decides which band the network is in; the map always draws the current band, and
+crossing a boundary plays a zoom-out **scale shift** (mm → cm → m). Each band is a
+self-contained push: the reach cost curve **re-bases** at every boundary, so a narrow band
+can still be a long stage.
 
-| Tier     | Echoes required | Hosts                                 |
-| -------- | --------------- | ------------------------------------- |
-| 1        | 0               | Fallen Leaf, Compost Worm             |
-| 2        | 2               | Garden Beetle, Pond Frog, Field Mouse |
-| 3        | 4               | Urban Pigeon, Backyard Squirrel       |
-| 4        | 6               | Stray Cat, Feral Raccoon              |
-| Boss (5) | 9               | Laboratory Rat                        |
+A host joins the sonar pool when its **stage** is in reach (`host.stage`), and the band
+**boss** sits on the outer ring as a gate — driving it off opens the next scale.
+`Soil Nematode` remains the tutorial encounter, excluded from the pool and the bestiary.
 
-`Soil Nematode` is the tutorial encounter and never appears in the pool.
+| Stage | Reach band | Unit | Biome               | Hosts (boss in **bold**)                                                                                              |
+| ----- | ---------- | ---- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 1     | 5–10 mm    | mm   | Leaf litter & soil  | Bacterial Film, Yeast Bloom, Ciliate, Vampire Amoeba, Rotifer, Fallen Leaf, **Nematode Brood**                         |
+| 2     | 1–5 cm     | cm   | Leaf litter & soil  | Oribatid Mite, Springtail, Tardigrade, Fungus Gnat Larva, Aphid, Pseudoscorpion, Compost Worm, **Mite Colony**         |
+| 3     | 5–20 cm    | cm   | Leaf litter & soil  | Termite Worker, Termite Soldier, Ant Worker, Carpenter Ant, Leafcutter Ant, Beetle Grub, **Termite Queen's Chamber**  |
+| 4     | 20–60 cm   | cm   | Rotting log         | Garden Beetle                                                                                                          |
+| 5     | 60 cm–1 m  | cm   | Forest floor        | Pond Frog                                                                                                              |
+| 6     | 1–5 m      | m    | Forest floor        | Field Mouse, Backyard Squirrel, Urban Pigeon, Feral Raccoon, Stray Cat, **Laboratory Rat**                             |
+| 7     | 5–50 m     | m    | Living forest       | _(not yet authored)_                                                                                                   |
+| 8     | 50 m+      | m    | Living forest       | _(not yet authored)_                                                                                                   |
 
-| Host                  | Tier | Difficulty | Patterns                                         |
-| --------------------- | ---- | ---------- | ------------------------------------------------ |
-| Soil Nematode         | —    | 1          | slow_spiral                                      |
-| Fallen Leaf           | 1    | 1          | slow_spiral                                      |
-| Compost Worm          | 1    | 1          | slow_spiral, wave                                |
-| Garden Beetle         | 2    | 2          | burst, scatter                                   |
-| Field Mouse           | 2    | 3          | erratic_swarm, wave                              |
-| Pond Frog             | 2    | 3          | burst, homing, scatter                           |
-| Urban Pigeon          | 3    | 4          | homing, spiral_nova                              |
-| Backyard Squirrel     | 3    | 4          | erratic_swarm, scatter, wave                     |
-| Stray Cat             | 4    | 5          | pattern_combo, enrage_phase                      |
-| Feral Raccoon         | 4    | 6          | pattern_combo, homing, spiral_nova, enrage_phase |
-| Laboratory Rat (Boss) | 5    | 7          | multi_phase, geometric_lasers, summon            |
+Each host carries one or more **attack patterns** (see `COMBAT.md`) and may carry behaviour
+**traits** drawn from the roster vocabulary (`armored`, `splits`, `revives`, `leech`,
+`summoner`, `dasher`, `shielded`, `clones`); bosses combine traits the player has already
+met. Traits are being wired into combat incrementally.
+
+Echoes are **unchanged for now** and are being reworked separately — new hosts omit an echo
+until that policy lands, and victory handling skips hosts without one.
 
 ### Radar (sonar)
 
@@ -177,8 +180,9 @@ Any contact can carry a **strain**, a light per-encounter modifier:
 ### Assimilation
 
 Each victory assimilates **that host** by `10 + difficulty × 5`. At 100 the host is fully
-grown over: its echo joins your network, `hostsDefeated` rises once, and it no longer
-grants echoes. Full assimilation is also what unlocks the next host tier.
+grown over: if it has an echo, the echo joins your network; `hostsDefeated` rises once, and
+it no longer grants an echo. Hosts enter the pool as **reach** opens their stage band — the
+band boss is what gates the next scale (see "Hosts & discovery").
 
 Separately, every victory adds a small, fixed amount of **ecological strain** (`2` per win)
 to a global meter, independent of the per-host echo progress. Strain — together with the

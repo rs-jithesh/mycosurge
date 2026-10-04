@@ -53,10 +53,14 @@ describe('generateNetwork', () => {
     }
   });
 
-  it('extends past the deepest host tier so the map can grow into it', () => {
-    const geometry = generateNetwork(7);
-    const furthest = Math.max(...geometry.segments.map((s) => s.endMm));
-    expect(furthest).toBeGreaterThanOrEqual(35);
+  it('generates band-local geometry that fills the band', () => {
+    for (const stage of [1, 3, 6]) {
+      const geometry = generateNetwork(7, stage);
+      const furthest = Math.max(...geometry.segments.map((s) => s.endMm));
+      expect(geometry.maxMm).toBeGreaterThan(0);
+      expect(furthest).toBeLessThanOrEqual(geometry.maxMm * 1.05);
+      expect(furthest).toBeGreaterThan(geometry.maxMm * 0.7);
+    }
   });
 });
 
@@ -65,16 +69,14 @@ describe('generateHostPlacements', () => {
     expect(generateHostPlacements(555)).toEqual(generateHostPlacements(555));
   });
 
-  it('places every non-tutorial host just past its tier gate', () => {
+  it('places every non-tutorial host inside its own stage band', () => {
     const placements = generateHostPlacements(555);
     expect(placements.map((p) => p.hostId)).not.toContain('soil_nematode');
-    const tier1 = placements.filter((p) => p.tier === 1);
-    expect(tier1.length).toBeGreaterThan(0);
-    for (const placement of tier1) {
+    const stage1 = placements.filter((p) => p.stage === 1);
+    expect(stage1.length).toBeGreaterThan(0);
+    for (const placement of stage1) {
       expect(placement.distanceMm).toBeGreaterThan(5);
-      expect(placement.distanceMm).toBeLessThan(
-        5 + EXPANSION_MAP.hostTierOffsetMm + EXPANSION_MAP.hostDistanceJitterMm,
-      );
+      expect(placement.distanceMm).toBeLessThan(10);
     }
   });
 });
@@ -84,11 +86,12 @@ describe('host visibility', () => {
   const placement = {
     id: 'host-x',
     hostId: 'fallen_leaf',
-    tier: 1,
+    stage: 1,
     isBoss: false,
     angle: 0,
     distanceMm: 6,
-    x: 6,
+    localMm: 1,
+    x: 1,
     y: 0,
   };
 
@@ -118,7 +121,7 @@ describe('catalogue + first contact', () => {
     // At the starting 5 mm every host is still only sensed.
     expect(getFirstContact(state, placements)).toBeNull();
 
-    // Extending past the tier-1 host distances makes the nearest one encountered.
+    // Extending past the stage-1 host distances makes the nearest one encountered.
     state.mycelialNetwork = 9;
     const first = getFirstContact(state, placements);
     expect(first).not.toBeNull();

@@ -1,10 +1,14 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import {
     EXPANSION_MAP,
     HOSTS,
     REACH_SECTORS,
-    SECTOR_GROW_MM,
     SECTOR_LABELS,
+    getStageForReach,
+    getStageBandWidth,
+    getStageGrowMm,
+    formatReach,
     getStrain,
     resourceLabel,
   } from '@mycosurge/config';
@@ -23,28 +27,42 @@
 
   let { onClose }: { onClose: () => void } = $props();
 
-  const MAJOR_MM = EXPANSION_MAP.ringStepMm * EXPANSION_MAP.majorRingEvery;
-
   // The viewport is measured in CSS pixels (1 viewBox unit == 1px), so panning is
-  // direct and the ring set fills the smaller axis while wide screens reveal more world.
+  // direct. The map always shows the network's current scale band, in band-local mm.
   let viewW = $state(1000);
   let viewH = $state(700);
   let cx = $derived(Math.max(1, viewW) / 2);
   let cy = $derived(Math.max(1, viewH) / 2);
-  let basePxPerMm = $derived(
-    Math.max(1, Math.min(viewW, viewH) / 2 - 24) / EXPANSION_MAP.baseViewMm,
-  );
 
   let gs = $derived(gameStore.state);
+  /** Absolute reach (mm). */
   let reach = $derived(gameStore.reach);
+  /** Absolute per-wedge depths (mm). */
   let depths = $derived(gameStore.sectorDepths);
   let seed = $derived(gameStore.networkSeed);
-  let geometry = $derived(generateNetwork(seed));
-  let placements = $derived(generateHostPlacements(seed));
   let catalogued = $derived(new Set(gameStore.cataloguedHosts));
-  let firstContact = $derived(getFirstContact(gs, placements));
-  let contactMarkers = $derived(getContactMarkers(gs.contacts, placements));
+
+  // ── Scale band ──
+  let stage = $derived(getStageForReach(reach));
+  let stageIndex = $derived(stage.index);
+  let bandWidth = $derived(getStageBandWidth(stage));
+  let growStepMm = $derived(getStageGrowMm(stage));
+  let ghostMm = $derived(bandWidth * EXPANSION_MAP.ghostFraction);
+  let basePxPerMm = $derived(
+    Math.max(1, Math.min(viewW, viewH) / 2 - 24) / Math.max(1e-6, bandWidth),
+  );
+
+  let geometry = $derived(generateNetwork(seed, stageIndex));
+  let allPlacements = $derived(generateHostPlacements(seed));
+  let placements = $derived(allPlacements.filter((p) => p.stage === stageIndex));
+  let firstContact = $derived(getFirstContact(gs, allPlacements));
+  let contactMarkers = $derived(
+    getContactMarkers(gs.contacts, allPlacements).filter((m) => m.stage === stageIndex),
+  );
   let adviceSector = $derived(gameStore.advisor.sector);
+
+  /** Per-wedge depth clamped to the current band, in local mm. */
+  let localDepths = $derived(depths.map((d) => Math.max(0, Math.min(bandWidth, d - stage.minMm))));
 
   // Desktop hover (fine pointer) and mobile select-then-grow both preview a wedge.
   let finePointer = $state(
@@ -57,7 +75,7 @@
     const s = activeSector;
     if (s === null) return null;
     const a = sectorCentreAngle(s);
-    const r = Math.max(0, drawnDepths[s] ?? 0) + SECTOR_GROW_MM + 0.6;
+    const r = Math.max(0, drawnDepths[s] ?? 0) + growStepMm + bandWidth * 0.02;
     const x = cx + panX + Math.cos(a) * r * k;
     const y = cy + panY + Math.sin(a) * r * k;
     return {
@@ -72,21 +90,15 @@
   let zoom = $state(1);
   let panX = $state(0);
   let panY = $state(0);
-  let k = $derived(basePxPerMm * zoom);
+  /** Stage-cross "zoom out": the fresh band opens from this scale to 1. */
+  let stageScale = $state(1);
+  let k = $derived(basePxPerMm * zoom * stageScale);
   let inv = $derived(1 / k);
 
-  let ringMax = $derived(
-    Math.max(
-      10,
-      Math.ceil((reach + EXPANSION_MAP.senseRangeMm) / EXPANSION_MAP.ringStepMm) *
-        EXPANSION_MAP.ringStepMm,
-    ),
-  );
   let rings = $derived.by(() => {
+    const count = EXPANSION_MAP.ringCount;
     const out: number[] = [];
-    for (let mm = EXPANSION_MAP.ringStepMm; mm <= ringMax + 1e-6; mm += EXPANSION_MAP.ringStepMm) {
-      out.push(Number(mm.toFixed(2)));
-    }
+    for (let i = 1; i <= count; i++) out.push((bandWidth * i) / count);
     return out;
   });
 
@@ -97,7 +109,7 @@
   let raf = 0;
 
   $effect(() => {
-    const target = depths;
+    const target = localDepths;
     if (firstRun) {
       firstRun = false;
       current = target.slice();
@@ -125,6 +137,43 @@
     return () => cancelAnimationFrame(raf);
   });
 
+  // ── Stage-cross ceremony ──
+  let prevStageIndex = untrack(() => stageIndex);
+  let ceremonyLabel = $state<string | null>(null);
+  let ceremonyRaf = 0;
+  $effect(() => {
+    const idx = stageIndex;
+    const stageNow = stage;
+    if (idx === prevStageIndex) return;
+    const entering = idx > prevStageIndex;
+    prevStageIndex = idx;
+    ceremonyLabel = `${stageNow.name} · ${stageNow.unit}`;
+    if (
+      typeof window === 'undefined' ||
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      stageScale = 1;
+      return;
+    }
+    cancelAnimationFrame(ceremonyRaf);
+    // Entering a wider band: start zoomed in, pull back. Going back: push in slightly.
+    const from = entering ? 0.45 : 1.5;
+    const start = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / EXPANSION_MAP.stageAnimMs);
+      const eased = 1 - Math.pow(1 - p, 3);
+      stageScale = from + (1 - from) * eased;
+      if (p < 1) {
+        ceremonyRaf = requestAnimationFrame(tick);
+      } else {
+        stageScale = 1;
+        ceremonyLabel = null;
+      }
+    };
+    ceremonyRaf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(ceremonyRaf);
+  });
+
   function drawnDepthAt(angle: number): number {
     return drawnDepths[sectorIndexForAngle(angle)] ?? 0;
   }
@@ -135,7 +184,7 @@
   let ghostSegments = $derived(
     geometry.segments.filter((s) => {
       const depth = drawnDepthAt(Math.atan2(s.y2, s.x2));
-      return s.endMm > depth && s.endMm <= depth + EXPANSION_MAP.ghostMm;
+      return s.endMm > depth && s.endMm <= depth + ghostMm;
     }),
   );
 
@@ -271,8 +320,8 @@
   }
 
   function fit() {
-    const viewMm = Math.max(EXPANSION_MAP.baseViewMm, reach + EXPANSION_MAP.senseRangeMm + 1);
-    zoom = clamp(EXPANSION_MAP.baseViewMm / viewMm, 0.2, 3.5);
+    // The base scale already fits one full stage band; Fit just recentres.
+    zoom = 1;
     panX = 0;
     panY = 0;
   }
@@ -329,11 +378,11 @@
     <div class="map-title">
       <span class="text-label-caps">Network</span>
       <span class="text-data-mono map-sub">
-        {Math.floor(reach)} mm
+        {stage.name} · {formatReach(reach).label}
         {#if gameStore.nextReachTier}
-          · tier {gameStore.nextReachTier.tier} at {gameStore.nextReachTier.at} mm
+          · next stage at {formatReach(gameStore.nextReachTier.at).label}
         {:else}
-          · all tiers open
+          · apex reached
         {/if}
         {#if contactMarkers.length}
           · {contactMarkers.length} signal{contactMarkers.length === 1 ? '' : 's'}
@@ -393,7 +442,7 @@
           {@const hoverDepth = Math.max(0, drawnDepths[activeSector] ?? 0)}
           <path d={wedgePath(activeSector, hoverDepth)} fill="var(--primary)" opacity="0.1" />
           <path
-            d={wedgePath(activeSector, hoverDepth + SECTOR_GROW_MM)}
+            d={wedgePath(activeSector, hoverDepth + growStepMm)}
             fill="none"
             stroke={gs.biomass >= gameStore.reachCost ? 'var(--primary)' : 'var(--warning)'}
             stroke-width={1.6 * inv}
@@ -436,27 +485,24 @@
         {/if}
 
         {#each rings as mm (mm)}
-          {@const major = Math.abs(mm % MAJOR_MM) < 1e-6}
           <circle
             r={mm}
             fill="none"
             stroke="var(--outline-variant)"
             stroke-width={inv}
-            stroke-dasharray={major ? 'none' : `${4 * inv} ${6 * inv}`}
-            opacity={major ? 0.5 : 0.28}
+            stroke-dasharray={`${4 * inv} ${6 * inv}`}
+            opacity="0.4"
           />
-          {#if major}
-            <text
-              x={0}
-              y={-mm - 3 * inv}
-              text-anchor="middle"
-              fill="var(--on-surface-variant)"
-              font-family="var(--font-mono)"
-              font-size={10 * inv}
-            >
-              {Math.round(mm)} mm
-            </text>
-          {/if}
+          <text
+            x={0}
+            y={-mm - 3 * inv}
+            text-anchor="middle"
+            fill="var(--on-surface-variant)"
+            font-family="var(--font-mono)"
+            font-size={10 * inv}
+          >
+            {formatReach(stage.minMm + mm).label}
+          </text>
         {/each}
 
         {#each ghostSegments as s (s.id)}
@@ -635,6 +681,13 @@
       </g>
     </svg>
 
+    {#if ceremonyLabel}
+      <div class="stage-ceremony" aria-live="polite">
+        <span class="stage-ceremony-kicker text-label-caps">Scale shift</span>
+        <span class="stage-ceremony-name">{ceremonyLabel}</span>
+      </div>
+    {/if}
+
     <p class="map-legend text-label-caps">
       {finePointer
         ? 'Hover a wedge for its cost · click to grow · tap signals to engage'
@@ -644,7 +697,9 @@
     {#if activeSector !== null && tipPos}
       <div class="sector-tip" style="left: {tipPos.x}px; top: {tipPos.y}px;">
         <span class="tip-dir">
-          {SECTOR_LABELS[activeSector]} · {Math.floor(drawnDepths[activeSector] ?? 0)} mm
+          {SECTOR_LABELS[activeSector]} · {formatReach(
+            stage.minMm + (drawnDepths[activeSector] ?? 0),
+          ).label}
         </span>
         <span class="tip-cost">{gameStore.reachCost} {resourceLabel('biomass')}</span>
         <span class="tip-sub">
@@ -767,6 +822,52 @@
     color: var(--on-surface-variant);
     font-size: 10px;
     pointer-events: none;
+  }
+
+  .stage-ceremony {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 16px;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--surface-container-highest) 92%, transparent);
+    box-shadow: var(--shadow-sm);
+    pointer-events: none;
+    animation: ceremony-in 0.35s ease-out;
+  }
+
+  .stage-ceremony-kicker {
+    color: var(--secondary);
+    font-size: 10px;
+  }
+
+  .stage-ceremony-name {
+    color: var(--primary);
+    font-size: 14px;
+  }
+
+  @keyframes ceremony-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -6px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stage-ceremony {
+      animation: none;
+    }
   }
 
   .sector-tip {

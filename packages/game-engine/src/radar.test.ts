@@ -33,26 +33,36 @@ beforeEach(() => {
 });
 
 describe('getUnlockedHosts', () => {
-  it('returns only tier 1 at the starting reach, never the tutorial host', () => {
+  it('returns only stage 1 at the starting reach, never the tutorial host', () => {
     const state = createInitialState();
     state.mycelialNetwork = 5;
-    const ids = getUnlockedHosts(state).map((h) => h.id);
-    expect(ids.sort()).toEqual(['compost_worm', 'fallen_leaf']);
+    const ids = getUnlockedHosts(state)
+      .map((h) => h.id)
+      .sort();
+    expect(ids).toEqual([
+      'bacterial_film',
+      'ciliate',
+      'fallen_leaf',
+      'nematode_brood',
+      'rotifer',
+      'vampire_amoeba',
+      'yeast_bloom',
+    ]);
     expect(ids).not.toContain('soil_nematode');
   });
 
-  it('unlocks tier 2 at 10 mm of reach', () => {
+  it('unlocks stage 2 at 10 mm of reach', () => {
     const state = createInitialState();
     state.mycelialNetwork = 10;
-    expect(getUnlockedHosts(state).some((h) => h.id === 'garden_beetle')).toBe(true);
+    expect(getUnlockedHosts(state).some((h) => h.id === 'oribatid_mite')).toBe(true);
     expect(getUnlockedHosts(state).some((h) => h.id === 'urban_pigeon')).toBe(false);
   });
 
-  it('gates the boss until 35 mm of reach', () => {
+  it('gates the boss until its stage is in reach', () => {
     const state = createInitialState();
     state.mycelialNetwork = 24;
     expect(getUnlockedHosts(state).some((h) => h.id === 'lab_rat')).toBe(false);
-    state.mycelialNetwork = 35;
+    state.mycelialNetwork = 1000;
     expect(getUnlockedHosts(state).some((h) => h.id === 'lab_rat')).toBe(true);
   });
 });

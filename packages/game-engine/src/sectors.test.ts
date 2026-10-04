@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EVEN_GROW_MM, REACH_SECTORS, REACH_START, SECTOR_GROW_MM } from '@mycosurge/config';
+import { REACH_SECTORS, REACH_START } from '@mycosurge/config';
 import { createInitialState } from './state';
 import type { HostPlacement } from './network';
 import { getHostVisibility } from './network';
@@ -8,7 +8,9 @@ import {
   canGrowSector,
   getCoverage,
   getEvenCost,
+  getEvenStepMm,
   getGrowCost,
+  getGrowStepMm,
   getMaxReach,
   getSectorDepths,
   growEvenly,
@@ -44,15 +46,16 @@ describe('sector geometry', () => {
 describe('growing a wedge', () => {
   it('deepens only the chosen wedge and raises max reach', () => {
     const state = activeState();
+    const step = getGrowStepMm(state);
     const result = growSector(state, 2);
     expect(result.success).toBe(true);
     expect(result.cost).toBe(getGrowCost(activeState()));
     const depths = getSectorDepths(state);
-    expect(depths[2]).toBeCloseTo(REACH_START + SECTOR_GROW_MM);
+    expect(depths[2]).toBeCloseTo(REACH_START + step);
     expect(depths[0]).toBeCloseTo(REACH_START);
-    expect(getMaxReach(state)).toBeCloseTo(REACH_START + SECTOR_GROW_MM);
+    expect(getMaxReach(state)).toBeCloseTo(REACH_START + step);
     // Coverage rises by the step spread over every wedge.
-    expect(getCoverage(state)).toBeCloseTo(SECTOR_GROW_MM / REACH_SECTORS);
+    expect(getCoverage(state)).toBeCloseTo(step / REACH_SECTORS);
   });
 
   it('refuses when Biomass is short', () => {
@@ -65,7 +68,7 @@ describe('growing a wedge', () => {
   it('charges the same per mm for wedge and even growth', () => {
     const state = activeState();
     const unit = getGrowCost(state);
-    const evenMm = EVEN_GROW_MM * REACH_SECTORS;
+    const evenMm = getEvenStepMm(state) * REACH_SECTORS;
     expect(Math.abs(getEvenCost(state) - unit * evenMm)).toBeLessThanOrEqual(0.5);
   });
 });
@@ -74,15 +77,16 @@ describe('growing evenly', () => {
   it('nudges every wedge and charges proportionally', () => {
     const state = activeState();
     const unit = getGrowCost(state);
-    expect(getEvenCost(state)).toBe(Math.round(unit * EVEN_GROW_MM * REACH_SECTORS));
+    const evenStep = getEvenStepMm(state);
+    expect(getEvenCost(state)).toBe(Math.round(unit * evenStep * REACH_SECTORS));
     expect(canGrowEvenly(state)).toBe(true);
 
     const result = growEvenly(state);
     expect(result.success).toBe(true);
     for (const depth of getSectorDepths(state)) {
-      expect(depth).toBeCloseTo(REACH_START + EVEN_GROW_MM);
+      expect(depth).toBeCloseTo(REACH_START + evenStep);
     }
-    expect(getMaxReach(state)).toBeCloseTo(REACH_START + EVEN_GROW_MM);
+    expect(getMaxReach(state)).toBeCloseTo(REACH_START + evenStep);
   });
 });
 
@@ -91,12 +95,13 @@ describe('per-sector visibility', () => {
     return {
       id: 'host-x',
       hostId: 'fallen_leaf',
-      tier: 1,
+      stage: 1,
       isBoss: false,
       angle,
       distanceMm,
-      x: Math.cos(angle) * distanceMm,
-      y: Math.sin(angle) * distanceMm,
+      localMm: distanceMm - REACH_START,
+      x: Math.cos(angle) * (distanceMm - REACH_START),
+      y: Math.sin(angle) * (distanceMm - REACH_START),
     };
   }
 
@@ -106,7 +111,7 @@ describe('per-sector visibility', () => {
     const centres = sectorCentres();
     // Sector 0 is deep: a 6mm host there is encountered.
     expect(getHostVisibility(placement(centres[0], 6), depths, catalogued)).toBe('encountered');
-    // Sector 1 is shallow: the same distance is only sensed.
+    // Sector 1 is shallow: the same distance is only sensed (within a quarter band).
     expect(getHostVisibility(placement(centres[1], 6), depths, catalogued)).toBe('sensed');
   });
 });

@@ -1,8 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { EVEN_GROW_MM, REACH_COST_BASE, REACH_START, SECTOR_GROW_MM } from '@mycosurge/config';
+import { REACH_COST_BASE, REACH_START } from '@mycosurge/config';
 import { createInitialState } from './state';
 import { getReachCost, getReachBand, getNextReachTier } from './reach';
-import { canExtendReach, extendReach, growSector, getSectorDepths } from './sectors';
+import {
+  canExtendReach,
+  extendReach,
+  growSector,
+  getSectorDepths,
+  getGrowStepMm,
+  getEvenStepMm,
+} from './sectors';
 import { resetRadarSeq } from './radar';
 
 beforeEach(() => {
@@ -10,24 +17,31 @@ beforeEach(() => {
 });
 
 describe('getReachCost', () => {
-  it('starts at the base cost and rises with each mm', () => {
+  it('starts at the base cost and rises within a band', () => {
     expect(getReachCost(REACH_START)).toBe(REACH_COST_BASE);
     expect(getReachCost(REACH_START + 1)).toBeGreaterThan(getReachCost(REACH_START));
-    expect(getReachCost(REACH_START + 5)).toBeGreaterThan(getReachCost(REACH_START + 4));
+    expect(getReachCost(REACH_START + 2)).toBeGreaterThan(getReachCost(REACH_START + 1));
+  });
+
+  it('re-bases at each stage boundary so a new band starts fresh', () => {
+    // 10 mm is the start of stage 2, so the curve resets to the base price.
+    expect(getReachCost(10)).toBe(REACH_COST_BASE);
+    expect(getReachCost(9)).toBeGreaterThan(getReachCost(10));
   });
 });
 
 describe('reach bands', () => {
-  it('opens host tiers at their reach thresholds', () => {
-    expect(getReachBand(4)).toBe(0);
+  it('opens host stages at their reach thresholds', () => {
     expect(getReachBand(5)).toBe(1);
     expect(getReachBand(10)).toBe(2);
-    expect(getReachBand(35)).toBe(5);
+    expect(getReachBand(35)).toBe(2);
+    expect(getReachBand(50)).toBe(3);
+    expect(getReachBand(1000)).toBe(6);
   });
 
-  it('points at the next tier and reach that opens it', () => {
+  it('points at the next stage and reach that opens it', () => {
     expect(getNextReachTier(5)).toEqual({ tier: 2, at: 10 });
-    expect(getNextReachTier(36)).toBeNull();
+    expect(getNextReachTier(60_000)).toBeNull();
   });
 });
 
@@ -39,10 +53,11 @@ describe('extendReach', () => {
     state.biomass = 1000;
 
     const before = state.biomass;
+    const step = getEvenStepMm(state);
     const result = extendReach(state);
 
     expect(result.success).toBe(true);
-    expect(state.mycelialNetwork).toBeCloseTo(REACH_START + EVEN_GROW_MM);
+    expect(state.mycelialNetwork).toBeCloseTo(REACH_START + step);
     expect(state.biomass).toBe(before - result.cost);
   });
 
@@ -52,13 +67,14 @@ describe('extendReach', () => {
     state.mycelialNetwork = REACH_START;
     state.biomass = 1000;
 
+    const step = getGrowStepMm(state);
     const result = growSector(state, 0);
 
     expect(result.success).toBe(true);
     expect(result.sector).toBe(0);
-    expect(state.mycelialNetwork).toBeCloseTo(REACH_START + SECTOR_GROW_MM);
+    expect(state.mycelialNetwork).toBeCloseTo(REACH_START + step);
     const depths = getSectorDepths(state);
-    expect(depths[0]).toBeCloseTo(REACH_START + SECTOR_GROW_MM);
+    expect(depths[0]).toBeCloseTo(REACH_START + step);
     expect(depths[1]).toBeCloseTo(REACH_START);
   });
 

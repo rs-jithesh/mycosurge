@@ -47,7 +47,8 @@ export function calculateVictoryReward(state: GameState, hostId: string): Combat
   const hostDefeated = next >= HOST_ASSIMILATION_TARGET;
 
   const lysateEarned = Math.floor(LYSATE_BASE_REWARD * host.difficulty * strain.lysateMult);
-  const echoUnlocked = hostDefeated && !state.acquiredEchoes.includes(host.echoes.id);
+  const echoUnlocked =
+    hostDefeated && !!host.echoes && !state.acquiredEchoes.includes(host.echoes.id);
 
   return {
     victory: true,
@@ -88,7 +89,8 @@ export function previewCombatReward(
 
 export function applyVictory(state: GameState, hostId: string): CombatResult {
   const host = HOSTS.find((h) => h.id === hostId);
-  const alreadyAcquired = host ? state.acquiredEchoes.includes(host.echoes.id) : false;
+  const echoId = host?.echoes?.id;
+  const alreadyAcquired = echoId ? state.acquiredEchoes.includes(echoId) : false;
 
   const result = calculateVictoryReward(state, hostId);
 
@@ -96,8 +98,8 @@ export function applyVictory(state: GameState, hostId: string): CombatResult {
   state.totalBiomassEarned += result.biomassEarned;
   state.lysateRaw += result.lysateEarned;
 
-  if (host && result.hostDefeated && !alreadyAcquired) {
-    state.acquiredEchoes.push(host.echoes.id);
+  if (echoId && result.hostDefeated && !alreadyAcquired) {
+    state.acquiredEchoes.push(echoId);
     state.hostsDefeated += 1;
   }
 
