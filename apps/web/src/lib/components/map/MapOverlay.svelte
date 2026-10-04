@@ -512,7 +512,7 @@
           {@const vis = getHostVisibility(p, depths, catalogued)}
           {#if vis !== 'hidden'}
             {@const isFirst = firstContact?.hostId === p.hostId}
-            {@const r = (p.isBoss ? 9 : vis === 'sensed' ? 4.5 : 6) * inv}
+            {@const r = p.isBoss ? 9 : vis === 'sensed' ? 4.5 : 6}
             <line
               x1={0}
               y1={0}
@@ -535,43 +535,41 @@
                 if (e.key === 'Enter' || e.key === ' ') tapHost(p);
               }}
             >
-              <circle cx={p.x} cy={p.y} r={22 * inv} fill="transparent" />
-              <circle
-                cx={p.x}
-                cy={p.y}
-                {r}
-                fill={vis === 'sensed'
-                  ? 'transparent'
-                  : vis === 'catalogued'
-                    ? 'var(--primary)'
-                    : 'var(--alert)'}
-                stroke={vis === 'sensed' ? 'var(--secondary)' : 'var(--on-surface)'}
-                stroke-width={1.6 * inv}
-                stroke-dasharray={vis === 'sensed' ? `${3 * inv} ${3 * inv}` : 'none'}
-              />
-              {#if p.isBoss}
+              <!-- Counter-scaled so marker geometry stays in screen px (see contacts). -->
+              <g transform={`translate(${p.x} ${p.y}) scale(${inv})`}>
+                <circle r={22} fill="transparent" />
                 <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={r + 3 * inv}
-                  fill="none"
-                  stroke="var(--alert)"
-                  stroke-width={inv}
-                  opacity="0.7"
+                  {r}
+                  fill={vis === 'sensed'
+                    ? 'transparent'
+                    : vis === 'catalogued'
+                      ? 'var(--primary)'
+                      : 'var(--alert)'}
+                  stroke={vis === 'sensed' ? 'var(--secondary)' : 'var(--on-surface)'}
+                  stroke-width={1.6}
+                  stroke-dasharray={vis === 'sensed' ? '3 3' : 'none'}
                 />
-              {/if}
-              {#if vis !== 'sensed'}
-                <text
-                  x={p.x}
-                  y={p.y - r - 4 * inv}
-                  text-anchor="middle"
-                  fill="var(--on-surface)"
-                  font-family="var(--font-mono)"
-                  font-size={10 * inv}
-                >
-                  {hostName(p.hostId)}
-                </text>
-              {/if}
+                {#if p.isBoss}
+                  <circle
+                    r={r + 3}
+                    fill="none"
+                    stroke="var(--alert)"
+                    stroke-width={1}
+                    opacity="0.7"
+                  />
+                {/if}
+                {#if vis !== 'sensed'}
+                  <text
+                    y={-r - 4}
+                    text-anchor="middle"
+                    fill="var(--on-surface)"
+                    font-family="var(--font-mono)"
+                    font-size={10}
+                  >
+                    {hostName(p.hostId)}
+                  </text>
+                {/if}
+              </g>
             </g>
           {/if}
         {/each}
@@ -579,7 +577,6 @@
         {#each contactMarkers as m (m.contactId)}
           {@const remaining =
             m.totalTime > 0 ? Math.max(0, Math.min(1, m.timeRemaining / m.totalTime)) : 0}
-          {@const circumference = 2 * Math.PI * 10 * inv}
           <g
             class="contact"
             class:revealed={m.revealed}
@@ -592,46 +589,41 @@
               if (e.key === 'Enter' || e.key === ' ') tapContact(m);
             }}
           >
-            <circle cx={m.x} cy={m.y} r={22 * inv} fill="transparent" />
-            <circle
-              cx={m.x}
-              cy={m.y}
-              r={10 * inv}
-              fill="none"
-              stroke="var(--warning)"
-              stroke-width={1.5 * inv}
-              opacity="0.5"
-              stroke-dasharray={`${remaining * circumference} ${(1 - remaining) * circumference}`}
-              transform={`rotate(-90 ${m.x} ${m.y})`}
-            />
-            <circle
-              cx={m.x}
-              cy={m.y}
-              r={7 * inv}
-              fill="none"
-              stroke={m.revealed ? 'var(--warning)' : 'var(--secondary)'}
-              stroke-width={2 * inv}
-              stroke-dasharray={m.revealed ? 'none' : `${3 * inv} ${2 * inv}`}
-              class:pulse={!m.revealed}
-            />
-            <circle
-              cx={m.x}
-              cy={m.y}
-              r={2.6 * inv}
-              fill={m.revealed ? 'var(--warning)' : 'var(--secondary)'}
-            />
-            {#if m.revealed}
-              <text
-                x={m.x}
-                y={m.y - 13 * inv}
-                text-anchor="middle"
-                fill="var(--on-surface)"
-                font-family="var(--font-mono)"
-                font-size={9 * inv}
-              >
-                {hostName(m.hostId)}{m.strainId !== 'normal' ? ` · ${strainName(m.strainId)}` : ''}
-              </text>
-            {/if}
+            <!-- Counter-scaled group: geometry stays in screen px, so no huge user-space shapes. -->
+            <g transform={`translate(${m.x} ${m.y}) scale(${inv})`}>
+              <circle r={22} fill="transparent" />
+              <circle
+                r={10}
+                fill="none"
+                stroke="var(--warning)"
+                stroke-width={1.5}
+                opacity="0.5"
+                stroke-dasharray={`${remaining * 62.83} ${(1 - remaining) * 62.83}`}
+                transform="rotate(-90)"
+              />
+              <circle
+                r={7}
+                fill="none"
+                stroke={m.revealed ? 'var(--warning)' : 'var(--secondary)'}
+                stroke-width={2}
+                stroke-dasharray={m.revealed ? 'none' : '3 2'}
+                class:pulse={!m.revealed}
+              />
+              <circle r={2.6} fill={m.revealed ? 'var(--warning)' : 'var(--secondary)'} />
+              {#if m.revealed}
+                <text
+                  y={-13}
+                  text-anchor="middle"
+                  fill="var(--on-surface)"
+                  font-family="var(--font-mono)"
+                  font-size={9}
+                >
+                  {hostName(m.hostId)}{m.strainId !== 'normal'
+                    ? ` · ${strainName(m.strainId)}`
+                    : ''}
+                </text>
+              {/if}
+            </g>
           </g>
         {/each}
       </g>
