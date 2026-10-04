@@ -27,6 +27,11 @@
   }
 
   function handlePopState() {
+    // Never let system Back abandon a fight — use the arena's Retreat instead.
+    if (uiStore.combatHostId !== null) {
+      armHistory();
+      return;
+    }
     if (uiStore.hasOverlay) {
       uiStore.closeTop();
       armHistory();

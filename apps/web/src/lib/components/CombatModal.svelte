@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy, tick } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { gameStore } from '$lib/stores/game.svelte';
   import { HOSTS, resourceLabel } from '@mycosurge/config';
   import { createRadar } from '$lib/pixi/radar';
@@ -33,6 +33,7 @@
   let hostPct = $derived(hostMaxHp > 0 ? Math.max(0, (hostHp / hostMaxHp) * 100) : 0);
   let hpPct = $derived(maxHp > 0 ? Math.max(0, (hp / maxHp) * 100) : 0);
   let dialogEl = $state<HTMLDivElement>();
+  let arenaError = $state(false);
   let coarsePointer = $state(
     typeof window !== 'undefined' && (window.matchMedia?.('(pointer: coarse)').matches ?? false),
   );
@@ -65,8 +66,15 @@
 
   onMount(async () => {
     wasTutorial = gameStore.state.gamePhase === 'tactician';
-    await tick();
-    if (!container || !hostId) return;
+    // The arena container is conditionally rendered; wait for it rather than
+    // starting nothing, which would leave the fight stuck with an empty arena.
+    for (let i = 0; i < 12 && !container; i++) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+    if (!container || !hostId) {
+      arenaError = true;
+      return;
+    }
     startRadar();
   });
 
@@ -115,6 +123,9 @@
           hostMaxHp = stats.hostMaxHp;
           gameStore.updateCombatHp(stats.hp);
         },
+        onError: () => {
+          arenaError = true;
+        },
       },
       {
         hpMult: strain.hpMult,
@@ -125,6 +136,7 @@
   }
 
   function handleRetreat() {
+    if (result === null && !confirm('Retreat from this fight?')) return;
     if (radarInstance) {
       radarInstance.destroy();
       radarInstance = null;
@@ -254,6 +266,13 @@
       <div class="result-view">
         <p class="trauma-msg">Recovering — {Math.ceil(gameStore.state.traumaTimer)}s left</p>
         <button class="cmd-btn" onclick={handleReturn}>Return to Core</button>
+      </div>
+    {:else if arenaError}
+      <div class="result-view">
+        <p class="trauma-msg">The arena could not start on this device.</p>
+        <div class="action-row">
+          <button class="cmd-btn secondary" onclick={handleReturn}>Return to Core</button>
+        </div>
       </div>
     {:else}
       <div class="combat-layout">

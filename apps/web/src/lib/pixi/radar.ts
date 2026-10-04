@@ -147,6 +147,8 @@ export interface RadarCallbacks {
   onVictory: () => void;
   onDefeat: () => void;
   onStats?: (stats: RadarStats) => void;
+  /** Called if the arena cannot start (e.g. no WebGL), so the UI can recover. */
+  onError?: (error: unknown) => void;
 }
 
 export interface RadarInstance {
@@ -198,6 +200,12 @@ export function createRadar(
 
   const app = new Application();
   let destroyed = false;
+  let ready = false;
+  // If Pixi never comes up (no WebGL, blocked context, etc.) we must not hang the
+  // fight: report failure so the modal can offer a way out.
+  const watchdog = setTimeout(() => {
+    if (!ready && !destroyed) callbacks.onError?.(new Error('Arena failed to start.'));
+  }, 5000);
 
   const size = 500;
 
@@ -823,45 +831,57 @@ export function createRadar(
   }
 
   (async () => {
-    await app.init({
-      width: size,
-      height: size,
-      background: RADAR_BG,
-      antialias: false,
-      roundPixels: true,
-      autoStart: true,
-    });
-    if (destroyed) return;
+    try {
+      await app.init({
+        width: size,
+        height: size,
+        background: RADAR_BG,
+        antialias: false,
+        roundPixels: true,
+        autoStart: true,
+      });
+      if (destroyed) return;
+      ready = true;
+      clearTimeout(watchdog);
 
-    container.appendChild(app.canvas);
-    app.canvas.setAttribute('tabindex', '0');
-    app.canvas.setAttribute('role', 'application');
-    app.canvas.setAttribute(
-      'aria-label',
-      'Combat arena. Use WASD or arrow keys to move; spores fire automatically.',
-    );
-    app.canvas.style.display = 'block';
-    app.canvas.style.width = '100%';
-    app.canvas.style.height = '100%';
-    app.canvas.style.touchAction = 'none';
-    app.canvas.addEventListener('keydown', onKeyDown);
-    app.canvas.addEventListener('keyup', onKeyUp);
-    app.canvas.addEventListener('touchstart', onTouchStart, { passive: true });
-    app.canvas.addEventListener('touchmove', onTouchMove, { passive: false });
-    app.canvas.addEventListener('touchend', onTouchEnd);
-    app.canvas.addEventListener('touchcancel', onTouchEnd);
-    app.stage.addChild(stage);
-    app.ticker.add(tick);
-    emitStats();
+      container.appendChild(app.canvas);
+      app.canvas.setAttribute('tabindex', '0');
+      app.canvas.setAttribute('role', 'application');
+      app.canvas.setAttribute(
+        'aria-label',
+        'Combat arena. Use WASD or arrow keys to move; spores fire automatically.',
+      );
+      app.canvas.style.display = 'block';
+      app.canvas.style.width = '100%';
+      app.canvas.style.height = '100%';
+      app.canvas.style.touchAction = 'none';
+      app.canvas.addEventListener('keydown', onKeyDown);
+      app.canvas.addEventListener('keyup', onKeyUp);
+      app.canvas.addEventListener('touchstart', onTouchStart, { passive: true });
+      app.canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+      app.canvas.addEventListener('touchend', onTouchEnd);
+      app.canvas.addEventListener('touchcancel', onTouchEnd);
+      app.stage.addChild(stage);
+      app.ticker.add(tick);
+      emitStats();
+    } catch (error) {
+      clearTimeout(watchdog);
+      if (!destroyed) callbacks.onError?.(error);
+    }
   })();
 
   return {
     destroy: () => {
       destroyed = true;
+      clearTimeout(watchdog);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      app.ticker.remove(tick);
-      app.destroy(true, { children: true, texture: true });
+      try {
+        app.ticker.remove(tick);
+        app.destroy(true, { children: true, texture: true });
+      } catch {
+        // The app may never have finished initialising; nothing to tear down.
+      }
     },
   };
 }
