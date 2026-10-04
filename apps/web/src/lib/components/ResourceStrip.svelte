@@ -80,6 +80,7 @@
   }
 
   .chip {
+    --tone: var(--primary);
     display: inline-flex;
     align-items: baseline;
     gap: 5px;
@@ -93,6 +94,7 @@
   .chip .g {
     font-size: 12px;
     font-weight: 600;
+    color: var(--tone);
   }
 
   .chip .v {
@@ -101,44 +103,44 @@
     color: var(--on-surface);
   }
 
-  .chip[data-tone='water'] .g {
-    color: var(--secondary);
+  .chip[data-tone='water'] {
+    --tone: var(--secondary);
   }
-  .chip[data-tone='nutrients'] .g {
-    color: var(--nutrient);
+  .chip[data-tone='nutrients'] {
+    --tone: var(--nutrient);
   }
-  .chip[data-tone='biomass'] .g {
-    color: var(--primary);
+  .chip[data-tone='biomass'] {
+    --tone: var(--primary);
   }
-  .chip[data-tone='lysate'] .g {
-    color: var(--warning);
+  .chip[data-tone='lysate'] {
+    --tone: var(--warning);
   }
 
-  /* Full: amber outline with a soft breathing glow. */
+  /* Full: the resource's own colour as an outline with a soft breathing glow. */
   .chip.full {
-    border-color: var(--warning);
+    border-color: var(--tone);
     animation: chip-full 1.8s ease-in-out infinite;
   }
 
   .chip.full .g,
   .chip.full .v {
-    color: var(--warning);
+    color: var(--tone);
   }
 
   @keyframes chip-full {
     0%,
     100% {
-      box-shadow: 0 0 7px -1px color-mix(in srgb, var(--warning) 60%, transparent);
+      box-shadow: 0 0 7px -1px color-mix(in srgb, var(--tone) 60%, transparent);
     }
     50% {
-      box-shadow: 0 0 14px 1px color-mix(in srgb, var(--warning) 85%, transparent);
+      box-shadow: 0 0 14px 1px color-mix(in srgb, var(--tone) 85%, transparent);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .chip.full {
       animation: none;
-      box-shadow: 0 0 10px -1px color-mix(in srgb, var(--warning) 70%, transparent);
+      box-shadow: 0 0 10px -1px color-mix(in srgb, var(--tone) 70%, transparent);
     }
   }
 </style>
