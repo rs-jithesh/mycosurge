@@ -574,20 +574,6 @@
       display: none;
     }
 
-    /* The online dot is decorative — drop it so the centred radar has room. */
-    .top-bar-status {
-      display: none;
-    }
-
-    /* The mini radar sits in the middle of the top bar, independent of the flex row. */
-    .top-radar {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 1;
-    }
-
     .mobile-bestiary-wrap {
       display: flex;
       justify-content: center;
