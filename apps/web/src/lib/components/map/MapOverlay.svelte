@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { EXPANSION_MAP, HOSTS, REACH_SECTORS, getStrain, resourceLabel } from '@mycosurge/config';
+  import {
+    EXPANSION_MAP,
+    HOSTS,
+    REACH_SECTORS,
+    SECTOR_LABELS,
+    getStrain,
+    resourceLabel,
+  } from '@mycosurge/config';
   import {
     generateNetwork,
     generateHostPlacements,
@@ -36,6 +43,7 @@
   let catalogued = $derived(new Set(gameStore.cataloguedHosts));
   let firstContact = $derived(getFirstContact(gs, placements));
   let contactMarkers = $derived(getContactMarkers(gs.contacts, placements));
+  let adviceSector = $derived(gameStore.advisor.sector);
   let cordBranch = $derived(
     gameStore.cordBranchId ? Number(gameStore.cordBranchId.split('-')[1]) : -1,
   );
@@ -128,6 +136,10 @@
 
   function wedgeAngle(index: number): number {
     return (index / sectorCount) * Math.PI * 2;
+  }
+
+  function sectorCentreAngle(index: number): number {
+    return ((index + 0.5) / sectorCount) * Math.PI * 2;
   }
 
   // ── Pan / pinch-zoom ──
@@ -274,6 +286,9 @@
         {#if contactMarkers.length}
           · {contactMarkers.length} signal{contactMarkers.length === 1 ? '' : 's'}
         {/if}
+        {#if adviceSector !== null}
+          · wants {SECTOR_LABELS[adviceSector]}
+        {/if}
       </span>
     </div>
     <div class="map-tools">
@@ -332,6 +347,28 @@
             opacity="0.25"
           />
         {/each}
+
+        {#if adviceSector !== null}
+          {@const highlightR = Math.max(0, drawnDepths[adviceSector] ?? 0) + 1.6}
+          <path
+            d={wedgePath(adviceSector, highlightR)}
+            fill="none"
+            stroke="var(--primary)"
+            stroke-width={2 * inv}
+            stroke-dasharray={`${5 * inv} ${4 * inv}`}
+            opacity="0.85"
+          />
+          <text
+            x={Math.cos(sectorCentreAngle(adviceSector)) * (highlightR + 2 * inv)}
+            y={Math.sin(sectorCentreAngle(adviceSector)) * (highlightR + 2 * inv)}
+            text-anchor="middle"
+            fill="var(--primary)"
+            font-family="var(--font-mono)"
+            font-size={10 * inv}
+          >
+            grow {SECTOR_LABELS[adviceSector]}
+          </text>
+        {/if}
 
         {#each rings as mm (mm)}
           {@const major = Math.abs(mm % MAJOR_MM) < 1e-6}
@@ -397,6 +434,16 @@
           {#if vis !== 'hidden'}
             {@const isFirst = firstContact?.hostId === p.hostId}
             {@const r = (p.isBoss ? 9 : vis === 'sensed' ? 4.5 : 6) * inv}
+            <line
+              x1={0}
+              y1={0}
+              x2={p.x}
+              y2={p.y}
+              stroke={vis === 'sensed' ? 'var(--secondary)' : 'var(--outline-variant)'}
+              stroke-width={inv}
+              opacity={vis === 'sensed' ? 0.35 : 0.18}
+              stroke-dasharray={vis === 'sensed' ? `${2 * inv} ${4 * inv}` : 'none'}
+            />
             <g
               class="host"
               class:first={isFirst}

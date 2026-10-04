@@ -101,6 +101,8 @@ export const REACH_SECTORS = 6;
 export const SECTOR_GROW_MM = 1;
 /** mm added to every wedge by a single "grow evenly" action. */
 export const EVEN_GROW_MM = 0.5;
+/** Compass labels for the six wedges, in sector order (0 = east, clockwise). */
+export const SECTOR_LABELS = ['E', 'SE', 'SW', 'W', 'NW', 'NE'] as const;
 
 // ── Observation log ──
 /** Most recent entries kept in the activity log. */

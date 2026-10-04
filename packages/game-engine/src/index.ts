@@ -24,6 +24,7 @@ export {
   recordCombatOutcome,
   getAdvisorMaturity,
   getAdvisorEvent,
+  getSectorAdvice,
   applyCurve,
   considerationsForPhase,
 } from './advisor';

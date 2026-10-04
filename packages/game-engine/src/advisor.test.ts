@@ -11,6 +11,7 @@ import {
   getAdvisorMaturity,
   applyCurve,
   getCheapestGeneratorCost,
+  getSectorAdvice,
 } from './advisor';
 
 function activeState(): GameState {
@@ -192,6 +193,27 @@ describe('advisor maturity ladder', () => {
     expect(getAdvisorMaturity(state)).toBe('responsive');
     state.advisor.autonomyLevel = 2;
     expect(getAdvisorMaturity(state)).toBe('symbiotic');
+  });
+});
+
+describe('advisor sector advice', () => {
+  it('has no pull from a standing start', () => {
+    const state = activeState();
+    state.mycelialNetwork = 0;
+    state.biomass = 1000;
+    const advice = getSectorAdvice(state);
+    expect(advice.pull).toBe(0);
+  });
+
+  it('pulls toward a sensed host once it is within sensing range', () => {
+    const state = activeState();
+    state.mycelialNetwork = 5;
+    state.biomass = 1000;
+    const advice = getSectorAdvice(state);
+    expect(advice.affordable).toBe(true);
+    expect(advice.signalPull).toBeGreaterThan(0);
+    expect(advice.index).toBeGreaterThanOrEqual(0);
+    expect(advice.index).toBeLessThan(6);
   });
 });
 

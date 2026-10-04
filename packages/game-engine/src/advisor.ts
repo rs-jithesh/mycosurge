@@ -2,6 +2,7 @@ import {
   ADVISOR_ACTIONS,
   ADVISOR_EMERGENCY,
   ADVISOR_TUNING,
+  EXPANSION_MAP,
   GENERATORS,
   getGeneratorCost,
   MANUAL_SYNTH_NUTRIENT_COST,
@@ -20,7 +21,9 @@ import type {
 import type { GameState } from './state';
 import type { CapResource } from './math';
 import { getCapExpandCost, getEffectiveMaxBiomass, isStarving } from './math';
-import { getReachCost } from './reach';
+import { getNextReachTier, getReachCost } from './reach';
+import { generateHostPlacements } from './network';
+import { getGrowCost, getMaxReach, getSectorDepths, sectorIndexForAngle } from './sectors';
 
 // ── Cheapest-cost helpers (previously in phase.ts, now the advisor owns them) ──
 
@@ -76,6 +79,8 @@ export interface AdvisorResult {
   explanation: string;
   candidates: AdvisorCandidate[];
   maturity: AdvisorMaturity;
+  /** Suggested wedge when the top action is `expand.sector`, else null. */
+  sector: number | null;
 }
 
 const EMPTY_MEMORY = {
@@ -129,7 +134,70 @@ export function applyCurve(curve: CurveDef, input: number): number {
 
 // ── Context ──
 
-function buildInputs(state: GameState): Record<AdvisorInputId, number> {
+export interface SectorAdvice {
+  index: number;
+  /** 0–1: how worthwhile the best wedge is (strongest of signal/tier pull). */
+  pull: number;
+  signalPull: number;
+  tierPull: number;
+  affordable: boolean;
+}
+
+/**
+ * Which wedge the network should grow next. Pulls toward a sensed host in that
+ * direction, or toward the next host tier when no signal is close.
+ */
+export function getSectorAdvice(state: GameState): SectorAdvice {
+  const depths = getSectorDepths(state);
+  const placements = generateHostPlacements(state.networkSeed >>> 0);
+  const catalogued = new Set(state.cataloguedHosts);
+  const maxReach = getMaxReach(state);
+  const nextTier = getNextReachTier(maxReach);
+  const affordable = state.biomass >= getGrowCost(state);
+
+  let index = 0;
+  let bestSignal = 0;
+  let bestTier = 0;
+
+  for (let i = 0; i < depths.length; i++) {
+    const depth = depths[i];
+
+    let signal = 0;
+    for (const placement of placements) {
+      if (catalogued.has(placement.hostId)) continue;
+      if (sectorIndexForAngle(placement.angle) !== i) continue;
+      const ahead = placement.distanceMm - depth;
+      if (ahead <= 0) signal = Math.max(signal, 0.4);
+      else if (ahead <= EXPANSION_MAP.senseRangeMm) {
+        signal = Math.max(signal, 1 - ahead / EXPANSION_MAP.senseRangeMm);
+      }
+    }
+
+    let tier = 0;
+    const gap = nextTier ? nextTier.at - maxReach : Infinity;
+    // Only pull toward a tier when it is genuinely close, so this never overrides
+    // the resting economy from a standing start.
+    if (Math.abs(depth - maxReach) < 1e-6 && gap <= 3) {
+      tier = clamp01(1 - gap / 3);
+    }
+
+    if (Math.max(signal, tier) > Math.max(bestSignal, bestTier) + 1e-9) {
+      index = i;
+      bestSignal = signal;
+      bestTier = tier;
+    }
+  }
+
+  return {
+    index,
+    pull: Math.max(bestSignal, bestTier),
+    signalPull: bestSignal,
+    tierPull: bestTier,
+    affordable,
+  };
+}
+
+function buildInputs(state: GameState, advice: SectorAdvice): Record<AdvisorInputId, number> {
   const full = ADVISOR_TUNING.fullReserveRatio;
   const waterRatio = ratio(state.water, state.waterCap);
   const nutrientRatio = ratio(state.nutrients, state.nutrientsCap);
@@ -159,6 +227,8 @@ function buildInputs(state: GameState): Record<AdvisorInputId, number> {
     waterForPing: state.water >= SCAN_WATER_COST ? 1 : 0,
     systemSaturated: anyPoolFull || generatorMaxed ? 1 : 0,
     reachAffordable: state.biomass >= getReachCost(state.mycelialNetwork) ? 1 : 0,
+    sectorAffordable: advice.affordable ? 1 : 0,
+    sectorPull: advice.pull,
     poolFullWater: waterRatio >= full ? 1 : 0,
     poolFullNutrients: nutrientRatio >= full ? 1 : 0,
     poolFullBiomass: biomassRatio >= full ? 1 : 0,
@@ -262,10 +332,12 @@ export function evaluateAdvisor(state: GameState): AdvisorResult {
       explanation: emergency.text,
       candidates: [],
       maturity,
+      sector: null,
     };
   }
 
-  const inputs = buildInputs(state);
+  const advice = getSectorAdvice(state);
+  const inputs = buildInputs(state, advice);
   const candidates = ADVISOR_ACTIONS.map((def) => scoreAction(def, inputs, bias)).sort(
     (a, b) => b.score - a.score || a.actionId.localeCompare(b.actionId),
   );
@@ -280,6 +352,7 @@ export function evaluateAdvisor(state: GameState): AdvisorResult {
       explanation: 'The network is steady. I will keep tending it.',
       candidates,
       maturity,
+      sector: null,
     };
   }
 
@@ -291,6 +364,7 @@ export function evaluateAdvisor(state: GameState): AdvisorResult {
     explanation: top.reason,
     candidates,
     maturity,
+    sector: top.actionId === 'expand.sector' ? advice.index : null,
   };
 }
 

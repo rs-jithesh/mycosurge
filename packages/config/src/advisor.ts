@@ -28,6 +28,8 @@ export type AdvisorInputId =
   | 'waterForPing'
   | 'systemSaturated'
   | 'reachAffordable'
+  | 'sectorAffordable'
+  | 'sectorPull'
   | 'poolFullWater'
   | 'poolFullNutrients'
   | 'poolFullBiomass'
@@ -198,6 +200,24 @@ export const ADVISOR_ACTIONS: AdvisorActionDef[] = [
       reachAffordable: 'There is spare Biomass. I will stretch the frontier.',
     },
     fallbackReason: 'I will extend the network.',
+  },
+  {
+    id: 'expand.sector',
+    phase: 'expand',
+    label: 'Grow toward the frontier',
+    considerations: [
+      {
+        id: 'expand.sector.affordable',
+        input: 'sectorAffordable',
+        curve: { type: 'binary' },
+        weight: 1,
+      },
+      { id: 'expand.sector.pull', input: 'sectorPull', curve: { type: 'linear' }, weight: 2 },
+    ],
+    reasons: {
+      sectorPull: 'Something is close in one direction. I will grow the network toward it.',
+    },
+    fallbackReason: 'I will deepen the network toward the strongest front.',
   },
   ...(['water', 'nutrients', 'biomass'] as const).map(
     (resource): AdvisorActionDef => ({
