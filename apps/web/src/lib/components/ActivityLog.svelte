@@ -2,9 +2,11 @@
   import { logStore } from '$lib/stores/log.svelte';
   import { tick } from 'svelte';
 
-  let { embedded = false }: { embedded?: boolean } = $props();
+  let { embedded = false, collapsible = false }: { embedded?: boolean; collapsible?: boolean } =
+    $props();
 
-  let container: HTMLDivElement;
+  let expanded = $state(false);
+  let container = $state<HTMLDivElement>();
   let autoScroll = $state(true);
 
   function handleScroll() {
@@ -21,6 +23,7 @@
 
   $effect(() => {
     logStore.entries;
+    expanded;
     tick().then(scrollToBottom);
   });
 
@@ -34,29 +37,44 @@
   }
 </script>
 
-<div class="log-panel" class:embedded>
-  <div class="log-header text-label-caps">Activity</div>
-  <div
-    class="log-container"
-    role="log"
-    aria-live="polite"
-    aria-label="Activity log"
-    bind:this={container}
-    onscroll={handleScroll}
-  >
-    {#each logStore.entries as entry (entry.id)}
-      <p
-        class="line"
-        class:is-info={entry.level === 'info'}
-        class:is-warn={entry.level === 'warn'}
-        class:is-error={entry.level === 'error'}
-        class:is-success={entry.level === 'success'}
-      >
-        <span class="time">{formatTime(entry.timestamp)}</span>
-        <span class="msg">{entry.text}</span>
-      </p>
-    {/each}
-  </div>
+<div class="log-panel" class:embedded class:collapsible class:open={expanded}>
+  {#if collapsible}
+    <button
+      class="log-header log-toggle text-label-caps"
+      aria-expanded={expanded}
+      aria-controls="activity-log"
+      onclick={() => (expanded = !expanded)}
+    >
+      <span>Activity</span>
+      <span class="chevron" class:up={expanded} aria-hidden="true">⌄</span>
+    </button>
+  {:else}
+    <div class="log-header text-label-caps">Activity</div>
+  {/if}
+  {#if !collapsible || expanded}
+    <div
+      id="activity-log"
+      class="log-container"
+      role="log"
+      aria-live="polite"
+      aria-label="Activity log"
+      bind:this={container}
+      onscroll={handleScroll}
+    >
+      {#each logStore.entries as entry (entry.id)}
+        <p
+          class="line"
+          class:is-info={entry.level === 'info'}
+          class:is-warn={entry.level === 'warn'}
+          class:is-error={entry.level === 'error'}
+          class:is-success={entry.level === 'success'}
+        >
+          <span class="time">{formatTime(entry.timestamp)}</span>
+          <span class="msg">{entry.text}</span>
+        </p>
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -99,9 +117,51 @@
   }
 
   @media (max-width: 480px) {
-    .log-panel {
+    .log-panel:not(.collapsible) {
       max-height: 100px;
     }
+  }
+
+  /* ── Collapsible (mobile): compact bar that opens into the feed ── */
+  .log-panel.collapsible {
+    flex-shrink: 0;
+    max-height: none;
+    background: var(--surface-container-lowest);
+  }
+
+  .log-panel.collapsible.open {
+    max-height: 45vh;
+  }
+
+  .log-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 40px;
+    border: 0;
+    border-radius: 0;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .log-panel.collapsible:not(.open) .log-toggle {
+    border-bottom: 0;
+  }
+
+  .chevron {
+    color: var(--on-surface-variant);
+    font-size: 15px;
+    line-height: 1;
+    transition: transform var(--duration-fast) var(--ease-out-soft);
+  }
+
+  .chevron.up {
+    transform: rotate(180deg);
+  }
+
+  .log-panel.collapsible .log-container {
+    min-height: 0;
   }
 
   .line {

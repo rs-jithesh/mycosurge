@@ -1,6 +1,6 @@
 <script lang="ts">
   import { gameStore } from '$lib/stores/game.svelte';
-  import { SKILL_NODES, SKILL_TREE_ORDER } from '@mycosurge/config';
+  import { SKILL_NODES, SKILL_TREE_ORDER, resourceLabel } from '@mycosurge/config';
   import type { SkillTree, SkillNodeDef } from '@mycosurge/config';
   import { arePrerequisitesMet, getSkillPointCost } from '@mycosurge/game-engine';
   import Overlay from '$lib/components/Overlay.svelte';
@@ -50,7 +50,10 @@
     const e = gameStore.echoEffects;
     const list: { label: string; value: string }[] = [];
     if (e.biomassMult)
-      list.push({ label: 'Passive Biomass', value: `+${Math.round(e.biomassMult * 100)}%` });
+      list.push({
+        label: `Passive ${resourceLabel('biomass')}`,
+        value: `+${Math.round(e.biomassMult * 100)}%`,
+      });
     if (e.damageMult)
       list.push({ label: 'Spore damage', value: `+${Math.round(e.damageMult * 100)}%` });
     if (e.fireRateMult)
@@ -88,10 +91,10 @@
           class="cmd-btn secondary respec-btn"
           disabled={!canRespec}
           title={respecReason ||
-            `Reset mutations (${respecCost === 0 ? 'free' : `${respecCost} Biomass`})`}
+            `Reset mutations (${respecCost === 0 ? 'free' : `${respecCost} ${resourceLabel('biomass')}`})`}
           onclick={handleRespec}
         >
-          Respec · {respecCost === 0 ? 'free' : `${respecCost} Biomass`}
+          Respec · {respecCost === 0 ? 'free' : `${respecCost} ${resourceLabel('biomass')}`}
         </button>
       </div>
       {#if respecReason}

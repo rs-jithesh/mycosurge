@@ -9,6 +9,30 @@ export const AWAKENING_MESSAGES = [
 
 const REPEAT_MESSAGE = 'You draw in moisture and minerals.';
 
+/**
+ * Early tutorial reserves are deliberately tiny so the player learns the 10 + 10 synthesis
+ * before capacity opens up. The cap lifts once enough Biomass is banked to automate.
+ */
+export const TUTORIAL_RESERVE_CAP = 10;
+const AUTOMATE_BIOMASS = 2;
+
+/**
+ * Effective Water/Nutrients capacity. During the feed/grow steps it is {@link TUTORIAL_RESERVE_CAP};
+ * from the automate step onward the real pool cap applies. Never reduces a value already above it.
+ */
+export function getTutorialReserveCap(state: GameState, resource: 'water' | 'nutrients'): number {
+  const base = resource === 'water' ? state.waterCap : state.nutrientsCap;
+  const early =
+    state.gamePhase === 'awakening' ||
+    (state.gamePhase === 'manager' && state.biomass < AUTOMATE_BIOMASS);
+  return early ? Math.min(base, TUTORIAL_RESERVE_CAP) : base;
+}
+
+function fillPool(current: number, cap: number, amount: number): number {
+  if (current >= cap) return current;
+  return Math.min(cap, current + amount);
+}
+
 let _absorbCount = 0;
 
 export function resetAbsorbCount(): void {
@@ -16,8 +40,8 @@ export function resetAbsorbCount(): void {
 }
 
 export function absorbResources(state: GameState): string {
-  state.water = Math.min(state.waterCap, state.water + 1);
-  state.nutrients = Math.min(state.nutrientsCap, state.nutrients + 1);
+  state.water = fillPool(state.water, getTutorialReserveCap(state, 'water'), 1);
+  state.nutrients = fillPool(state.nutrients, getTutorialReserveCap(state, 'nutrients'), 1);
 
   let message: string;
   if (_absorbCount < AWAKENING_MESSAGES.length) {
@@ -116,10 +140,18 @@ export function tutorialTick(state: GameState, deltaSec: number): void {
     const shockMul = getTutorialShockMultiplier(state);
 
     if (state.tutorialUpgrades.osmoticPump) {
-      state.water = Math.min(state.waterCap, state.water + 1 * deltaSec * shockMul);
+      state.water = fillPool(
+        state.water,
+        getTutorialReserveCap(state, 'water'),
+        1 * deltaSec * shockMul,
+      );
     }
     if (state.tutorialUpgrades.enzymaticExudates) {
-      state.nutrients = Math.min(state.nutrientsCap, state.nutrients + 1 * deltaSec * shockMul);
+      state.nutrients = fillPool(
+        state.nutrients,
+        getTutorialReserveCap(state, 'nutrients'),
+        1 * deltaSec * shockMul,
+      );
     }
   }
 

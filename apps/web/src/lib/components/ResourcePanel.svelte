@@ -5,11 +5,23 @@
     STARVATION_STATE_THRESHOLD,
     STARVATION_THRESHOLD,
     WATER_YIELD_THRESHOLD,
+    resourceLabel,
+    resourceName,
   } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import CountUp from './CountUp.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
+
+  let {
+    variant = 'full',
+    showLysate = true,
+  }: {
+    /** `compact` is the tighter mobile meter list; `full` is the desktop panel. */
+    variant?: 'full' | 'compact';
+    /** Mobile renders Lysate as its own panel, so hide the inline copy. */
+    showLysate?: boolean;
+  } = $props();
 
   let gs = $derived(gameStore.state);
 
@@ -41,7 +53,7 @@
   let meters = $derived<Meter[]>([
     {
       resource: 'water',
-      label: 'Water',
+      label: resourceLabel('water'),
       icon: 'water',
       tone: 'cyan',
       value: gs.water,
@@ -54,7 +66,7 @@
     },
     {
       resource: 'nutrients',
-      label: 'Nutrients',
+      label: resourceLabel('nutrients'),
       icon: 'nutrients',
       tone: 'violet',
       value: gs.nutrients,
@@ -67,7 +79,7 @@
     },
     {
       resource: 'biomass',
-      label: 'Biomass',
+      label: resourceLabel('biomass'),
       icon: 'biomass',
       tone: 'amber',
       value: gameStore.biomass,
@@ -81,7 +93,7 @@
   let strainEffect = $derived(Math.round((1 - gameStore.ecologicalEfficiency) * 100));
 </script>
 
-<div class="panel resource-panel">
+<div class="panel resource-panel" class:compact={variant === 'compact'}>
   <div class="panel-header">
     <span class="text-label-caps">Resources</span>
     <span class="text-data-mono strain" class:active={strainEffect > 0}
@@ -93,7 +105,9 @@
     {#each meters as m (m.resource)}
       <div class="res-row" data-tone={m.tone} class:is-critical={m.critical}>
         <div class="res-top">
-          <span class="res-name"><ResourceIcon name={m.icon} size={20} round /> {m.label}</span>
+          <span class="res-name" title={resourceName(m.resource)}
+            ><ResourceIcon name={m.icon} size={20} round /> {m.label}</span
+          >
           <span class="text-data-mono res-val">
             {#if m.resource === 'biomass'}
               <b><CountUp value={m.value} format={(n) => n.toFixed(n < 10 ? 1 : 0)} /></b>
@@ -125,23 +139,29 @@
       </div>
     {/each}
 
-    <div class="res-row lysate">
-      <div class="res-top">
-        <span class="res-name"><ResourceIcon name="lysate" size={20} round /> Lysate</span>
-        <span class="tag text-label-caps">Spendable</span>
-      </div>
-      <div class="lysate-rows">
-        <div class="lysate-cell">
-          <span class="text-label-caps lysate-label">Banked</span>
-          <span class="text-data-mono lysate-banked">{Math.floor(gs.lysateBanked)}</span>
+    {#if showLysate}
+      <div class="res-row lysate">
+        <div class="res-top">
+          <span class="res-name" title="Lysate"
+            ><ResourceIcon name="lysate" size={20} round /> {resourceLabel('lysate')}</span
+          >
+          <span class="tag text-label-caps">Spendable</span>
         </div>
-        <div class="lysate-cell">
-          <span class="text-label-caps lysate-label">Raw</span>
-          <span class="text-data-mono lysate-raw">{Math.floor(gs.lysateRaw * 10) / 10}</span>
+        <div class="lysate-rows">
+          <div class="lysate-cell">
+            <span class="text-label-caps lysate-label">Banked</span>
+            <span class="text-data-mono lysate-banked">{Math.floor(gs.lysateBanked)}</span>
+          </div>
+          <div class="lysate-cell">
+            <span class="text-label-caps lysate-label">Raw</span>
+            <span class="text-data-mono lysate-raw">{Math.floor(gs.lysateRaw * 10) / 10}</span>
+          </div>
         </div>
+        <p class="lysate-hint">
+          Raw Lysate stabilises into Banked; spend Banked to raise capacity.
+        </p>
       </div>
-      <p class="lysate-hint">Raw Lysate stabilises into Banked; spend Banked to raise capacity.</p>
-    </div>
+    {/if}
   </div>
 
   <div class="vitals">
@@ -351,5 +371,35 @@
   .vital-val {
     color: var(--on-surface);
     font-size: 15px;
+  }
+
+  /* ── Compact (mobile): tighter rows, every datum kept ── */
+  .panel.compact .res-list {
+    padding: 0 var(--space-panel-padding);
+  }
+
+  .panel.compact .res-row {
+    padding: 8px 0;
+    gap: 4px;
+  }
+
+  .panel.compact .res-name {
+    font-size: 13px;
+  }
+
+  .panel.compact .res-val {
+    font-size: 12px;
+  }
+
+  .panel.compact .res-foot {
+    font-size: 10px;
+  }
+
+  .panel.compact .vitals {
+    padding: 8px var(--space-panel-padding);
+  }
+
+  .panel.compact .vital-val {
+    font-size: 14px;
   }
 </style>

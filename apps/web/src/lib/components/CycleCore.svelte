@@ -6,16 +6,19 @@
   let {
     phase,
     suggested = null,
+    variant = 'nucleus',
   }: {
     phase: GrowthPhase;
     suggested?: GrowthPhase | null;
+    /** `nucleus` is the compact wheel centre; `hero` is the larger mobile focal point. */
+    variant?: 'nucleus' | 'hero';
   } = $props();
 
   let meta = $derived(phaseMeta(phase));
   let next = $derived(suggested && suggested !== phase ? phaseMeta(suggested) : null);
 </script>
 
-<div class="core" data-tone={meta.tone}>
+<div class="core" class:is-hero={variant === 'hero'} data-tone={meta.tone}>
   <span class="icon" aria-hidden="true"><ResourceIcon name={phase} size={44} round /></span>
   <span class="stage text-label-caps">{meta.label}</span>
   <p class="objective">{meta.objective}</p>
@@ -105,5 +108,29 @@
   }
   .wish-chip[data-tone='mint'] {
     --tone: var(--primary);
+  }
+
+  /* ── Hero: larger focal point for the mobile current-mode card ── */
+  .core.is-hero {
+    gap: 8px;
+  }
+
+  .core.is-hero .icon {
+    width: clamp(72px, 26cqw, 116px);
+    height: clamp(72px, 26cqw, 116px);
+    border-color: color-mix(in srgb, var(--tone) 45%, var(--border));
+    box-shadow:
+      inset 0 0 26px -6px var(--tone),
+      0 0 22px -8px var(--tone);
+  }
+
+  .core.is-hero .stage {
+    font-size: 18px;
+    letter-spacing: 0.12em;
+  }
+
+  .core.is-hero .objective {
+    font-size: 14px;
+    max-width: 30ch;
   }
 </style>

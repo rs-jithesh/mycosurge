@@ -15,7 +15,6 @@ import {
   removeCollectedExpeditions,
   getEffectiveBiomassPerSec,
   getEffectiveMaxBiomass,
-  addBiomass,
   tickAlertDecay,
   applyVictory as engineApplyVictory,
   applyDefeat as engineApplyDefeat,
@@ -33,6 +32,7 @@ import {
   getCapExpandCost,
   expandCap as engineExpandCap,
   tickRadar as engineTickRadar,
+  ensureUniqueContactIds,
   pingSubstrate as enginePingSubstrate,
   scanContact as engineScanContact,
   engageContact as engineEngageContact,
@@ -156,8 +156,8 @@ function createGameStore() {
 
         // Pre-release: drop mutations that no longer fit the genome-point budget.
         if (migrateSkillAllocations(merged)) didResetSkills = true;
-        // Clamp older saves that may have exceeded the Biomass cap.
-        addBiomass(merged, 0);
+        // Repair duplicate radar-contact ids from older saves (they crash keyed lists).
+        ensureUniqueContactIds(merged);
 
         const elapsed = merged.lastSavedAt > 0 ? (Date.now() - merged.lastSavedAt) / 1000 : 0;
         if (elapsed > 0) {

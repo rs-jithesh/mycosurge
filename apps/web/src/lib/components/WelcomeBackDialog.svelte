@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import type { OfflineReport } from '@mycosurge/game-engine';
+  import { resourceLabel } from '@mycosurge/config';
   import CountUp from './CountUp.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
 
@@ -94,7 +95,7 @@
           <span class="stat-val text-data-mono" class:neg={report.biomassGained < 0}>
             {signed(report.biomassGained)}
           </span>
-          <span class="stat-label text-label-caps">Biomass</span>
+          <span class="stat-label text-label-caps">{resourceLabel('biomass')}</span>
         </div>
       {/if}
 
@@ -104,7 +105,7 @@
           <span class="stat-val text-data-mono" class:neg={report.waterGained < 0}>
             {signed(report.waterGained)}
           </span>
-          <span class="stat-label text-label-caps">Water</span>
+          <span class="stat-label text-label-caps">{resourceLabel('water')}</span>
         </div>
       {/if}
 
@@ -114,7 +115,7 @@
           <span class="stat-val text-data-mono" class:neg={report.nutrientsGained < 0}>
             {signed(report.nutrientsGained)}
           </span>
-          <span class="stat-label text-label-caps">Nutrients</span>
+          <span class="stat-label text-label-caps">{resourceLabel('nutrients')}</span>
         </div>
       {/if}
 
@@ -124,7 +125,7 @@
           <span class="stat-val text-data-mono" class:neg={report.lysateStabilized < 0}>
             {signed(report.lysateStabilized)}
           </span>
-          <span class="stat-label text-label-caps">Lysate banked</span>
+          <span class="stat-label text-label-caps">{resourceLabel('lysate')} banked</span>
         </div>
       {/if}
 
@@ -266,6 +267,7 @@
     color: var(--on-surface-variant);
     font-size: 10px;
     text-align: center;
+    text-transform: none;
   }
 
   .rate-note {

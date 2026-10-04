@@ -84,12 +84,18 @@ export function getEffectiveMaxBiomass(state: GameState): number {
   return state.maxBiomass * (1 + bonus);
 }
 
-/** Add Biomass without exceeding its effective storage capacity. Returns the amount stored. */
+/**
+ * Add Biomass, filling up to the effective storage capacity. Biomass already held above
+ * the cap (e.g. a reward that arrived over cap, or a legacy save) is preserved rather than
+ * discarded — the cap only limits how much *new* Biomass can be stored.
+ * Returns the amount actually stored.
+ */
 export function addBiomass(state: GameState, amount: number): number {
   const cap = getEffectiveMaxBiomass(state);
-  const current = Math.min(state.biomass, cap);
-  state.biomass = Math.min(cap, current + Math.max(0, amount));
-  return state.biomass - current;
+  const current = state.biomass;
+  const stored = Math.min(Math.max(0, cap - current), Math.max(0, amount));
+  state.biomass = current + stored;
+  return stored;
 }
 
 /** True when either reserve is below the starvation-state threshold. */
@@ -282,7 +288,8 @@ export function tickIdle(state: GameState, deltaSec: number): void {
   const perSec = getEffectiveBiomassPerSec(state);
   const gained = perSec * deltaSec;
 
-  state.totalBiomassEarned += addBiomass(state, gained);
+  addBiomass(state, gained);
+  state.totalBiomassEarned += gained;
 
   if (state.assimilationPercent > 0 && !state.isInTrauma) {
     state.alertLevel = Math.min(100, state.alertLevel + ALERT_INCREASE_RATE * deltaSec);

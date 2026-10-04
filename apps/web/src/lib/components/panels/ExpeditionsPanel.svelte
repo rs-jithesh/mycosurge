@@ -1,6 +1,6 @@
 <script lang="ts">
   import { gameStore } from '$lib/stores/game.svelte';
-  import { HOSTS } from '@mycosurge/config';
+  import { HOSTS, resourceLabel } from '@mycosurge/config';
   import Overlay from '$lib/components/Overlay.svelte';
 
   let { onClose }: { onClose: () => void } = $props();
@@ -91,7 +91,9 @@
             <div class="host-row">
               <div class="host-meta">
                 <span class="host-name">{host.name}</span>
-                <span class="host-reward text-data-mono">+{host.biomassReward} Biomass</span>
+                <span class="host-reward text-data-mono"
+                  >+{host.biomassReward} {resourceLabel('biomass')}</span
+                >
               </div>
               <button class="cmd-btn" onclick={() => gameStore.startExpedition(host.id)}>
                 Start

@@ -1,4 +1,5 @@
 import type { GamePhase } from '@mycosurge/game-engine';
+import { resourceLabel } from '@mycosurge/config';
 import type { IconKey } from './icons';
 
 export type Tone = 'mint' | 'amber' | 'coral' | 'cyan' | 'violet';
@@ -97,7 +98,7 @@ export const TUTORIAL_GENERATORS: TutorialGeneratorContent[] = [
     id: 'osmoticPump',
     name: 'Osmotic Pump',
     description: 'Pulls moisture from the surrounding air.',
-    effect: '+1 Water / sec',
+    effect: `+1 ${resourceLabel('water', 'first')} / sec`,
     glyph: '≋',
     icon: 'osmotic_pump',
     recommended: true,
@@ -106,7 +107,7 @@ export const TUTORIAL_GENERATORS: TutorialGeneratorContent[] = [
     id: 'enzymaticExudates',
     name: 'Enzymatic Exudates',
     description: 'Digests organic matter into nutrients.',
-    effect: '+1 Nutrients / sec',
+    effect: `+1 ${resourceLabel('nutrients', 'first')} / sec`,
     glyph: '✦',
     icon: 'enzymatic_exudates',
   },
@@ -115,8 +116,11 @@ export const TUTORIAL_GENERATORS: TutorialGeneratorContent[] = [
 export const TUTORIAL_GENERATOR_COST = 2;
 
 export const LOCK_REASONS = {
-  synthesize: 'Gather 10 Water + 10 Nutrients',
-  generators: 'Gather 2 Biomass',
+  synthesize: `Gather 10 ${resourceLabel('water', 'first')} + 10 ${resourceLabel(
+    'nutrients',
+    'first',
+  )}`,
+  generators: `Gather 2 ${resourceLabel('biomass', 'first')}`,
   extend: 'Install a generator first',
 };
 

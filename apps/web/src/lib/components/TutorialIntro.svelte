@@ -1,13 +1,15 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
+  import { getTutorialReserveCap } from '@mycosurge/game-engine';
+  import { resourceLabel } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
-  import { logStore } from '$lib/stores/log.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { devStore } from '$lib/stores/dev.svelte';
   import ObjectiveBanner from './ObjectiveBanner.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import CountUp from './CountUp.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
+  import ActivityLog from './ActivityLog.svelte';
   import HuntSection from '$lib/components/hunt/HuntSection.svelte';
   import {
     TUTORIAL_STEPS,
@@ -32,11 +34,9 @@
     }),
   );
   let step = $derived(isHandoff ? HANDOFF_STEP : TUTORIAL_STEPS[stepId]);
-  let latest = $derived(logStore.entries.at(-1));
 
-  let atThreshold = $derived(!isHandoff && (stepId === 'feed' || stepId === 'grow'));
-  let waterMax = $derived(atThreshold ? 10 : s.waterCap);
-  let nutrientMax = $derived(atThreshold ? 10 : s.nutrientsCap);
+  let waterMax = $derived(getTutorialReserveCap(s, 'water'));
+  let nutrientMax = $derived(getTutorialReserveCap(s, 'nutrients'));
   let showNetwork = $derived(stepId === 'expand' || isHandoff);
 
   let canSynthesize = $derived(s.water >= 10 && s.nutrients >= 10);
@@ -143,151 +143,171 @@
     <div class="shock text-label-caps">⚠ {ONBOARDING_COPY.shock(Math.ceil(shock))}</div>
   {/if}
 
-  <section class="panel">
-    <div class="panel-body resources">
-      <div class="res-grid">
-        <ProgressBar
-          tone="cyan"
-          label="Water"
-          value={s.water}
-          max={waterMax}
-          valueText={`${Math.floor(s.water)}/${Math.floor(waterMax)}`}
-        />
-        <ProgressBar
-          tone="violet"
-          label="Nutrients"
-          value={s.nutrients}
-          max={nutrientMax}
-          valueText={`${Math.floor(s.nutrients)}/${Math.floor(nutrientMax)}`}
-        />
+  <div class="tut-grid">
+    <div class="tut-col-left">
+      <section class="panel area-resources">
+        <div class="panel-body resources">
+          <div class="res-grid">
+            <ProgressBar
+              tone="cyan"
+              label={resourceLabel('water', 'first')}
+              labelCaps={false}
+              value={s.water}
+              max={waterMax}
+              valueText={`${Math.floor(s.water)}/${Math.floor(waterMax)}`}
+            />
+            <ProgressBar
+              tone="violet"
+              label={resourceLabel('nutrients', 'first')}
+              labelCaps={false}
+              value={s.nutrients}
+              max={nutrientMax}
+              valueText={`${Math.floor(s.nutrients)}/${Math.floor(nutrientMax)}`}
+            />
+          </div>
+          <div class="biomass-block">
+            <ProgressBar
+              tone="amber"
+              label={resourceLabel('biomass', 'first')}
+              labelCaps={false}
+              value={s.biomass}
+              max={s.maxBiomass}
+              valueText={`${Math.floor(s.biomass)}/${Math.floor(s.maxBiomass)}`}
+            />
+            <span class="stat-sub text-data-mono">
+              <span class="sub-arrow">↑</span>
+              <CountUp value={s.totalBiomassEarned} format={fmtWhole} />
+              harvested
+            </span>
+          </div>
+          {#if showNetwork}
+            <ProgressBar
+              tone="mint"
+              label="Network"
+              value={s.mycelialNetwork}
+              max={5}
+              valueText={`${s.mycelialNetwork} / 5 mm`}
+            />
+          {/if}
+        </div>
+      </section>
+
+      <div class="area-activity">
+        <ActivityLog embedded />
       </div>
-      <div class="stat-line">
-        <span class="stat-label text-label-caps">Biomass</span>
-        <span class="stat-value text-data-mono">
-          <CountUp value={s.biomass} format={fmtWhole} />
-        </span>
-        <span class="stat-sub text-data-mono">
-          <span class="sub-arrow">↑</span>
-          <CountUp value={s.totalBiomassEarned} format={fmtWhole} />
-          harvested
-        </span>
-      </div>
-      {#if showNetwork}
-        <ProgressBar
-          tone="mint"
-          label="Network"
-          value={s.mycelialNetwork}
-          max={5}
-          valueText={`${s.mycelialNetwork} / 5 mm`}
-        />
+    </div>
+
+    <div class="tut-col-actions">
+      {#if isHandoff}
+        <HuntSection mode="tutorial" />
+      {:else}
+        <section class="panel">
+          <div class="panel-body actions">
+            <!-- Actions -->
+            <div class="group">
+              <span class="group-label text-label-caps">Actions</span>
+
+              <!-- Absorb -->
+              <button class="action-btn" class:current={stepId === 'feed'} onclick={absorb}>
+                <span class="action-verb">Absorb</span>
+                <span class="action-sub">
+                  +1 {resourceLabel('water', 'first')} · +1 {resourceLabel('nutrients', 'first')}
+                </span>
+              </button>
+
+              <!-- Synthesize -->
+              {#if synthAvailable}
+                <button
+                  class="action-btn"
+                  class:current={stepId === 'grow'}
+                  class:flash={flash.synth}
+                  disabled={!canSynthesize}
+                  onclick={synthesize}
+                >
+                  <span class="action-verb">Synthesize Biomass</span>
+                  <span class="action-sub">
+                    {canSynthesize
+                      ? `10 ${resourceLabel('water', 'first')} + 10 ${resourceLabel(
+                          'nutrients',
+                          'first',
+                        )} → 1 ${resourceLabel('biomass', 'first')}`
+                      : `Need 10 ${resourceLabel('water', 'first')} + 10 ${resourceLabel(
+                          'nutrients',
+                          'first',
+                        )}`}
+                  </span>
+                </button>
+              {:else}
+                <div class="action-btn locked">
+                  <span class="action-verb">Synthesize Biomass</span>
+                  <span class="action-sub">{LOCK_REASONS.synthesize}</span>
+                </div>
+              {/if}
+
+              <!-- Extend -->
+              {#if extendAvailable}
+                <button
+                  class="action-btn"
+                  class:current={stepId === 'expand'}
+                  class:flash={flash.extend}
+                  disabled={!canExtend}
+                  onclick={extend}
+                >
+                  <span class="action-verb">Extend Hyphae</span>
+                  <span class="action-sub">
+                    {canExtend
+                      ? `5 ${resourceLabel('biomass', 'first')} → +1mm network`
+                      : `Need 5 ${resourceLabel('biomass', 'first')}`}
+                  </span>
+                </button>
+              {:else}
+                <div class="action-btn locked">
+                  <span class="action-verb">Extend Hyphae</span>
+                  <span class="action-sub">{LOCK_REASONS.extend}</span>
+                </div>
+              {/if}
+            </div>
+
+            <!-- Generators -->
+            <div class="group">
+              <span class="group-label text-label-caps">Generators</span>
+
+              {#if genAvailable}
+                {#each TUTORIAL_GENERATORS as gen (gen.id)}
+                  {@const owned = gen.id === 'osmoticPump' ? hasPump : hasExudates}
+                  <div class="gen-row" class:current={stepId === 'automate' && !owned}>
+                    <span class="gen-glyph"><ResourceIcon name={gen.icon} size={34} round /></span>
+                    <span class="gen-info">
+                      <span class="gen-name">{gen.recommended ? '★ ' : ''}{gen.name}</span>
+                      <span class="gen-rate text-data-mono">{gen.effect}</span>
+                    </span>
+                    {#if owned}
+                      <span class="gen-owned text-label-caps">Installed</span>
+                    {:else}
+                      <button
+                        class="install-btn"
+                        class:flash={flash.gen}
+                        disabled={!canInstall}
+                        onclick={() => buy(gen.id)}
+                      >
+                        {TUTORIAL_GENERATOR_COST}
+                        <span class="install-unit">{resourceLabel('biomass', 'first')}</span>
+                      </button>
+                    {/if}
+                  </div>
+                {/each}
+              {:else}
+                <div class="action-btn locked">
+                  <span class="action-verb">Install a generator</span>
+                  <span class="action-sub">{LOCK_REASONS.generators}</span>
+                </div>
+              {/if}
+            </div>
+          </div>
+        </section>
       {/if}
     </div>
-  </section>
-
-  {#if isHandoff}
-    <HuntSection mode="tutorial" />
-  {:else}
-    <section class="panel">
-      <div class="panel-body actions">
-        <!-- Actions -->
-        <div class="group">
-          <span class="group-label text-label-caps">Actions</span>
-
-          <!-- Absorb -->
-          <button class="action-btn" class:current={stepId === 'feed'} onclick={absorb}>
-            <span class="action-verb">Absorb</span>
-            <span class="action-sub">+1 Water · +1 Nutrients</span>
-          </button>
-
-          <!-- Synthesize -->
-          {#if synthAvailable}
-            <button
-              class="action-btn"
-              class:current={stepId === 'grow'}
-              class:flash={flash.synth}
-              disabled={!canSynthesize}
-              onclick={synthesize}
-            >
-              <span class="action-verb">Synthesize Biomass</span>
-              <span class="action-sub">
-                {canSynthesize
-                  ? '10 Water + 10 Nutrients → 1 Biomass'
-                  : 'Need 10 Water + 10 Nutrients'}
-              </span>
-            </button>
-          {:else}
-            <div class="action-btn locked">
-              <span class="action-verb">Synthesize Biomass</span>
-              <span class="action-sub">{LOCK_REASONS.synthesize}</span>
-            </div>
-          {/if}
-
-          <!-- Extend -->
-          {#if extendAvailable}
-            <button
-              class="action-btn"
-              class:current={stepId === 'expand'}
-              class:flash={flash.extend}
-              disabled={!canExtend}
-              onclick={extend}
-            >
-              <span class="action-verb">Extend Hyphae</span>
-              <span class="action-sub">
-                {canExtend ? '5 Biomass → +1mm network' : 'Need 5 Biomass'}
-              </span>
-            </button>
-          {:else}
-            <div class="action-btn locked">
-              <span class="action-verb">Extend Hyphae</span>
-              <span class="action-sub">{LOCK_REASONS.extend}</span>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Generators -->
-        <div class="group">
-          <span class="group-label text-label-caps">Generators</span>
-
-          {#if genAvailable}
-            {#each TUTORIAL_GENERATORS as gen (gen.id)}
-              {@const owned = gen.id === 'osmoticPump' ? hasPump : hasExudates}
-              <div class="gen-row" class:current={stepId === 'automate' && !owned}>
-                <span class="gen-glyph"><ResourceIcon name={gen.icon} size={34} round /></span>
-                <span class="gen-info">
-                  <span class="gen-name">{gen.recommended ? '★ ' : ''}{gen.name}</span>
-                  <span class="gen-rate text-data-mono">{gen.effect}</span>
-                </span>
-                {#if owned}
-                  <span class="gen-owned text-label-caps">Installed</span>
-                {:else}
-                  <button
-                    class="install-btn"
-                    class:flash={flash.gen}
-                    disabled={!canInstall}
-                    onclick={() => buy(gen.id)}
-                  >
-                    {canInstall ? 'Install' : 'Need 2 Biomass'}
-                  </button>
-                {/if}
-              </div>
-            {/each}
-          {:else}
-            <div class="action-btn locked">
-              <span class="action-verb">Install a generator</span>
-              <span class="action-sub">{LOCK_REASONS.generators}</span>
-            </div>
-          {/if}
-        </div>
-      </div>
-    </section>
-  {/if}
-
-  <section class="panel activity-panel">
-    <span class="activity-label text-label-caps">Latest</span>
-    <span class="activity-text text-data-mono">
-      {latest?.text ?? 'Awaiting your first move…'}
-    </span>
-  </section>
+  </div>
 </div>
 
 <style>
@@ -298,6 +318,56 @@
     max-width: 480px;
     margin: 0 auto;
     padding: var(--space-gutter) 0 var(--space-margin);
+  }
+
+  /* Mobile: single column in the original order (resources → actions → latest).
+     The left wrapper dissolves so its two panels can be reordered around the actions. */
+  .tut-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tut-col-left {
+    display: contents;
+  }
+
+  .area-resources {
+    order: 1;
+  }
+
+  .tut-col-actions {
+    order: 2;
+  }
+
+  .area-activity {
+    order: 3;
+  }
+
+  .area-resources,
+  .tut-col-actions,
+  .area-activity {
+    min-width: 0;
+  }
+
+  /* Desktop: resources + latest packed on the left, actions on the right. */
+  @media (min-width: 768px) {
+    .tutorial-frame {
+      max-width: 840px;
+    }
+
+    .tut-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .tut-col-left {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
   }
 
   .tut-head {
@@ -406,26 +476,14 @@
     gap: 10px;
   }
 
-  .stat-line {
+  .biomass-block {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-    padding: 2px;
-  }
-
-  .stat-label {
-    color: var(--on-surface);
-  }
-
-  .stat-value {
-    color: var(--primary);
-    font-size: var(--font-headline-md);
-    font-weight: 700;
-    line-height: 1;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .stat-sub {
-    margin-left: auto;
+    align-self: flex-end;
     color: var(--on-surface-variant);
     font-size: 11px;
   }
@@ -612,6 +670,9 @@
 
   .install-btn {
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
     font: inherit;
     font-weight: 600;
     color: var(--on-primary);
@@ -621,10 +682,21 @@
     padding: 8px 14px;
     box-shadow: var(--shadow-sm);
     cursor: pointer;
+    white-space: nowrap;
     transition:
       transform 120ms var(--ease-out-soft),
       background-color var(--duration-fast) var(--ease-out-soft),
       box-shadow var(--duration-fast) var(--ease-out-soft);
+  }
+
+  .install-unit {
+    font-size: 10px;
+    font-weight: 500;
+    opacity: 0.82;
+  }
+
+  .install-btn:disabled .install-unit {
+    opacity: 1;
   }
 
   .install-btn:hover:not(:disabled) {
@@ -651,24 +723,8 @@
     animation: unlock-flash 1.5s var(--ease-out-soft);
   }
 
-  /* Activity ticker */
-  .activity-panel {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    padding: 9px 12px;
-  }
-
-  .activity-label {
-    color: var(--primary);
-    flex-shrink: 0;
-  }
-
-  .activity-text {
-    color: var(--on-surface-variant);
+  /* Activity feed shares the left column with the resource meters. */
+  .area-activity {
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 </style>

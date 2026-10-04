@@ -10,6 +10,7 @@ import {
   clearActiveEncounter,
   getActiveStrain,
   resetRadarSeq,
+  ensureUniqueContactIds,
 } from './radar';
 import { applyVictory, calculateVictoryReward } from './combat';
 import { createInitialState, type GameState, type RadarContact } from './state';
@@ -171,6 +172,38 @@ describe('dismissContact', () => {
     state.contacts = [makeContact()];
     dismissContact(state, 'test-contact');
     expect(state.contacts).toHaveLength(0);
+  });
+});
+
+describe('contact id uniqueness', () => {
+  it('does not reuse an id after the in-memory sequence resets (reload)', () => {
+    const state = createInitialState();
+    state.water = 100;
+    pingSubstrate(state);
+    expect(state.contacts[0].id).toBe('contact-1');
+
+    // Simulate a page reload: the module sequence resets but the save keeps contact-1.
+    resetRadarSeq();
+    pingSubstrate(state);
+
+    const ids = state.contacts.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('repairs duplicate ids from an older save', () => {
+    const state = createInitialState();
+    state.contacts = [
+      makeContact({ id: 'contact-1' }),
+      makeContact({ id: 'contact-1' }),
+      makeContact({ id: 'contact-2' }),
+    ];
+
+    ensureUniqueContactIds(state);
+
+    const ids = state.contacts.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain('contact-1');
+    expect(ids).toContain('contact-2');
   });
 });
 

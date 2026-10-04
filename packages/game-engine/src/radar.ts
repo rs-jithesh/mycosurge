@@ -22,6 +22,42 @@ export function resetRadarSeq(): void {
   contactSeq = 0;
 }
 
+/**
+ * Next contact id, guaranteed not to collide with any id already on the radar. The
+ * in-memory sequence starts at zero on every load, so we also read the highest existing
+ * numeric id from the save — otherwise a fresh session would re-issue `contact-1` while an
+ * older one is still drifting.
+ */
+function nextContactId(state: GameState): string {
+  let max = contactSeq;
+  for (const contact of state.contacts) {
+    const match = /^contact-(\d+)$/.exec(contact.id);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  contactSeq = max + 1;
+  return `contact-${contactSeq}`;
+}
+
+/**
+ * Reassign duplicate contact ids (e.g. from a save written by an older build). Keeps the
+ * UI's keyed lists stable — a duplicate key otherwise throws and blanks the app.
+ */
+export function ensureUniqueContactIds(state: GameState): void {
+  const seen = new Set<string>();
+  let max = 0;
+  for (const contact of state.contacts) {
+    const match = /^contact-(\d+)$/.exec(contact.id);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  for (const contact of state.contacts) {
+    if (seen.has(contact.id)) {
+      max += 1;
+      contact.id = `contact-${max}`;
+    }
+    seen.add(contact.id);
+  }
+}
+
 function pickHost(pool: HostDef[], lastHostId: string | null): HostDef {
   const candidates = pool.length > 1 && lastHostId ? pool.filter((h) => h.id !== lastHostId) : pool;
   const usable = candidates.length > 0 ? candidates : pool;
@@ -56,10 +92,9 @@ export function rollContact(state: GameState): RadarContact | null {
 
   const host = pickHost(pool, state.lastContactHostId);
   const strain = pickStrain();
-  contactSeq += 1;
 
   return {
-    id: `contact-${contactSeq}`,
+    id: nextContactId(state),
     hostId: host.id,
     strainId: strain.id,
     revealed: false,

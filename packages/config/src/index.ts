@@ -8,6 +8,15 @@ export { STRAINS, getStrain, NORMAL_STRAIN_ID } from './strains';
 export type { StrainDef, StrainId } from './strains';
 
 export {
+  RESOURCES,
+  resourceName,
+  resourceSymbol,
+  resourceLabel,
+  resourceAmount,
+} from './resources';
+export type { ResourceId, ResourceTone, ResourceMeta, ResourceLabelStyle } from './resources';
+
+export {
   GENERATORS,
   getGeneratorCost,
   getLysateCapExpandCost,

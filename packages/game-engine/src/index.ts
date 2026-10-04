@@ -92,6 +92,7 @@ export {
   getActiveStrain,
   tickRadar,
   resetRadarSeq,
+  ensureUniqueContactIds,
 } from './radar';
 export {
   applyVictory,
@@ -136,4 +137,6 @@ export {
   resetAbsorbCount,
   applyTutorialDefeat,
   getTutorialShockMultiplier,
+  getTutorialReserveCap,
+  TUTORIAL_RESERVE_CAP,
 } from './tutorial';

@@ -1,14 +1,20 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { previewCombatReward } from '@mycosurge/game-engine';
-  import { HOSTS, getStrain, isHostUnlocked, SCAN_WATER_COST } from '@mycosurge/config';
+  import {
+    HOSTS,
+    getStrain,
+    isHostUnlocked,
+    SCAN_WATER_COST,
+    resourceLabel,
+  } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import ResourceIcon from '$lib/components/ResourceIcon.svelte';
   import { hostIconKey } from '$lib/content/icons';
 
-  let { mode }: { mode: 'full' | 'tutorial' } = $props();
+  let { mode, hideAction = false }: { mode: 'full' | 'tutorial'; hideAction?: boolean } = $props();
 
   let gs = $derived(gameStore.state);
   let water = $derived(gs.water);
@@ -112,7 +118,7 @@
           </div>
           <button class="cmd-btn scan-btn" disabled={!canAffordScan} onclick={startScan}>
             Scan substrate
-            <span class="cost-label">[5 Water]</span>
+            <span class="cost-label">[5 {resourceLabel('water')}]</span>
           </button>
           {#if !canAffordScan}
             <div class="scan-insufficient-text text-label-caps">You need 5 Water to scan</div>
@@ -204,7 +210,8 @@
                 disabled={water < SCAN_WATER_COST}
                 onclick={() => gameStore.scanContact(contact.id)}
               >
-                Scan · {SCAN_WATER_COST} Water
+                Scan · {SCAN_WATER_COST}
+                {resourceLabel('water')}
               </button>
             {:else}
               <div class="contact-meta">
@@ -219,7 +226,9 @@
                 <span class="text-data-mono contact-assim">Echo {Math.floor(assim)}/100</span>
               </div>
               <div class="contact-reward text-data-mono">
-                +{preview.biomassEarned} Biomass · +{preview.lysateEarned} Lysate
+                +{preview.biomassEarned}
+                {resourceLabel('biomass')} · +{preview.lysateEarned}
+                {resourceLabel('lysate')}
               </div>
               {#if cstrain.id !== 'normal'}
                 <div class="contact-desc">{cstrain.description}</div>
@@ -248,11 +257,14 @@
       </div>
     {/if}
 
-    <div class="hunt-actions">
-      <button class="cmd-btn ping-btn" bind:this={pingBtn} disabled={!canPing} onclick={ping}>
-        Ping substrate · {SCAN_WATER_COST} Water
-      </button>
-    </div>
+    {#if !hideAction}
+      <div class="hunt-actions">
+        <button class="cmd-btn ping-btn" bind:this={pingBtn} disabled={!canPing} onclick={ping}>
+          Ping substrate · {SCAN_WATER_COST}
+          {resourceLabel('water')}
+        </button>
+      </div>
+    {/if}
 
     {#if lockedCount > 0}
       <div class="locked-teaser text-label-caps">

@@ -39,6 +39,7 @@
   }
 
   let isFullGame = $derived(gameStore.state.gamePhase === 'active');
+  let menuOpen = $state(false);
 
   // Arm once, after the router has initialised, so Back reaches our handler.
   let historyArmed = false;
@@ -79,7 +80,12 @@
   // Esc closes the topmost overlay. Combat owns its own Esc (retreat) so we bow out
   // while it is open to avoid closing the Radar drawer underneath it as well.
   function handleEscape(e: KeyboardEvent) {
-    if (e.key !== 'Escape' || uiStore.combatHostId !== null) return;
+    if (e.key !== 'Escape') return;
+    if (menuOpen) {
+      menuOpen = false;
+      return;
+    }
+    if (uiStore.combatHostId !== null) return;
     if (uiStore.activePanel !== null) uiStore.closeTop();
   }
 </script>
@@ -104,16 +110,63 @@
 
     <div class="top-bar-actions">
       <span class="top-bar-status text-label-caps">● Online</span>
-      {#if devStore.enabled}
+
+      <div class="desktop-actions">
+        {#if devStore.enabled}
+          <button
+            class="cmd-btn secondary dev-btn"
+            title="Developer preview (mycosurge_dev)"
+            onclick={() => devStore.previewWelcomeBack()}
+          >
+            Preview welcome
+          </button>
+          <button class="cmd-btn danger reset-btn" onclick={handleReset}>Reset</button>
+        {/if}
+      </div>
+
+      <div class="mobile-actions">
         <button
-          class="cmd-btn secondary dev-btn"
-          title="Developer preview (mycosurge_dev)"
-          onclick={() => devStore.previewWelcomeBack()}
+          class="overflow-btn"
+          aria-label="More options"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onclick={() => (menuOpen = !menuOpen)}
         >
-          Preview welcome
+          ⋯
         </button>
-        <button class="cmd-btn danger reset-btn" onclick={handleReset}>Reset</button>
-      {/if}
+        {#if menuOpen}
+          <button
+            class="menu-backdrop"
+            aria-label="Close menu"
+            tabindex="-1"
+            onclick={() => (menuOpen = false)}
+          ></button>
+          <div class="overflow-menu" role="menu">
+            {#if devStore.enabled}
+              <button
+                class="menu-item"
+                role="menuitem"
+                onclick={() => {
+                  menuOpen = false;
+                  devStore.previewWelcomeBack();
+                }}
+              >
+                Preview welcome back
+              </button>
+            {/if}
+            <button
+              class="menu-item danger-item"
+              role="menuitem"
+              onclick={() => {
+                menuOpen = false;
+                handleReset();
+              }}
+            >
+              Reset progress
+            </button>
+          </div>
+        {/if}
+      </div>
     </div>
   </header>
 
@@ -130,7 +183,7 @@
       {@render children()}
     </main>
     {#if isFullGame}
-      <ActivityLog />
+      <ActivityLog collapsible />
     {/if}
   </div>
 </div>
@@ -209,6 +262,81 @@
     font-size: var(--font-label-caps);
   }
 
+  /* Desktop actions fold into the header row; mobile swaps to an overflow menu. */
+  .desktop-actions {
+    display: contents;
+  }
+
+  .mobile-actions {
+    display: none;
+    position: relative;
+  }
+
+  .overflow-btn {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    padding: 0 0 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-container);
+    color: var(--on-surface);
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .overflow-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .overflow-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 100;
+    min-width: 190px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-container);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  .menu-item {
+    padding: 12px var(--space-panel-padding);
+    border: 0;
+    background: transparent;
+    color: var(--on-surface);
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .menu-item + .menu-item {
+    border-top: 1px solid var(--border);
+  }
+
+  .menu-item:hover {
+    background: var(--surface-container-high);
+  }
+
+  .menu-item.danger-item {
+    color: var(--alert);
+  }
+
   .desktop-layout {
     display: none;
     flex: 1;
@@ -230,7 +358,7 @@
   }
 
   .center-full {
-    max-width: 600px;
+    max-width: 840px;
     margin: 0 auto;
   }
 
@@ -250,8 +378,12 @@
       row-gap: 6px;
     }
 
-    .top-bar-status {
+    .desktop-actions {
       display: none;
+    }
+
+    .mobile-actions {
+      display: inline-flex;
     }
   }
 

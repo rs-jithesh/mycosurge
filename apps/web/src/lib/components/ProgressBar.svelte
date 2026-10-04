@@ -8,6 +8,7 @@
     label = '',
     valueText = '',
     showValue = true,
+    labelCaps = true,
     markers = [],
   }: {
     value: number;
@@ -16,6 +17,8 @@
     label?: string;
     valueText?: string;
     showValue?: boolean;
+    /** Render the label in normal case (e.g. a resource label carrying a lowercase symbol). */
+    labelCaps?: boolean;
     /** Decorative threshold ticks, as percentages (0–100). */
     markers?: number[];
   } = $props();
@@ -28,7 +31,9 @@
   {#if label || showValue}
     <div class="head">
       {#if label}
-        <span class="label text-label-caps">{label}</span>
+        <span class="label" class:text-label-caps={labelCaps} class:label-plain={!labelCaps}>
+          {label}
+        </span>
       {/if}
       {#if showValue}
         <span class="val text-data-mono">{display}</span>
@@ -60,6 +65,14 @@
 
   .label {
     color: var(--on-surface);
+  }
+
+  .label-plain {
+    font-size: var(--font-label-caps);
+    line-height: var(--line-label-caps);
+    font-weight: var(--weight-label-caps);
+    letter-spacing: normal;
+    text-transform: none;
   }
 
   .val {

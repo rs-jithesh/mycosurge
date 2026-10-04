@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from 'svelte';
   import { gameStore } from '$lib/stores/game.svelte';
-  import { HOSTS } from '@mycosurge/config';
+  import { HOSTS, resourceLabel } from '@mycosurge/config';
   import { createRadar } from '$lib/pixi/radar';
   import type { RadarInstance } from '$lib/pixi/radar';
   import { completeTutorial, applyTutorialDefeat } from '@mycosurge/game-engine';
@@ -194,9 +194,12 @@
           {@render resultHeadline('victory', `You drove off ${host?.name ?? 'the host'}`)}
           <div class="reward-panel">
             <div class="reward-header text-label-caps">Rewards</div>
-            <div class="reward-line">+{reward?.biomassEarned ?? 0} Biomass</div>
+            <div class="reward-line">
+              +{reward?.biomassEarned ?? 0}
+              {resourceLabel('biomass')}
+            </div>
             {#if (reward?.lysateEarned ?? 0) > 0}
-              <div class="reward-line">+{reward?.lysateEarned} Lysate</div>
+              <div class="reward-line">+{reward?.lysateEarned} {resourceLabel('lysate')}</div>
             {/if}
           </div>
           <div class="action-row">
@@ -223,9 +226,12 @@
           {@render resultHeadline('victory', `You drove off ${host?.name ?? 'the host'}`)}
           <div class="reward-panel">
             <div class="reward-header text-label-caps">Rewards</div>
-            <div class="reward-line">+{reward?.biomassEarned ?? 0} Biomass</div>
+            <div class="reward-line">
+              +{reward?.biomassEarned ?? 0}
+              {resourceLabel('biomass')}
+            </div>
             {#if (reward?.lysateEarned ?? 0) > 0}
-              <div class="reward-line">+{reward?.lysateEarned} Lysate</div>
+              <div class="reward-line">+{reward?.lysateEarned} {resourceLabel('lysate')}</div>
             {/if}
           </div>
           {#if gameStore.strainPercent > 0}

@@ -1,37 +1,53 @@
 <script lang="ts">
   import { type CapResource, type GrowthPhase } from '@mycosurge/game-engine';
-  import { GENERATORS, getGeneratorCost, LYSATE_CAP_EXPAND_AMOUNT } from '@mycosurge/config';
+  import {
+    GENERATORS,
+    getGeneratorCost,
+    LYSATE_CAP_EXPAND_AMOUNT,
+    resourceLabel,
+    resourceName,
+  } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
-  import { uiStore } from '$lib/stores/ui.svelte';
   import { phaseMeta } from '$lib/content/phases';
   import ResourceIcon from './ResourceIcon.svelte';
   import HuntSection from '$lib/components/hunt/HuntSection.svelte';
+  import PhaseAction from './core/PhaseAction.svelte';
 
-  let { phase }: { phase: GrowthPhase } = $props();
+  let {
+    phase,
+    variant = 'full',
+  }: {
+    phase: GrowthPhase;
+    /** `mobile` drops the header and the primary action (the mode hero owns both). */
+    variant?: 'full' | 'mobile';
+  } = $props();
 
   let meta = $derived(phaseMeta(phase));
   let gs = $derived(gameStore.state);
+  let isMobile = $derived(variant === 'mobile');
+  let echoOverride = $state<boolean | null>(null);
+  let echoesOpen = $derived(echoOverride ?? !isMobile);
 
   let activeGenerators = $derived(GENERATORS.filter((g) => (gs.generators[g.id] ?? 0) > 0).length);
-
-  let manualCooldown = $derived(gs.manualCooldown);
-  let canAbsorb = $derived(manualCooldown <= 0);
-  let canSynthesize = $derived(gs.water >= 10 && gs.nutrients >= 10);
-  let synthYield = $derived(gameStore.synthesisYield());
 
   let echoes = $derived(gameStore.acquiredEchoes);
 
   let capRows = $derived([
-    { resource: 'water' as const, label: 'Water', cap: gs.waterCap, tone: 'cyan' as const },
+    {
+      resource: 'water' as const,
+      label: resourceLabel('water'),
+      cap: gs.waterCap,
+      tone: 'cyan' as const,
+    },
     {
       resource: 'nutrients' as const,
-      label: 'Nutrients',
+      label: resourceLabel('nutrients'),
       cap: gs.nutrientsCap,
       tone: 'violet' as const,
     },
     {
       resource: 'biomass' as const,
-      label: 'Biomass',
+      label: resourceLabel('biomass'),
       cap: gameStore.maxBiomass,
       tone: 'amber' as const,
     },
@@ -53,31 +69,27 @@
   }
 </script>
 
-<div class="detail-panel" data-tone={meta.tone}>
-  <header class="panel-head">
-    <div class="head-left">
-      <span class="head-icon" aria-hidden="true"><ResourceIcon name={phase} size={34} round /></span
-      >
-      <div class="head-text">
-        <h2 class="head-title">{meta.label}</h2>
-        <p class="head-tagline">{meta.tagline}</p>
+<div class="detail-panel" class:is-mobile={isMobile} data-tone={meta.tone}>
+  {#if !isMobile}
+    <header class="panel-head">
+      <div class="head-left">
+        <span class="head-icon" aria-hidden="true"
+          ><ResourceIcon name={phase} size={34} round /></span
+        >
+        <div class="head-text">
+          <h2 class="head-title">{meta.label}</h2>
+          <p class="head-tagline">{meta.tagline}</p>
+        </div>
       </div>
-    </div>
-  </header>
+    </header>
+  {/if}
 
   <div class="panel-body">
     {#if phase === 'gather'}
       <!-- ── GATHER ── -->
-      <button
-        class="cmd-btn action-btn"
-        disabled={!canAbsorb}
-        onclick={() => gameStore.manualAbsorb()}
-      >
-        <span class="action-verb">Absorb</span>
-        <span class="action-sub">
-          {canAbsorb ? '+2 Water · +2 Nutrients' : `Ready in ${Math.ceil(manualCooldown)}s`}
-        </span>
-      </button>
+      {#if !isMobile}
+        <PhaseAction phase="gather" />
+      {/if}
       <p class="hint">
         Draw water and nutrients straight from the substrate. Watch the reserves panel while you
         cycle.
@@ -86,14 +98,16 @@
       <div class="cap-section">
         <div class="cap-head">
           <span class="text-label-caps">Capacity</span>
-          <span class="text-data-mono cap-hint">Spend Lysate to hold more</span>
+          <span class="text-data-mono cap-hint">Spend {resourceLabel('lysate')} to hold more</span>
         </div>
         <div class="cap-rows">
           {#each capRows as row}
             {@const cost = capCost(row.resource)}
             <div class="cap-row">
               <div class="cap-info">
-                <span class="cap-name" data-tone={row.tone}>{row.label}</span>
+                <span class="cap-name" data-tone={row.tone} title={resourceName(row.resource)}
+                  >{row.label}</span
+                >
                 <span class="text-data-mono cap-val">
                   {Math.floor(row.cap)}
                   <span class="cap-next">→ {Math.floor(row.cap) + LYSATE_CAP_EXPAND_AMOUNT}</span>
@@ -104,7 +118,8 @@
                 disabled={!canExpand(row.resource)}
                 onclick={() => gameStore.expandCap(row.resource)}
               >
-                +{LYSATE_CAP_EXPAND_AMOUNT} cap · {cost} Lysate
+                +{LYSATE_CAP_EXPAND_AMOUNT} cap · {cost}
+                {resourceLabel('lysate')}
               </button>
             </div>
           {/each}
@@ -112,24 +127,9 @@
       </div>
     {:else if phase === 'grow'}
       <!-- ── GROW ── -->
-      <button
-        class="cmd-btn action-btn"
-        disabled={!canSynthesize}
-        onclick={() => gameStore.manualSynthesize()}
-      >
-        <span class="action-verb">Synthesize Biomass</span>
-        <span class="action-sub">
-          {#if !canSynthesize}
-            Need 10 Water + 10 Nutrients
-          {:else if synthYield >= 1}
-            10 Water + 10 Nutrients → 1 Biomass
-          {:else if synthYield > 0}
-            10 Water + 10 Nutrients → 0.5 Biomass (low reserves)
-          {:else}
-            Low reserves — this would be wasted
-          {/if}
-        </span>
-      </button>
+      {#if !isMobile}
+        <PhaseAction phase="grow" />
+      {/if}
 
       <div class="gen-section">
         <div class="gen-head">
@@ -141,7 +141,7 @@
             {@const level = gs.generators[gen.id] ?? 0}
             {@const cost = getGeneratorCost(gen.baseCost, level, gen.costScale)}
             {@const canAfford = gameStore.biomass >= cost}
-            {@const unit = gen.resource === 'water' ? 'Water' : 'Nutrients'}
+            {@const unit = resourceLabel(gen.resource)}
             <div class="gen-card">
               <span class="gen-icon"><ResourceIcon name={gen.resource} size={40} round /></span>
               <div class="gen-meta">
@@ -164,7 +164,7 @@
                     disabled={!canAfford}
                     onclick={() => gameStore.purchaseGenerator(gen.id)}
                   >
-                    {cost} <span class="gen-unit">Biomass</span>
+                    {cost} <span class="gen-unit">{resourceLabel('biomass')}</span>
                   </button>
                   {#if !canAfford && affordTime(cost)}
                     <span class="gen-eta text-data-mono">{affordTime(cost)}</span>
@@ -178,27 +178,43 @@
         </div>
       </div>
     {:else if phase === 'hunt'}
-      <HuntSection mode="full" />
+      <HuntSection mode="full" hideAction={isMobile} />
     {:else}
       <!-- ── EVOLVE ── -->
       <div class="echo-section">
-        <div class="echo-head">
-          <span class="text-label-caps">Echoes</span>
-          <span class="text-data-mono echo-count">{echoes.length} collected</span>
-        </div>
-        {#if echoes.length === 0}
-          <p class="hint">
-            Defeat hosts to acquire echoes. Each echo permanently enhances the network.
-          </p>
+        {#if isMobile}
+          <button
+            class="echo-head echo-toggle"
+            aria-expanded={echoesOpen}
+            onclick={() => (echoOverride = !echoesOpen)}
+          >
+            <span class="text-label-caps">Echoes</span>
+            <span class="echo-head-right">
+              <span class="text-data-mono echo-count">{echoes.length} collected</span>
+              <span class="chev" class:up={echoesOpen} aria-hidden="true">⌄</span>
+            </span>
+          </button>
         {:else}
-          <ul class="echo-list">
-            {#each echoes as id (id)}
-              <li class="echo-chip">
-                <ResourceIcon name="echo" size={18} round />
-                <span>{gameStore.echoName(id)}</span>
-              </li>
-            {/each}
-          </ul>
+          <div class="echo-head">
+            <span class="text-label-caps">Echoes</span>
+            <span class="text-data-mono echo-count">{echoes.length} collected</span>
+          </div>
+        {/if}
+        {#if echoesOpen}
+          {#if echoes.length === 0}
+            <p class="hint">
+              Defeat hosts to acquire echoes. Each echo permanently enhances the network.
+            </p>
+          {:else}
+            <ul class="echo-list">
+              {#each echoes as id (id)}
+                <li class="echo-chip">
+                  <ResourceIcon name="echo" size={18} round />
+                  <span>{gameStore.echoName(id)}</span>
+                </li>
+              {/each}
+            </ul>
+          {/if}
         {/if}
       </div>
 
@@ -206,10 +222,10 @@
         <div class="genome-available text-data-mono">
           Genome: {gameStore.genomePointsAvailable} available
         </div>
-        <button class="cmd-btn evolution-cta" onclick={() => uiStore.openPanel('evolution')}>
-          <span class="action-verb">Evolution</span>
-          <span class="action-sub">Spend genome points on permanent mutations</span>
-        </button>
+      {/if}
+
+      {#if !isMobile}
+        <PhaseAction phase="expand" />
       {/if}
 
       <p class="hint">
@@ -290,23 +306,6 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-  }
-
-  /* ── Actions ── */
-  .action-btn {
-    flex-direction: column;
-    gap: 2px;
-    padding: 12px;
-  }
-
-  .action-verb {
-    font-weight: 600;
-  }
-
-  .action-sub {
-    font-size: 11px;
-    font-weight: 500;
-    opacity: 0.85;
   }
 
   /* ── Grow: generators ── */
@@ -522,12 +521,6 @@
     font-size: 12px;
   }
 
-  .evolution-cta {
-    flex-direction: column;
-    gap: 2px;
-    padding: 12px;
-  }
-
   .genome-available {
     color: var(--primary);
     font-size: 12px;
@@ -538,5 +531,37 @@
     font-size: 12px;
     color: var(--on-surface-variant);
     line-height: 1.5;
+  }
+
+  /* ── Mobile: the mode hero owns the header and primary action ── */
+  .detail-panel.is-mobile .panel-body {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .echo-head-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .echo-toggle {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .chev {
+    color: var(--on-surface-variant);
+    font-size: 14px;
+    line-height: 1;
+    transition: transform var(--duration-fast) var(--ease-out-soft);
+  }
+
+  .chev.up {
+    transform: rotate(180deg);
   }
 </style>
