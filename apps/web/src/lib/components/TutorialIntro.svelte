@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { getTutorialReserveCap } from '@mycosurge/game-engine';
+  import { getTutorialReserveCap, TUTORIAL_EXTEND_COST } from '@mycosurge/game-engine';
   import { resourceLabel } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
@@ -41,7 +41,7 @@
 
   let canSynthesize = $derived(s.water >= 10 && s.nutrients >= 10);
   let canInstall = $derived(s.biomass >= TUTORIAL_GENERATOR_COST);
-  let canExtend = $derived(s.biomass >= 5);
+  let canExtend = $derived(s.biomass >= TUTORIAL_EXTEND_COST);
 
   let hasPump = $derived(s.tutorialUpgrades.osmoticPump);
   let hasExudates = $derived(s.tutorialUpgrades.enzymaticExudates);
@@ -256,8 +256,8 @@
                   <span class="action-verb">Extend Hyphae</span>
                   <span class="action-sub">
                     {canExtend
-                      ? `5 ${resourceLabel('biomass', 'first')} → +1mm network`
-                      : `Need 5 ${resourceLabel('biomass', 'first')}`}
+                      ? `${TUTORIAL_EXTEND_COST} ${resourceLabel('biomass', 'first')} → +1mm network`
+                      : `Need ${TUTORIAL_EXTEND_COST} ${resourceLabel('biomass', 'first')}`}
                   </span>
                 </button>
               {:else}

@@ -179,4 +179,5 @@ export {
   getTutorialShockMultiplier,
   getTutorialReserveCap,
   TUTORIAL_RESERVE_CAP,
+  TUTORIAL_EXTEND_COST,
 } from './tutorial';

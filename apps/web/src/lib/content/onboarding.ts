@@ -1,4 +1,5 @@
 import type { GamePhase } from '@mycosurge/game-engine';
+import { TUTORIAL_EXTEND_COST } from '@mycosurge/game-engine';
 import { resourceLabel } from '@mycosurge/config';
 import type { IconKey } from './icons';
 
@@ -55,7 +56,7 @@ export const TUTORIAL_STEPS: Record<TutorialStepId, TutorialStep> = {
     total: TUTORIAL_TOTAL_STEPS,
     tag: 'Objective',
     title: 'Extend your hyphae across the substrate',
-    description: 'Spend 5 Biomass to grow your network by 1mm.',
+    description: `Spend ${TUTORIAL_EXTEND_COST} Biomass to grow your network by 1mm.`,
     tone: 'mint',
     hint: 'Reach 5mm and something will find you.',
   },
@@ -135,7 +136,10 @@ export const ONBOARDING_COPY = {
   network: 'Network',
   absorb: { label: 'Absorb', effect: '+1 Water · +1 Nutrients' },
   synthesize: { label: 'Synthesize Biomass', effect: '10 Water + 10 Nutrients → 1 Biomass' },
-  extend: { label: 'Extend Hyphae', effect: '5 Biomass → +1mm network' },
+  extend: {
+    label: 'Extend Hyphae',
+    effect: `${TUTORIAL_EXTEND_COST} Biomass → +1mm network`,
+  },
   install: { label: 'Install', cost: (cost: number) => `Cost: ${cost} Biomass` },
   shock: (seconds: number) => `Recovering from shock — production halved for ${seconds}s`,
 };

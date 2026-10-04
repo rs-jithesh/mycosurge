@@ -93,11 +93,21 @@ export function purchaseTutorialUpgrade(
   return { success: true, message: messages[upgrade] };
 }
 
+/**
+ * Biomass cost of one tutorial reach extension. Deliberately low so the Expand
+ * step is a short demonstration rather than a grind (the full game's reach curve
+ * takes over afterwards).
+ */
+export const TUTORIAL_EXTEND_COST = 2;
+
 export function extendHyphae(state: GameState): { success: boolean; message: string } {
-  if (state.biomass < 5) {
-    return { success: false, message: 'You need 5 Biomass to extend your network.' };
+  if (state.biomass < TUTORIAL_EXTEND_COST) {
+    return {
+      success: false,
+      message: `You need ${TUTORIAL_EXTEND_COST} Biomass to extend your network.`,
+    };
   }
-  state.biomass -= 5;
+  state.biomass -= TUTORIAL_EXTEND_COST;
   state.mycelialNetwork += 1;
 
   const message =
