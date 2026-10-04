@@ -35,6 +35,7 @@
     src="{base}/assets/icons/{meta.file}"
     width={size}
     height={size}
+    style="width: {size}px; height: {size}px;"
     alt={label ?? ''}
     aria-hidden={label ? undefined : 'true'}
     draggable="false"
