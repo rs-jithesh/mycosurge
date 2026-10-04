@@ -3,6 +3,7 @@
     EXPANSION_MAP,
     HOSTS,
     REACH_SECTORS,
+    SECTOR_GROW_MM,
     SECTOR_LABELS,
     getStrain,
     resourceLabel,
@@ -44,6 +45,14 @@
   let firstContact = $derived(getFirstContact(gs, placements));
   let contactMarkers = $derived(getContactMarkers(gs.contacts, placements));
   let adviceSector = $derived(gameStore.advisor.sector);
+
+  // Desktop hover: highlight the wedge under the cursor and show its cost.
+  let finePointer = $state(
+    typeof window !== 'undefined' && (window.matchMedia?.('(pointer: fine)').matches ?? false),
+  );
+  let hoverSector = $state<number | null>(null);
+  let hoverX = $state(0);
+  let hoverY = $state(0);
   let cordBranch = $derived(
     gameStore.cordBranchId ? Number(gameStore.cordBranchId.split('-')[1]) : -1,
   );
@@ -180,7 +189,11 @@
   }
 
   function onMove(event: PointerEvent) {
-    if (!pointers.has(event.pointerId)) return;
+    if (!pointers.has(event.pointerId)) {
+      updateHover(event);
+      return;
+    }
+    hoverSector = null;
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (pointers.size === 1) {
       panX += event.clientX - last.x;
@@ -211,6 +224,21 @@
     const radius = Math.hypot(wx, wy);
     if (radius < 1) return;
     gameStore.growSector(sectorIndexForAngle(Math.atan2(wy, wx)));
+  }
+
+  /** Highlight the wedge under a mouse cursor (desktop only). */
+  function updateHover(event: PointerEvent) {
+    if (!finePointer) return;
+    const rect = (event.currentTarget as Element).getBoundingClientRect();
+    const wx = (event.clientX - rect.left - (cx + panX)) / k;
+    const wy = (event.clientY - rect.top - (cy + panY)) / k;
+    if (Math.hypot(wx, wy) < 1) {
+      hoverSector = null;
+      return;
+    }
+    hoverSector = sectorIndexForAngle(Math.atan2(wy, wx));
+    hoverX = event.clientX - rect.left;
+    hoverY = event.clientY - rect.top;
   }
 
   function onWheel(event: WheelEvent) {
@@ -324,6 +352,7 @@
       onpointermove={onMove}
       onpointerup={onUp}
       onpointercancel={onUp}
+      onpointerleave={() => (hoverSector = null)}
       onwheel={onWheel}
       role="group"
       aria-label="Expansion network"
@@ -336,6 +365,18 @@
             opacity={EXPANSION_MAP.territoryOpacity}
           />
         {/each}
+        {#if hoverSector !== null}
+          {@const hoverDepth = Math.max(0, drawnDepths[hoverSector] ?? 0)}
+          <path d={wedgePath(hoverSector, hoverDepth)} fill="var(--primary)" opacity="0.1" />
+          <path
+            d={wedgePath(hoverSector, hoverDepth + SECTOR_GROW_MM)}
+            fill="none"
+            stroke={gs.biomass >= gameStore.reachCost ? 'var(--primary)' : 'var(--warning)'}
+            stroke-width={1.6 * inv}
+            stroke-dasharray={`${4 * inv} ${3 * inv}`}
+            opacity="0.6"
+          />
+        {/if}
         {#each drawnDepths as radius, i (i)}
           <line
             x1={0}
@@ -573,6 +614,18 @@
     </svg>
 
     <p class="map-legend text-label-caps">Tap a wedge to grow it · tap signals to scan or engage</p>
+
+    {#if hoverSector !== null}
+      <div class="sector-tip" style="left: {hoverX + 14}px; top: {hoverY + 14}px;">
+        <span class="tip-dir">
+          {SECTOR_LABELS[hoverSector]} · {Math.floor(drawnDepths[hoverSector] ?? 0)} mm
+        </span>
+        <span class="tip-cost">{gameStore.reachCost} {resourceLabel('biomass')}</span>
+        <span class="tip-sub">
+          {gs.biomass >= gameStore.reachCost ? 'Click to grow here' : 'Not enough Biomass'}
+        </span>
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -683,6 +736,38 @@
     color: var(--on-surface-variant);
     font-size: 10px;
     pointer-events: none;
+  }
+
+  .sector-tip {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface-container-highest) 94%, transparent);
+    box-shadow: var(--shadow-sm);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .tip-dir {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--on-surface);
+  }
+
+  .tip-cost {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--primary);
+  }
+
+  .tip-sub {
+    font-size: 10px;
+    color: var(--on-surface-variant);
   }
 
   .host:focus-visible {
