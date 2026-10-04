@@ -5,6 +5,6 @@
   let { onClose }: { onClose: () => void } = $props();
 </script>
 
-<Overlay title="Resources" {onClose}>
+<Overlay title="Resources" placement="bottom" {onClose}>
   <ResourcePanel />
 </Overlay>

@@ -5,11 +5,14 @@
     title,
     subtitle,
     onClose,
+    placement = 'side',
     children,
   }: {
     title: string;
     subtitle?: string;
     onClose: () => void;
+    /** `bottom` slides the sheet up from the bottom (full-screen panels on mobile). */
+    placement?: 'side' | 'bottom';
     children: Snippet;
   } = $props();
 
@@ -20,9 +23,16 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="scrim" role="presentation" onclick={onClose} onwheel={onScrimWheel}>
+<div
+  class="scrim"
+  class:slide-up={placement === 'bottom'}
+  role="presentation"
+  onclick={onClose}
+  onwheel={onScrimWheel}
+>
   <div
     class="shell"
+    class:slide-up={placement === 'bottom'}
     role="dialog"
     tabindex="-1"
     aria-modal="true"
@@ -116,6 +126,42 @@
     .shell {
       width: 100%;
       border-left: none;
+    }
+  }
+
+  /* Bottom placement: full-screen sheets slide up from the bottom on mobile. */
+  @media (max-width: 767px) {
+    .shell.slide-up {
+      animation: sheet-up var(--duration-normal) var(--ease-out-soft);
+    }
+
+    .scrim.slide-up {
+      animation: scrim-in var(--duration-normal) var(--ease-out-soft);
+    }
+  }
+
+  @keyframes sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scrim-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shell.slide-up,
+    .scrim.slide-up {
+      animation: none;
     }
   }
 </style>

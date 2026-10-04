@@ -14,7 +14,12 @@
   let foundCount = $derived(hosts.filter((h) => catalogued.has(h.id)).length);
 </script>
 
-<Overlay title="Bestiary" subtitle={`${foundCount} of ${hosts.length} catalogued`} {onClose}>
+<Overlay
+  title="Bestiary"
+  subtitle={`${foundCount} of ${hosts.length} catalogued`}
+  placement="bottom"
+  {onClose}
+>
   <p class="hint">
     Every host you drive off is recorded here. Expand the network to uncover the rest.
   </p>
