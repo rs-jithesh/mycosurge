@@ -118,6 +118,7 @@ export {
   generateHostPlacements,
   getHostVisibility,
   getFirstContact,
+  getContactMarkers,
   catalogueHost,
   isCatalogued,
   getDefaultCordBranch,
@@ -126,7 +127,13 @@ export {
   buildCord,
   mulberry32,
 } from './network';
-export type { NetworkSegment, NetworkGeometry, HostPlacement, HostVisibility } from './network';
+export type {
+  NetworkSegment,
+  NetworkGeometry,
+  HostPlacement,
+  HostVisibility,
+  ContactMarker,
+} from './network';
 export {
   applyVictory,
   applyDefeat,

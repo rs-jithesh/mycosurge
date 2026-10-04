@@ -1,5 +1,5 @@
 import { EXPANSION_MAP, HOSTS, HOST_TIER_REACH } from '@mycosurge/config';
-import type { GameState } from './state';
+import type { GameState, RadarContact } from './state';
 import { getReachCost } from './reach';
 
 /**
@@ -174,6 +174,57 @@ export function getFirstContact(
     if (!best || placement.distanceMm < best.distanceMm) best = placement;
   }
   return best;
+}
+
+/** A live radar contact placed on the map, fanned out if its species repeats. */
+export interface ContactMarker {
+  contactId: string;
+  hostId: string;
+  revealed: boolean;
+  strainId: string;
+  timeRemaining: number;
+  totalTime: number;
+  x: number;
+  y: number;
+  distanceMm: number;
+}
+
+/**
+ * Place each active radar contact at its species' map location. Multiple contacts of
+ * the same species fan out slightly so they never perfectly overlap. Contacts whose
+ * species has no placement are skipped.
+ */
+export function getContactMarkers(
+  contacts: readonly RadarContact[],
+  placements: readonly HostPlacement[],
+): ContactMarker[] {
+  const byHost = new Map(placements.map((p) => [p.hostId, p]));
+  const seen = new Map<string, number>();
+  const markers: ContactMarker[] = [];
+
+  for (const contact of contacts) {
+    const placement = byHost.get(contact.hostId);
+    if (!placement) continue;
+    const index = seen.get(contact.hostId) ?? 0;
+    seen.set(contact.hostId, index + 1);
+
+    const spread = index * 0.22;
+    const angle = placement.angle + spread;
+    const distanceMm = placement.distanceMm + spread;
+    markers.push({
+      contactId: contact.id,
+      hostId: contact.hostId,
+      revealed: contact.revealed,
+      strainId: contact.strainId,
+      timeRemaining: contact.timeRemaining,
+      totalTime: contact.totalTime,
+      x: Math.cos(angle) * distanceMm,
+      y: Math.sin(angle) * distanceMm,
+      distanceMm,
+    });
+  }
+
+  return markers;
 }
 
 /** Record a species as uncovered (first defeat). The tutorial host is never catalogued. */

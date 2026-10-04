@@ -1,22 +1,30 @@
 <script lang="ts">
-  import { EXPANSION_MAP, HOSTS, resourceLabel } from '@mycosurge/config';
+  import { EXPANSION_MAP, HOSTS, getStrain, resourceLabel } from '@mycosurge/config';
   import {
     generateNetwork,
     generateHostPlacements,
     getHostVisibility,
     getFirstContact,
+    getContactMarkers,
   } from '@mycosurge/game-engine';
-  import type { HostPlacement } from '@mycosurge/game-engine';
+  import type { HostPlacement, ContactMarker } from '@mycosurge/game-engine';
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { logStore } from '$lib/stores/log.svelte';
 
   let { onClose }: { onClose: () => void } = $props();
 
-  const VIEW = 1000;
-  const CENTER = VIEW / 2;
-  const BASE_PX_PER_MM = CENTER / EXPANSION_MAP.baseViewMm;
   const MAJOR_MM = EXPANSION_MAP.ringStepMm * EXPANSION_MAP.majorRingEvery;
+
+  // The viewport is measured in CSS pixels (1 viewBox unit == 1px), so panning is
+  // direct and the ring set fills the smaller axis while wide screens reveal more world.
+  let viewW = $state(1000);
+  let viewH = $state(700);
+  let cx = $derived(Math.max(1, viewW) / 2);
+  let cy = $derived(Math.max(1, viewH) / 2);
+  let basePxPerMm = $derived(
+    Math.max(1, Math.min(viewW, viewH) / 2 - 24) / EXPANSION_MAP.baseViewMm,
+  );
 
   let gs = $derived(gameStore.state);
   let reach = $derived(gameStore.reach);
@@ -25,6 +33,7 @@
   let placements = $derived(generateHostPlacements(seed));
   let catalogued = $derived(new Set(gameStore.cataloguedHosts));
   let firstContact = $derived(getFirstContact(gs, placements));
+  let contactMarkers = $derived(getContactMarkers(gs.contacts, placements));
   let cordBranch = $derived(
     gameStore.cordBranchId ? Number(gameStore.cordBranchId.split('-')[1]) : -1,
   );
@@ -32,7 +41,7 @@
   let zoom = $state(1);
   let panX = $state(0);
   let panY = $state(0);
-  let k = $derived(BASE_PX_PER_MM * zoom);
+  let k = $derived(basePxPerMm * zoom);
   let inv = $derived(1 / k);
 
   let ringMax = $derived(
@@ -92,7 +101,6 @@
   );
 
   // ── Pan / pinch-zoom ──
-  let svgEl: SVGSVGElement | undefined;
   const pointers = new Map<number, { x: number; y: number }>();
   let last = { x: 0, y: 0 };
   let pinchDist = 0;
@@ -121,13 +129,12 @@
     if (!pointers.has(event.pointerId)) return;
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (pointers.size === 1) {
-      const rect = svgEl?.getBoundingClientRect();
-      const scale = rect && rect.width > 0 ? VIEW / rect.width : 1;
-      panX += (event.clientX - last.x) * scale;
-      panY += (event.clientY - last.y) * scale;
+      panX += event.clientX - last.x;
+      panY += event.clientY - last.y;
       last = { x: event.clientX, y: event.clientY };
     } else if (pointers.size >= 2 && pinchDist > 0) {
-      zoom = clamp(pinchZoom * (pointerDistance() / pinchDist), 0.15, 4);
+      // Damped so a pinch feels less twitchy than raw distance ratio.
+      zoom = clamp(pinchZoom * Math.pow(pointerDistance() / pinchDist, 0.55), 0.2, 3.5);
     }
   }
 
@@ -140,15 +147,24 @@
 
   function onWheel(event: WheelEvent) {
     event.preventDefault();
-    zoom = clamp(zoom * (event.deltaY < 0 ? 1.12 : 0.89), 0.15, 4);
+    zoom = clamp(zoom * (event.deltaY < 0 ? 1.05 : 0.952), 0.2, 3.5);
   }
 
   function fit() {
     const viewMm = Math.max(EXPANSION_MAP.baseViewMm, reach + EXPANSION_MAP.senseRangeMm + 1);
-    zoom = clamp(CENTER - 40 > 0 ? (CENTER - 40) / viewMm / BASE_PX_PER_MM : 1, 0.15, 4);
+    zoom = clamp(EXPANSION_MAP.baseViewMm / viewMm, 0.2, 3.5);
     panX = 0;
     panY = 0;
   }
+
+  // Fit once the viewport has been measured.
+  let didFit = false;
+  $effect(() => {
+    if (!didFit && viewW > 0 && viewH > 0) {
+      didFit = true;
+      fit();
+    }
+  });
 
   function hostName(hostId: string): string {
     return HOSTS.find((h) => h.id === hostId)?.name ?? hostId;
@@ -163,6 +179,22 @@
     }
     gameStore.engageHost(placement.hostId);
     uiStore.openCombat(placement.hostId);
+  }
+
+  function tapContact(marker: ContactMarker) {
+    if (!marker.revealed) {
+      gameStore.scanContact(marker.contactId);
+      return;
+    }
+    if (gameStore.engageContact(marker.contactId)) {
+      uiStore.openCombat(marker.hostId);
+    } else {
+      logStore.info('The network is not ready to engage.');
+    }
+  }
+
+  function strainName(strainId: string): string {
+    return getStrain(strainId).name;
   }
 
   const canExtend = $derived(gs.biomass >= gameStore.reachCost);
@@ -182,6 +214,9 @@
         {:else}
           · all tiers open
         {/if}
+        {#if contactMarkers.length}
+          · {contactMarkers.length} signal{contactMarkers.length === 1 ? '' : 's'}
+        {/if}
       </span>
     </div>
     <div class="map-tools">
@@ -197,12 +232,12 @@
       <button
         class="cmd-btn secondary zoom-btn"
         aria-label="Zoom in"
-        onclick={() => (zoom = clamp(zoom * 1.2, 0.15, 4))}>+</button
+        onclick={() => (zoom = clamp(zoom * 1.15, 0.2, 3.5))}>+</button
       >
       <button
         class="cmd-btn secondary zoom-btn"
         aria-label="Zoom out"
-        onclick={() => (zoom = clamp(zoom / 1.2, 0.15, 4))}>−</button
+        onclick={() => (zoom = clamp(zoom / 1.15, 0.2, 3.5))}>−</button
       >
     </div>
   </header>
@@ -210,8 +245,9 @@
   <div class="map-stage">
     <svg
       class="map-svg"
-      viewBox={`0 0 ${VIEW} ${VIEW}`}
-      bind:this={svgEl}
+      viewBox={`0 0 ${Math.max(1, viewW)} ${Math.max(1, viewH)}`}
+      bind:clientWidth={viewW}
+      bind:clientHeight={viewH}
       onpointerdown={onDown}
       onpointermove={onMove}
       onpointerup={onUp}
@@ -220,7 +256,7 @@
       role="group"
       aria-label="Expansion network"
     >
-      <g transform={`translate(${CENTER + panX} ${CENTER + panY}) scale(${k})`}>
+      <g transform={`translate(${cx + panX} ${cy + panY}) scale(${k})`}>
         <circle
           r={Math.max(0, drawnReach)}
           fill="var(--primary)"
@@ -343,8 +379,69 @@
             </g>
           {/if}
         {/each}
+
+        {#each contactMarkers as m (m.contactId)}
+          {@const remaining =
+            m.totalTime > 0 ? Math.max(0, Math.min(1, m.timeRemaining / m.totalTime)) : 0}
+          {@const circumference = 2 * Math.PI * 10 * inv}
+          <g
+            class="contact"
+            class:revealed={m.revealed}
+            role="button"
+            tabindex="0"
+            aria-label={m.revealed ? `${hostName(m.hostId)} signal` : 'Unidentified signal'}
+            onpointerdown={(e) => e.stopPropagation()}
+            onclick={() => tapContact(m)}
+            onkeydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') tapContact(m);
+            }}
+          >
+            <circle cx={m.x} cy={m.y} r={22 * inv} fill="transparent" />
+            <circle
+              cx={m.x}
+              cy={m.y}
+              r={10 * inv}
+              fill="none"
+              stroke="var(--warning)"
+              stroke-width={1.5 * inv}
+              opacity="0.5"
+              stroke-dasharray={`${remaining * circumference} ${(1 - remaining) * circumference}`}
+              transform={`rotate(-90 ${m.x} ${m.y})`}
+            />
+            <circle
+              cx={m.x}
+              cy={m.y}
+              r={7 * inv}
+              fill="none"
+              stroke={m.revealed ? 'var(--warning)' : 'var(--secondary)'}
+              stroke-width={2 * inv}
+              stroke-dasharray={m.revealed ? 'none' : `${3 * inv} ${2 * inv}`}
+              class:pulse={!m.revealed}
+            />
+            <circle
+              cx={m.x}
+              cy={m.y}
+              r={2.6 * inv}
+              fill={m.revealed ? 'var(--warning)' : 'var(--secondary)'}
+            />
+            {#if m.revealed}
+              <text
+                x={m.x}
+                y={m.y - 13 * inv}
+                text-anchor="middle"
+                fill="var(--on-surface)"
+                font-family="var(--font-mono)"
+                font-size={9 * inv}
+              >
+                {hostName(m.hostId)}{m.strainId !== 'normal' ? ` · ${strainName(m.strainId)}` : ''}
+              </text>
+            {/if}
+          </g>
+        {/each}
       </g>
     </svg>
+
+    <p class="map-legend text-label-caps">Signals drift in and fade — tap to scan or engage</p>
   </div>
 </div>
 
@@ -407,26 +504,54 @@
   .map-stage {
     flex: 1;
     min-height: 0;
-    display: grid;
-    place-items: center;
-    padding: 8px;
+    position: relative;
   }
 
   .map-svg {
-    width: min(100%, 92vh);
-    height: min(100%, 92vh);
-    aspect-ratio: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
     touch-action: none;
     user-select: none;
     background: radial-gradient(
       circle at center,
-      transparent 55%,
+      transparent 45%,
       var(--surface-container-low) 100%
     );
   }
 
   .host {
     cursor: pointer;
+  }
+
+  .contact {
+    cursor: pointer;
+  }
+
+  .contact .pulse {
+    animation: contact-pulse 1.1s ease-in-out infinite;
+  }
+
+  @keyframes contact-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  .map-legend {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 10px;
+    margin: 0;
+    text-align: center;
+    color: var(--on-surface-variant);
+    font-size: 10px;
+    pointer-events: none;
   }
 
   .host:focus-visible {
@@ -454,6 +579,10 @@
 
   @media (prefers-reduced-motion: reduce) {
     .host.first circle:nth-child(2) {
+      animation: none;
+    }
+
+    .contact .pulse {
       animation: none;
     }
   }

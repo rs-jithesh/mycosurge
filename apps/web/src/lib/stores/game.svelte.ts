@@ -40,6 +40,7 @@ import {
   scanContact as engineScanContact,
   engageContact as engineEngageContact,
   dismissContact as engineDismissContact,
+  clearActiveEncounter,
   getRadarSlots,
   getActiveStrain,
   manualAbsorb as engineManualAbsorb,
@@ -538,9 +539,8 @@ function createGameStore() {
   }
 
   function disengageHost() {
-    state.currentHostId = null;
-    state.currentContactId = null;
-    state.activeStrainId = 'normal';
+    // Dismiss the originating contact too, so a retreated signal leaves the map.
+    clearActiveEncounter(state);
   }
 
   function updateCombatHp(hp: number) {
@@ -563,14 +563,14 @@ function createGameStore() {
         logStore.success(`${host?.name ?? hostId} catalogued — added to the bestiary.`);
       }
       recordCombatOutcome(state, 'victory');
-      state.currentHostId = null;
+      clearActiveEncounter(state);
       saveState();
       return result;
     }
     engineApplyDefeat(state);
     logStore.warn('The network recoils — retreat, and recover.');
     recordCombatOutcome(state, 'defeat');
-    state.currentHostId = null;
+    clearActiveEncounter(state);
     saveState();
     return null;
   }

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { EXPANSION_MAP } from '@mycosurge/config';
 import { createInitialState } from './state';
+import type { RadarContact } from './state';
 import { getReachCost } from './reach';
 import {
   mulberry32,
@@ -8,6 +9,7 @@ import {
   generateHostPlacements,
   getHostVisibility,
   getFirstContact,
+  getContactMarkers,
   catalogueHost,
   isCatalogued,
   getDefaultCordBranch,
@@ -125,6 +127,49 @@ describe('catalogue + first contact', () => {
     catalogueHost(state, first!.hostId);
     const next = getFirstContact(state, placements);
     expect(next?.hostId).not.toBe(first!.hostId);
+  });
+});
+
+function makeContact(
+  id: string,
+  hostId: string,
+  overrides: Partial<RadarContact> = {},
+): RadarContact {
+  return {
+    id,
+    hostId,
+    strainId: 'normal',
+    revealed: false,
+    timeRemaining: 60,
+    totalTime: 120,
+    ...overrides,
+  };
+}
+
+describe('contact markers', () => {
+  const placements = generateHostPlacements(555);
+
+  it('places a contact at its species location', () => {
+    const markers = getContactMarkers([makeContact('contact-1', 'fallen_leaf')], placements);
+    const placement = placements.find((p) => p.hostId === 'fallen_leaf')!;
+    expect(markers).toHaveLength(1);
+    expect(markers[0].distanceMm).toBeCloseTo(placement.distanceMm);
+    expect(markers[0].revealed).toBe(false);
+  });
+
+  it('fans out repeated species and skips unknown hosts', () => {
+    const markers = getContactMarkers(
+      [
+        makeContact('contact-1', 'fallen_leaf', { revealed: true }),
+        makeContact('contact-2', 'fallen_leaf'),
+        makeContact('contact-3', 'not_a_host'),
+      ],
+      placements,
+    );
+    expect(markers).toHaveLength(2);
+    expect(markers.map((m) => m.contactId)).toEqual(['contact-1', 'contact-2']);
+    expect(markers[0].x).not.toBeCloseTo(markers[1].x);
+    expect(markers[0].revealed).toBe(true);
   });
 });
 
