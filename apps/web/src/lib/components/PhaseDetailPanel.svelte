@@ -511,6 +511,12 @@
   }
 
   /* ── Mobile: the mode hero owns the header and primary action ── */
+  .detail-panel.is-mobile {
+    /* Keep a floor on the phase panel so switching to a short phase doesn't collapse
+       the page (and yank the scroll position) after a tall one like Grow. */
+    min-height: 200px;
+  }
+
   .detail-panel.is-mobile .panel-body {
     padding: 12px;
     gap: 12px;

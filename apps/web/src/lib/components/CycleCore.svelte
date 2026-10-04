@@ -29,12 +29,18 @@
   <span class="icon" aria-hidden="true"><ResourceIcon name={phase} size={44} round /></span>
   <span class="stage text-label-caps">{meta.label}</span>
   <p class="objective">{meta.objective}</p>
-  {#if next}
-    <span class="wish-chip" data-tone={next.tone}>Wants to {next.label.toLowerCase()}</span>
-  {/if}
-  {#if showReason}
-    <p class="wish-reason">{reason}</p>
-  {/if}
+  <div class="wish-slot" class:is-hero={variant === 'hero'}>
+    {#if next}
+      <span class="wish-chip" data-tone={next.tone}>Wants to {next.label.toLowerCase()}</span>
+    {:else if variant === 'hero'}
+      <span class="wish-chip is-placeholder" aria-hidden="true">&nbsp;</span>
+    {/if}
+    {#if showReason}
+      <p class="wish-reason">{reason}</p>
+    {:else if variant === 'hero'}
+      <p class="wish-reason is-placeholder" aria-hidden="true">&nbsp;</p>
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -90,6 +96,24 @@
     font-size: clamp(11px, 2.3cqw, 16px);
     line-height: 1.45;
     color: var(--on-surface-variant);
+  }
+
+  /* The wish chip + reason only appear when the organism wants a different phase.
+     Reserve their space so the card (and the tabs below it) never reflow on switch. */
+  .wish-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(4px, 1.1cqw, 10px);
+    width: 100%;
+  }
+
+  .wish-slot.is-hero .wish-reason {
+    min-height: 2.8em;
+  }
+
+  .is-placeholder {
+    visibility: hidden;
   }
 
   .wish-chip {
@@ -152,5 +176,6 @@
   .core.is-hero .objective {
     font-size: 14px;
     max-width: 30ch;
+    min-height: 2.9em;
   }
 </style>
