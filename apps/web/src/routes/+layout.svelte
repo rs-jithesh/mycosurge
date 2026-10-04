@@ -200,7 +200,7 @@
 
       {#if gameStore.cataloguedHosts.length > 0}
         <button
-          class="bestiary-btn"
+          class="bestiary-btn desktop-bestiary"
           aria-label="Open bestiary"
           title="Bestiary"
           onclick={() => uiStore.openPanel('bestiary')}
@@ -213,7 +213,9 @@
 
     <div class="top-bar-actions">
       {#if isFullGame}
-        <MiniRadar />
+        <div class="top-radar">
+          <MiniRadar />
+        </div>
       {/if}
       <span class="top-bar-status text-label-caps">● Online</span>
 
@@ -295,6 +297,19 @@
     <main class="content" class:content-full={!isFullGame}>
       {@render children()}
     </main>
+    {#if isFullGame && gameStore.cataloguedHosts.length > 0}
+      <div class="mobile-bestiary-wrap">
+        <button
+          class="bestiary-btn"
+          aria-label="Open bestiary"
+          title="Bestiary"
+          onclick={() => uiStore.openPanel('bestiary')}
+        >
+          <span class="bestiary-glyph" aria-hidden="true">◈</span>
+          <span class="bestiary-label text-label-caps">Bestiary</span>
+        </button>
+      </div>
+    {/if}
     {#if isFullGame}
       <ActivityLog collapsible />
     {/if}
@@ -374,6 +389,7 @@
     user-select: none;
     flex-shrink: 0;
     min-height: 48px;
+    position: relative;
   }
 
   .top-bar-brand {
@@ -430,6 +446,10 @@
 
   .top-bar-status {
     color: var(--primary);
+  }
+
+  .top-radar {
+    display: inline-flex;
   }
 
   /* One overflow menu on every layout; developer tools unfold from it. */
@@ -544,8 +564,35 @@
       row-gap: 6px;
     }
 
-    .bestiary-label {
+    /* The bottom bestiary bar has room for its label; only the (hidden) top one drops it. */
+    .desktop-bestiary .bestiary-label {
       display: none;
+    }
+
+    /* Bestiary moves to the bottom bar on mobile; the top-bar one is desktop-only. */
+    .desktop-bestiary {
+      display: none;
+    }
+
+    /* The online dot is decorative — drop it so the centred radar has room. */
+    .top-bar-status {
+      display: none;
+    }
+
+    /* The mini radar sits in the middle of the top bar, independent of the flex row. */
+    .top-radar {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+    }
+
+    .mobile-bestiary-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 8px var(--space-margin) calc(8px + env(safe-area-inset-bottom, 0px));
+      border-top: 1px solid var(--border);
     }
   }
 
