@@ -58,6 +58,18 @@ import {
   getEcologicalEfficiency,
   getSystemUnlocks,
   applyOfflineProgress,
+  evaluateAdvisor,
+  observePlayerChoice,
+  observePlayerAction,
+  recordHostEngaged,
+  recordCombatOutcome,
+  getAdvisorEvent,
+  catalogueHost,
+  buildCord as engineBuildCord,
+  getCordCost,
+  getDefaultCordBranch,
+  generateNetwork,
+  canBuildCord as engineCanBuildCord,
 } from '@mycosurge/game-engine';
 import type {
   GameState,
@@ -67,8 +79,10 @@ import type {
   OfflineReport,
   SystemId,
   SystemUnlocks,
+  GrowthPhase,
+  AdvisorResult,
 } from '@mycosurge/game-engine';
-import { HOSTS, SKILL_NODES, GENERATORS, REACH_START } from '@mycosurge/config';
+import { HOSTS, SKILL_NODES, GENERATORS, REACH_START, ADVISOR_TUNING } from '@mycosurge/config';
 import { SYSTEM_META } from '$lib/content/systems';
 import { logStore } from './log.svelte';
 
@@ -95,6 +109,12 @@ function loadReveals(): RevealState {
   return { announced: [], seen: [] };
 }
 
+/** Assign a stable map seed the first time the full game is reached. */
+function assignNetworkSeed(target: GameState): void {
+  if (target.networkSeed) return;
+  target.networkSeed = ((Date.now() >>> 0) ^ 0x9e3779b9) >>> 0 || 1;
+}
+
 function createGameStore() {
   let offlineReport = $state<OfflineReport | null>(null);
   let didResetSkills = $state(false);
@@ -102,6 +122,8 @@ function createGameStore() {
   let tickHandle: ReturnType<typeof setInterval> | null = null;
   let revealState = $state<RevealState>(loadReveals());
   let allSystemsUnlocked = $state(false);
+  let lastAdvisorPhase: GrowthPhase | null = null;
+  let lastAdvisorLogAt = 0;
 
   function persistReveals() {
     try {
@@ -155,6 +177,26 @@ function createGameStore() {
           contacts: parsed.contacts ?? [],
           expeditions: parsed.expeditions ?? [],
           acquiredEchoes: parsed.acquiredEchoes ?? [],
+          networkSeed: parsed.networkSeed ?? initial.networkSeed,
+          cordBranchId: parsed.cordBranchId ?? initial.cordBranchId,
+          cataloguedHosts: parsed.cataloguedHosts ?? initial.cataloguedHosts,
+          advisor: {
+            ...initial.advisor,
+            ...(parsed.advisor ?? {}),
+            memory: {
+              ...initial.advisor.memory,
+              ...(parsed.advisor?.memory ?? {}),
+              actionCounts: { ...(parsed.advisor?.memory?.actionCounts ?? {}) },
+              phaseCounts: { ...(parsed.advisor?.memory?.phaseCounts ?? {}) },
+              hostTypeCounts: { ...(parsed.advisor?.memory?.hostTypeCounts ?? {}) },
+              bias: { ...(parsed.advisor?.memory?.bias ?? {}) },
+              lastActionAt: { ...(parsed.advisor?.memory?.lastActionAt ?? {}) },
+              outcomes: {
+                victories: parsed.advisor?.memory?.outcomes?.victories ?? 0,
+                defeats: parsed.advisor?.memory?.outcomes?.defeats ?? 0,
+              },
+            },
+          },
         };
 
         // Pre-release: drop mutations that no longer fit the genome-point budget.
@@ -173,6 +215,7 @@ function createGameStore() {
             offlineReport = report;
           }
         }
+        if (merged.gamePhase === 'active') assignNetworkSeed(merged);
         return merged;
       }
     } catch {
@@ -190,6 +233,27 @@ function createGameStore() {
     }
   }
 
+  /**
+   * Forward the organism's advice to the observation log when the advised stage
+   * changes. The advisor emits a structured event; only this adapter knows about
+   * the log, so a future log pipeline only has to change here.
+   */
+  function reportAdvisor(result: AdvisorResult) {
+    const changed = result.phase !== lastAdvisorPhase;
+    lastAdvisorPhase = result.phase;
+    if (!changed || result.maturity === 'germinating') return;
+
+    const now = Date.now();
+    if (now - lastAdvisorLogAt < ADVISOR_TUNING.logMinSeconds * 1000) return;
+    lastAdvisorLogAt = now;
+    logStore.info(getAdvisorEvent(result).text);
+  }
+
+  /** Record a concrete player action so the organism can learn from real play. */
+  function observeAction(actionId: string) {
+    observePlayerAction(state, actionId, Date.now());
+  }
+
   function startTick() {
     if (tickHandle) return;
 
@@ -204,6 +268,7 @@ function createGameStore() {
     tickHandle = setInterval(() => {
       tutorialTick(state, 1);
       if (state.gamePhase === 'active') {
+        assignNetworkSeed(state);
         tickIdle(state, 1);
         tickExpeditions(state, 1);
         tickManualCooldown(state, 1);
@@ -227,6 +292,11 @@ function createGameStore() {
         logStore.info('The wounds close. The network steadies.');
       }
       wasInTrauma = state.isInTrauma;
+
+      if (state.gamePhase === 'active') {
+        const advisor = evaluateAdvisor(state);
+        reportAdvisor(advisor);
+      }
 
       saveState();
     }, TICK_INTERVAL);
@@ -254,6 +324,8 @@ function createGameStore() {
     state.currentHostId = hostId;
     state.combatStats.hp = state.combatStats.maxHp;
     logStore.info(`You close on ${host.name}. Spores fire on their own — dodge.`);
+    observeAction('hunt.engage');
+    recordHostEngaged(state, hostId);
   }
 
   function purchaseSkill(skillId: string): boolean {
@@ -301,6 +373,7 @@ function createGameStore() {
     const result = engineExpandWaterCap(state);
     if (result) {
       logStore.success(`The membrane stretches — Water capacity ${Math.floor(state.waterCap)}.`);
+      observeAction('expand.cap.water');
       saveState();
     }
     return result;
@@ -312,6 +385,7 @@ function createGameStore() {
       logStore.success(
         `The membrane stretches — Nutrients capacity ${Math.floor(state.nutrientsCap)}.`,
       );
+      observeAction('expand.cap.nutrients');
       saveState();
     }
     return result;
@@ -323,6 +397,7 @@ function createGameStore() {
       logStore.success(
         `The membrane stretches — Biomass capacity ${Math.floor(state.maxBiomass)}.`,
       );
+      observeAction('expand.cap.biomass');
       saveState();
     }
     return result;
@@ -337,6 +412,7 @@ function createGameStore() {
         biomass: 'Biomass',
       };
       logStore.success(`The membrane stretches — ${labels[resource]} (+10).`);
+      observeAction(`expand.cap.${resource}`);
       saveState();
     }
     return result;
@@ -346,6 +422,7 @@ function createGameStore() {
     const result = engineManualAbsorb(state);
     if (result) {
       logStore.info('Dew beads along the hyphae and sinks in.');
+      observeAction('gather.topUp');
       saveState();
     }
     return result;
@@ -364,6 +441,7 @@ function createGameStore() {
     } else {
       logStore.error('Too little to hold — the conversion slips away.');
     }
+    observeAction('grow.synthesize');
     saveState();
     return true;
   }
@@ -378,6 +456,7 @@ function createGameStore() {
     if (result.spawned) {
       logStore.info('A signal blooms at the frontier.');
     }
+    observeAction('expand.reach');
     saveState();
     return true;
   }
@@ -386,6 +465,7 @@ function createGameStore() {
     const result = enginePingSubstrate(state);
     if (result) {
       logStore.info('A pulse travels out — the substrate answers.');
+      observeAction('hunt.ping');
       saveState();
       return true;
     }
@@ -403,6 +483,7 @@ function createGameStore() {
     if (result) {
       const host = contact ? HOSTS.find((h) => h.id === contact.hostId) : undefined;
       logStore.info(`Something surfaces from the noise: ${host?.name ?? 'unknown host'}.`);
+      observeAction('hunt.scan');
       saveState();
       return true;
     }
@@ -415,6 +496,8 @@ function createGameStore() {
     if (result) {
       const host = HOSTS.find((h) => h.id === state.currentHostId);
       logStore.info(`You close on ${host?.name ?? 'the host'}. Spores fire on their own — dodge.`);
+      observeAction('hunt.engage');
+      if (state.currentHostId) recordHostEngaged(state, state.currentHostId);
       saveState();
     }
     return result;
@@ -430,6 +513,7 @@ function createGameStore() {
     if (result) {
       const genName = GENERATORS.find((g) => g.id === genId)?.name ?? 'Generator';
       logStore.success(`${genName} deepens.`);
+      observeAction('grow.invest');
       saveState();
     }
     return result;
@@ -460,12 +544,19 @@ function createGameStore() {
       if (result.hostDefeated) {
         logStore.success('Its pattern sinks in — a new echo joins the network.');
       }
+      const wasKnown = state.cataloguedHosts.includes(hostId);
+      catalogueHost(state, hostId);
+      if (!wasKnown) {
+        logStore.success(`${host?.name ?? hostId} catalogued — added to the bestiary.`);
+      }
+      recordCombatOutcome(state, 'victory');
       state.currentHostId = null;
       saveState();
       return result;
     }
     engineApplyDefeat(state);
     logStore.warn('The network recoils — retreat, and recover.');
+    recordCombatOutcome(state, 'defeat');
     state.currentHostId = null;
     saveState();
     return null;
@@ -590,6 +681,31 @@ function createGameStore() {
     extendReach() {
       return extendReach();
     },
+    get networkSeed() {
+      return state.networkSeed;
+    },
+    get cataloguedHosts() {
+      return state.cataloguedHosts;
+    },
+    get cordBranchId() {
+      return state.cordBranchId;
+    },
+    get cordCost() {
+      return getCordCost(state);
+    },
+    get canBuildCord() {
+      return engineCanBuildCord(state);
+    },
+    reinforceCord() {
+      const geometry = generateNetwork(state.networkSeed);
+      const branch = getDefaultCordBranch(geometry);
+      const ok = engineBuildCord(state, branch);
+      if (ok) {
+        logStore.success('The main hypha thickens — a rhizomorph cord forms.');
+        saveState();
+      }
+      return ok;
+    },
     get currentHost() {
       return state.currentHostId;
     },
@@ -607,6 +723,15 @@ function createGameStore() {
     },
     get recommendedPhase() {
       return getRecommendedPhase(state);
+    },
+    /** Full advisor result: top action, reason and every scored candidate. */
+    get advisor(): AdvisorResult {
+      return evaluateAdvisor(state);
+    },
+    /** Record a deliberate phase choice so the organism can learn the player's habits. */
+    observePhase(phase: GrowthPhase) {
+      observePlayerChoice(state, phase, Date.now());
+      saveState();
     },
     get unlockedSystems() {
       return unlockedSystems();

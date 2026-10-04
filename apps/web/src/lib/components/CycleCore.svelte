@@ -1,21 +1,28 @@
 <script lang="ts">
-  import type { GrowthPhase } from '@mycosurge/game-engine';
+  import type { GrowthPhase, AdvisorMaturity } from '@mycosurge/game-engine';
   import { phaseMeta } from '$lib/content/phases';
   import ResourceIcon from './ResourceIcon.svelte';
 
   let {
     phase,
     suggested = null,
+    reason = null,
+    maturity = null,
     variant = 'nucleus',
   }: {
     phase: GrowthPhase;
     suggested?: GrowthPhase | null;
+    /** The organism's short, in-voice reason for the suggestion. */
+    reason?: string | null;
+    /** Only shown from `aware` up; `germinating` stays a bare hint. */
+    maturity?: AdvisorMaturity | null;
     /** `nucleus` is the compact wheel centre; `hero` is the larger mobile focal point. */
     variant?: 'nucleus' | 'hero';
   } = $props();
 
   let meta = $derived(phaseMeta(phase));
   let next = $derived(suggested && suggested !== phase ? phaseMeta(suggested) : null);
+  let showReason = $derived(Boolean(next && reason && maturity && maturity !== 'germinating'));
 </script>
 
 <div class="core" class:is-hero={variant === 'hero'} data-tone={meta.tone}>
@@ -24,6 +31,9 @@
   <p class="objective">{meta.objective}</p>
   {#if next}
     <span class="wish-chip" data-tone={next.tone}>Wants to {next.label.toLowerCase()}</span>
+  {/if}
+  {#if showReason}
+    <p class="wish-reason">{reason}</p>
   {/if}
 </div>
 
@@ -108,6 +118,16 @@
   }
   .wish-chip[data-tone='mint'] {
     --tone: var(--primary);
+  }
+
+  .wish-reason {
+    margin: 0;
+    max-width: 24ch;
+    font-size: clamp(9px, 1.9cqw, 13px);
+    line-height: 1.4;
+    color: var(--on-surface-variant);
+    font-style: italic;
+    opacity: 0.85;
   }
 
   /* ── Hero: larger focal point for the mobile current-mode card ── */

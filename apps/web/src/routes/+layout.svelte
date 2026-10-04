@@ -10,6 +10,8 @@
   import ActivityLog from '$lib/components/ActivityLog.svelte';
   import EvolutionPanel from '$lib/components/panels/EvolutionPanel.svelte';
   import ExpeditionsPanel from '$lib/components/panels/ExpeditionsPanel.svelte';
+  import MapOverlay from '$lib/components/map/MapOverlay.svelte';
+  import BestiaryPanel from '$lib/components/bestiary/BestiaryPanel.svelte';
   import CombatModal from '$lib/components/CombatModal.svelte';
 
   let { children } = $props();
@@ -101,36 +103,37 @@
 
   <!-- Top Bar -->
   <header class="top-bar">
-    <span class="top-bar-brand text-headline-md">
-      <img
-        class="top-bar-logo"
-        src="{base}/assets/logo.png"
-        width="26"
-        height="26"
-        alt=""
-        aria-hidden="true"
-        draggable="false"
-      />
-      MYCOSURGE
-    </span>
+    <div class="top-bar-left">
+      <span class="top-bar-brand text-headline-md">
+        <img
+          class="top-bar-logo"
+          src="{base}/assets/logo.png"
+          width="26"
+          height="26"
+          alt=""
+          aria-hidden="true"
+          draggable="false"
+        />
+        MYCOSURGE
+      </span>
+
+      {#if gameStore.cataloguedHosts.length > 0}
+        <button
+          class="bestiary-btn"
+          aria-label="Open bestiary"
+          title="Bestiary"
+          onclick={() => uiStore.openPanel('bestiary')}
+        >
+          <span class="bestiary-glyph" aria-hidden="true">◈</span>
+          <span class="bestiary-label text-label-caps">Bestiary</span>
+        </button>
+      {/if}
+    </div>
 
     <div class="top-bar-actions">
       <span class="top-bar-status text-label-caps">● Online</span>
 
-      <div class="desktop-actions">
-        {#if devStore.enabled}
-          <button
-            class="cmd-btn secondary dev-btn"
-            title="Developer preview (mycosurge_dev)"
-            onclick={() => devStore.previewWelcomeBack()}
-          >
-            Preview welcome
-          </button>
-          <button class="cmd-btn danger reset-btn" onclick={handleReset}>Reset</button>
-        {/if}
-      </div>
-
-      <div class="mobile-actions">
+      <div class="overflow-wrap">
         <button
           class="overflow-btn"
           aria-label="More options"
@@ -148,18 +151,6 @@
             onclick={() => (menuOpen = false)}
           ></button>
           <div class="overflow-menu" role="menu">
-            {#if devStore.enabled}
-              <button
-                class="menu-item"
-                role="menuitem"
-                onclick={() => {
-                  menuOpen = false;
-                  devStore.previewWelcomeBack();
-                }}
-              >
-                Preview welcome back
-              </button>
-            {/if}
             <button
               class="menu-item"
               role="menuitem"
@@ -170,16 +161,38 @@
             >
               {devStore.enabled ? 'Disable developer tools' : 'Enable developer tools'}
             </button>
-            <button
-              class="menu-item danger-item"
-              role="menuitem"
-              onclick={() => {
-                menuOpen = false;
-                handleReset();
-              }}
-            >
-              Reset progress
-            </button>
+            {#if devStore.enabled}
+              <button
+                class="menu-item"
+                role="menuitem"
+                onclick={() => {
+                  menuOpen = false;
+                  devStore.setShowAdvisorPanel(!devStore.showAdvisorPanel);
+                }}
+              >
+                {devStore.showAdvisorPanel ? 'Hide advisor panel' : 'Show advisor panel'}
+              </button>
+              <button
+                class="menu-item"
+                role="menuitem"
+                onclick={() => {
+                  menuOpen = false;
+                  devStore.previewWelcomeBack();
+                }}
+              >
+                Preview welcome back
+              </button>
+              <button
+                class="menu-item danger-item"
+                role="menuitem"
+                onclick={() => {
+                  menuOpen = false;
+                  handleReset();
+                }}
+              >
+                Reset progress
+              </button>
+            {/if}
           </div>
         {/if}
       </div>
@@ -209,6 +222,10 @@
   <EvolutionPanel onClose={() => uiStore.closeTop()} />
 {:else if uiStore.activePanel === 'expeditions'}
   <ExpeditionsPanel onClose={() => uiStore.closeTop()} />
+{:else if uiStore.activePanel === 'map'}
+  <MapOverlay onClose={() => uiStore.closeTop()} />
+{:else if uiStore.activePanel === 'bestiary'}
+  <BestiaryPanel onClose={() => uiStore.closeTop()} />
 {/if}
 
 <!-- Combat is layered on top of the single Core view (Hunt) -->
@@ -278,6 +295,35 @@
     gap: 8px;
   }
 
+  .top-bar-left {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-gutter);
+    min-width: 0;
+  }
+
+  .bestiary-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
+    cursor: pointer;
+  }
+
+  .bestiary-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .bestiary-glyph {
+    color: var(--warning);
+    line-height: 1;
+  }
+
   .top-bar-logo {
     width: 26px;
     height: 26px;
@@ -297,24 +343,10 @@
     color: var(--primary);
   }
 
-  .reset-btn {
-    padding: 4px 12px;
-    font-size: var(--font-label-caps);
-  }
-
-  .dev-btn {
-    padding: 4px 10px;
-    font-size: var(--font-label-caps);
-  }
-
-  /* Desktop actions fold into the header row; mobile swaps to an overflow menu. */
-  .desktop-actions {
-    display: contents;
-  }
-
-  .mobile-actions {
-    display: none;
+  /* One overflow menu on every layout; developer tools unfold from it. */
+  .overflow-wrap {
     position: relative;
+    display: inline-flex;
   }
 
   .overflow-btn {
@@ -423,12 +455,8 @@
       row-gap: 6px;
     }
 
-    .desktop-actions {
+    .bestiary-label {
       display: none;
-    }
-
-    .mobile-actions {
-      display: inline-flex;
     }
   }
 

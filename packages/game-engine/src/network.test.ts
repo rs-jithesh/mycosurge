@@ -1,0 +1,158 @@
+import { describe, it, expect } from 'vitest';
+import { EXPANSION_MAP } from '@mycosurge/config';
+import { createInitialState } from './state';
+import { getReachCost } from './reach';
+import {
+  mulberry32,
+  generateNetwork,
+  generateHostPlacements,
+  getHostVisibility,
+  getFirstContact,
+  catalogueHost,
+  isCatalogued,
+  getDefaultCordBranch,
+  getCordCost,
+  canBuildCord,
+  buildCord,
+} from './network';
+
+describe('mulberry32', () => {
+  it('is deterministic and stays in [0,1)', () => {
+    const a = mulberry32(42);
+    const b = mulberry32(42);
+    for (let i = 0; i < 100; i++) {
+      const value = a();
+      expect(value).toBe(b());
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThan(1);
+    }
+  });
+});
+
+describe('generateNetwork', () => {
+  it('produces identical geometry for the same seed', () => {
+    expect(generateNetwork(1234)).toEqual(generateNetwork(1234));
+  });
+
+  it('produces different geometry for a different seed', () => {
+    const a = generateNetwork(1).segments.map((s) => `${s.x2.toFixed(3)},${s.y2.toFixed(3)}`);
+    const b = generateNetwork(2).segments.map((s) => `${s.x2.toFixed(3)},${s.y2.toFixed(3)}`);
+    expect(a).not.toEqual(b);
+  });
+
+  it('stays within the segment cap and has sane values', () => {
+    const geometry = generateNetwork(99);
+    expect(geometry.segments.length).toBeGreaterThan(0);
+    expect(geometry.segments.length).toBeLessThanOrEqual(EXPANSION_MAP.maxSegments);
+    for (const segment of geometry.segments) {
+      expect(Number.isFinite(segment.endMm)).toBe(true);
+      expect(segment.width).toBeGreaterThan(0);
+      expect(segment.depth).toBeLessThanOrEqual(EXPANSION_MAP.maxForkDepth);
+    }
+  });
+
+  it('extends past the deepest host tier so the map can grow into it', () => {
+    const geometry = generateNetwork(7);
+    const furthest = Math.max(...geometry.segments.map((s) => s.endMm));
+    expect(furthest).toBeGreaterThanOrEqual(35);
+  });
+});
+
+describe('generateHostPlacements', () => {
+  it('is deterministic for the same seed', () => {
+    expect(generateHostPlacements(555)).toEqual(generateHostPlacements(555));
+  });
+
+  it('places every non-tutorial host just past its tier gate', () => {
+    const placements = generateHostPlacements(555);
+    expect(placements.map((p) => p.hostId)).not.toContain('soil_nematode');
+    const tier1 = placements.filter((p) => p.tier === 1);
+    expect(tier1.length).toBeGreaterThan(0);
+    for (const placement of tier1) {
+      expect(placement.distanceMm).toBeGreaterThan(5);
+      expect(placement.distanceMm).toBeLessThan(
+        5 + EXPANSION_MAP.hostTierOffsetMm + EXPANSION_MAP.hostDistanceJitterMm,
+      );
+    }
+  });
+});
+
+describe('host visibility', () => {
+  const catalogued = new Set<string>();
+  const placement = {
+    id: 'host-x',
+    hostId: 'fallen_leaf',
+    tier: 1,
+    isBoss: false,
+    angle: 0,
+    distanceMm: 6,
+    x: 6,
+    y: 0,
+  };
+
+  it('resolves catalogued > encountered > sensed > hidden', () => {
+    expect(getHostVisibility(placement, 10, new Set(['fallen_leaf']))).toBe('catalogued');
+    expect(getHostVisibility(placement, 10, catalogued)).toBe('encountered');
+    expect(getHostVisibility(placement, 5, catalogued)).toBe('sensed');
+    expect(getHostVisibility(placement, 1, catalogued)).toBe('hidden');
+  });
+});
+
+describe('catalogue + first contact', () => {
+  it('catalogues a host once and ignores the tutorial host', () => {
+    const state = createInitialState();
+    catalogueHost(state, 'fallen_leaf');
+    catalogueHost(state, 'fallen_leaf');
+    catalogueHost(state, 'soil_nematode');
+    expect(state.cataloguedHosts).toEqual(['fallen_leaf']);
+    expect(isCatalogued(state, 'fallen_leaf')).toBe(true);
+    expect(isCatalogued(state, 'soil_nematode')).toBe(false);
+  });
+
+  it('offers the nearest uncatalogued host as first contact once in reach', () => {
+    const state = createInitialState();
+    state.mycelialNetwork = 5;
+    const placements = generateHostPlacements(555);
+    // At the starting 5 mm every host is still only sensed.
+    expect(getFirstContact(state, placements)).toBeNull();
+
+    // Extending past the tier-1 host distances makes the nearest one encountered.
+    state.mycelialNetwork = 9;
+    const first = getFirstContact(state, placements);
+    expect(first).not.toBeNull();
+    expect(first!.distanceMm).toBeLessThanOrEqual(9);
+
+    catalogueHost(state, first!.hostId);
+    const next = getFirstContact(state, placements);
+    expect(next?.hostId).not.toBe(first!.hostId);
+  });
+});
+
+describe('rhizomorph cord', () => {
+  it('picks the furthest branch by default', () => {
+    const geometry = generateNetwork(3);
+    const branch = getDefaultCordBranch(geometry);
+    expect(branch).toMatch(/^branch-\d+$/);
+  });
+
+  it('scales the cost off the next reach cost and upgrades once', () => {
+    const state = createInitialState();
+    state.mycelialNetwork = 5;
+    state.biomass = 1_000;
+    expect(getCordCost(state)).toBe(getReachCost(5) * EXPANSION_MAP.cordCostMult);
+    expect(canBuildCord(state)).toBe(true);
+
+    expect(buildCord(state, 'branch-0')).toBe(true);
+    expect(state.cordBranchId).toBe('branch-0');
+    expect(buildCord(state, 'branch-1')).toBe(false);
+    expect(canBuildCord(state)).toBe(false);
+  });
+
+  it('refuses when Biomass is short', () => {
+    const state = createInitialState();
+    state.mycelialNetwork = 5;
+    state.biomass = 0;
+    expect(buildCord(state, 'branch-0')).toBe(false);
+    expect(state.cordBranchId).toBeNull();
+  });
+});

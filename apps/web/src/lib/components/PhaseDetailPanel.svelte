@@ -186,6 +186,23 @@
         <PhaseAction phase="expand" />
       {/if}
 
+      <div class="map-section">
+        <button class="cmd-btn secondary map-open-btn" onclick={() => uiStore.openPanel('map')}>
+          View network map
+        </button>
+        {#if gameStore.cordBranchId}
+          <span class="cord-status text-data-mono">Rhizomorph cord: active</span>
+        {:else}
+          <button
+            class="cmd-btn secondary cord-btn"
+            disabled={!gameStore.canBuildCord}
+            onclick={() => gameStore.reinforceCord()}
+          >
+            Reinforce cord · {gameStore.cordCost}
+            {resourceLabel('biomass')}
+          </button>
+        {/if}
+      </div>
       <div class="echo-section">
         {#if isMobile}
           <button
@@ -313,6 +330,30 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+  }
+
+  /* ── Expand: map + cord ── */
+  .map-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .map-open-btn {
+    font-size: 13px;
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+
+  .cord-btn {
+    font-size: 12px;
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+
+  .cord-status {
+    font-size: 12px;
+    color: var(--primary);
   }
 
   /* ── Grow: generators ── */

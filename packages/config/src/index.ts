@@ -27,3 +27,18 @@ export {
 export type { GeneratorDef } from './generators';
 
 export * from './constants';
+
+export { EXPANSION_MAP } from './expansion-map';
+export type { ExpansionMapTuning } from './expansion-map';
+
+export { ADVISOR_ACTIONS, ADVISOR_EMERGENCY, ADVISOR_TUNING } from './advisor';
+export type {
+  AdvisorActionDef,
+  AdvisorInputId,
+  AdvisorMaturity,
+  AdvisorPhase,
+  ConsiderationDef,
+  CurveDef,
+  EmergencyDef,
+  EmergencyReasonId,
+} from './advisor';

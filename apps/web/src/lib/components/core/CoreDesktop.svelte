@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { GrowthPhase } from '@mycosurge/game-engine';
+  import type { GrowthPhase, AdvisorMaturity } from '@mycosurge/game-engine';
   import ResourcePanel from '$lib/components/ResourcePanel.svelte';
   import PhaseDetailPanel from '$lib/components/PhaseDetailPanel.svelte';
   import ActivityLog from '$lib/components/ActivityLog.svelte';
@@ -11,11 +11,15 @@
     phase,
     recommended,
     suggested,
+    reason = null,
+    maturity = null,
     onselect,
   }: {
     phase: GrowthPhase;
     recommended: GrowthPhase;
     suggested: GrowthPhase | null;
+    reason?: string | null;
+    maturity?: AdvisorMaturity | null;
     onselect: (phase: GrowthPhase) => void;
   } = $props();
 </script>
@@ -31,7 +35,7 @@
     <section class="cycle-col">
       <div class="wheel-wrap">
         {#snippet nucleus()}
-          <CycleCore {phase} {suggested} />
+          <CycleCore {phase} {suggested} {reason} {maturity} />
         {/snippet}
         <GrowthCycleWheel {phase} {recommended} {onselect} {nucleus} />
         <div class="cycle-warnings">

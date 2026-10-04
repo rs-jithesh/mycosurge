@@ -10,6 +10,10 @@ import type { OfflineReport } from '@mycosurge/game-engine';
  * value, or removing the key, turns dev features back off.
  */
 const DEV_KEY = 'mycosurge_dev';
+/** Independent visibility toggle for the advisor tuning panel. */
+const PANEL_KEY = 'mycosurge_dev_panel';
+/** Persisted panel position in viewport pixels. */
+const PANEL_POS_KEY = 'mycosurge_dev_panel_pos';
 
 function readFlag(): boolean {
   try {
@@ -17,6 +21,28 @@ function readFlag(): boolean {
   } catch {
     return false;
   }
+}
+
+function readPanelFlag(): boolean {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(PANEL_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function readPanelPos(): { x: number; y: number } | null {
+  try {
+    const raw = localStorage.getItem(PANEL_POS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { x?: unknown; y?: unknown };
+    if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+      return { x: parsed.x, y: parsed.y };
+    }
+  } catch {
+    // ignore malformed position
+  }
+  return null;
 }
 
 /** A representative report for previewing the welcome-back dialog. */
@@ -34,6 +60,8 @@ const SAMPLE_REPORT: OfflineReport = {
 
 let enabled = $state(readFlag());
 let previewReport = $state<OfflineReport | null>(null);
+let showAdvisorPanel = $state(readPanelFlag());
+let advisorPanelPos = $state<{ x: number; y: number } | null>(readPanelPos());
 
 export const devStore = {
   get enabled() {
@@ -42,6 +70,31 @@ export const devStore = {
   /** The offline report being previewed, or null. */
   get previewReport() {
     return previewReport;
+  },
+  /** Whether the movable advisor tuning panel is shown (dev tools only). */
+  get showAdvisorPanel() {
+    return showAdvisorPanel;
+  },
+  setShowAdvisorPanel(value: boolean) {
+    showAdvisorPanel = value;
+    try {
+      if (value) localStorage.setItem(PANEL_KEY, 'true');
+      else localStorage.removeItem(PANEL_KEY);
+    } catch {
+      // storage unavailable — the in-memory flag still applies for this session
+    }
+  },
+  /** Last dragged position of the advisor panel, or null for the default corner. */
+  get advisorPanelPos() {
+    return advisorPanelPos;
+  },
+  setAdvisorPanelPos(pos: { x: number; y: number }) {
+    advisorPanelPos = pos;
+    try {
+      localStorage.setItem(PANEL_POS_KEY, JSON.stringify(pos));
+    } catch {
+      // storage unavailable — position is not remembered
+    }
   },
   /** Re-read the localStorage flag (after flipping it in devtools). */
   refresh() {

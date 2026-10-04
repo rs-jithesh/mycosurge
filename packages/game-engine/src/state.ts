@@ -14,6 +14,37 @@ export interface TutorialUpgrades {
   enzymaticExudates: boolean;
 }
 
+/**
+ * What the organism has observed of the player and learned from it. All values
+ * are bounded and persist with the save; nothing here is ever advanced offline.
+ */
+export interface AdvisorMemory {
+  /** Deliberate player choices observed, lifetime. */
+  observations: number;
+  /** Count of player actions by action id. */
+  actionCounts: Record<string, number>;
+  /** Count of chosen phases by phase. */
+  phaseCounts: Record<string, number>;
+  /** Count of hosts engaged, by host id. */
+  hostTypeCounts: Record<string, number>;
+  /** Lifetime combat outcomes. */
+  outcomes: { victories: number; defeats: number };
+  /** EMA of "player chose what the organism wanted" in [0,1]. */
+  alignment: number;
+  /** Learned multiplicative bias per consideration id, clamped. */
+  bias: Record<string, number>;
+  /** Timestamp of the last observation (informational). */
+  lastObservedAt: number;
+  /** Last observation time per action id, used to rate-limit action spam. */
+  lastActionAt: Record<string, number>;
+}
+
+export interface AdvisorState {
+  memory: AdvisorMemory;
+  /** 0 = hints only; future autonomy levels gate on this. */
+  autonomyLevel: number;
+}
+
 export interface CombatStats {
   maxHp: number;
   hp: number;
@@ -86,6 +117,13 @@ export interface GameState {
   nutrientsCap: number;
   manualCooldown: number;
   mycelialNetwork: number;
+  /** Seed for the deterministic expansion-map geometry (0 = not yet assigned). */
+  networkSeed: number;
+  /** Branch id reinforced into a rhizomorph cord, or null. */
+  cordBranchId: string | null;
+  /** Host ids uncovered (first defeat); drives the bestiary and farming pool. */
+  cataloguedHosts: string[];
+  advisor: AdvisorState;
   tutorialUpgrades: TutorialUpgrades;
   tutorialShockTimer: number;
   /** Epoch ms of the last save; 0 means no save has been written yet. */
@@ -145,6 +183,23 @@ export function createInitialState(): GameState {
     nutrientsCap: MAX_NUTRIENT_BASE,
     manualCooldown: 0,
     mycelialNetwork: 0,
+    networkSeed: 0,
+    cordBranchId: null,
+    cataloguedHosts: [],
+    advisor: {
+      memory: {
+        observations: 0,
+        actionCounts: {},
+        phaseCounts: {},
+        hostTypeCounts: {},
+        outcomes: { victories: 0, defeats: 0 },
+        alignment: 0,
+        bias: {},
+        lastObservedAt: 0,
+        lastActionAt: {},
+      },
+      autonomyLevel: 0,
+    },
     tutorialUpgrades: { osmoticPump: false, enzymaticExudates: false },
     tutorialShockTimer: 0,
     lastSavedAt: 0,

@@ -6,6 +6,7 @@
   import CoreDesktop from '$lib/components/core/CoreDesktop.svelte';
   import CoreMobile from '$lib/components/core/CoreMobile.svelte';
   import WelcomeBackDialog from '$lib/components/WelcomeBackDialog.svelte';
+  import AdvisorDebugPanel from '$lib/components/dev/AdvisorDebugPanel.svelte';
   import { devStore } from '$lib/stores/dev.svelte';
   import { viewport } from '$lib/stores/viewport.svelte';
   import type { GrowthPhase } from '@mycosurge/game-engine';
@@ -19,9 +20,13 @@
   let recommended = $derived(gameStore.recommendedPhase);
   let phase = $state<GrowthPhase>(gameStore.recommendedPhase);
   let suggested = $derived(recommended === phase ? null : recommended);
+  let advisor = $derived(gameStore.advisor);
 
   function selectPhase(next: GrowthPhase) {
+    if (next === phase) return;
     phase = next;
+    // Tell the organism what the player actually chose, so it can learn habits.
+    gameStore.observePhase(next);
   }
 
   const UNLOCK_SEEN_KEY = 'mycosurge_unlock_seen';
@@ -77,10 +82,28 @@
 
 {#if isFullGame}
   {#if viewport.isDesktop}
-    <CoreDesktop {phase} {recommended} {suggested} onselect={selectPhase} />
+    <CoreDesktop
+      {phase}
+      {recommended}
+      {suggested}
+      reason={advisor.explanation}
+      maturity={advisor.maturity}
+      onselect={selectPhase}
+    />
   {:else}
-    <CoreMobile {phase} {recommended} {suggested} onselect={selectPhase} />
+    <CoreMobile
+      {phase}
+      {recommended}
+      {suggested}
+      reason={advisor.explanation}
+      maturity={advisor.maturity}
+      onselect={selectPhase}
+    />
   {/if}
+{/if}
+
+{#if devStore.enabled && devStore.showAdvisorPanel}
+  <AdvisorDebugPanel />
 {/if}
 
 {#if showUnlock}

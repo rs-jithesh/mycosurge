@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { GrowthPhase } from '@mycosurge/game-engine';
+  import type { GrowthPhase, AdvisorMaturity } from '@mycosurge/game-engine';
   import { gameStore } from '$lib/stores/game.svelte';
   import ResourcePanel from '$lib/components/ResourcePanel.svelte';
   import LysatePanel from '$lib/components/LysatePanel.svelte';
@@ -13,11 +13,15 @@
     phase,
     recommended,
     suggested,
+    reason = null,
+    maturity = null,
     onselect,
   }: {
     phase: GrowthPhase;
     recommended: GrowthPhase;
     suggested: GrowthPhase | null;
+    reason?: string | null;
+    maturity?: AdvisorMaturity | null;
     onselect: (phase: GrowthPhase) => void;
   } = $props();
 
@@ -27,7 +31,7 @@
 </script>
 
 <div class="core-mobile">
-  <ModeHero {phase} {suggested}>
+  <ModeHero {phase} {suggested} {reason} {maturity}>
     <PhaseAction {phase} variant="hero" />
   </ModeHero>
 

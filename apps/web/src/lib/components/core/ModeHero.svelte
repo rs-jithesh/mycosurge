@@ -1,16 +1,20 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import type { GrowthPhase } from '@mycosurge/game-engine';
+  import type { GrowthPhase, AdvisorMaturity } from '@mycosurge/game-engine';
   import { phaseMeta } from '$lib/content/phases';
   import CycleCore from '$lib/components/CycleCore.svelte';
 
   let {
     phase,
     suggested = null,
+    reason = null,
+    maturity = null,
     children,
   }: {
     phase: GrowthPhase;
     suggested?: GrowthPhase | null;
+    reason?: string | null;
+    maturity?: AdvisorMaturity | null;
     children?: Snippet;
   } = $props();
 
@@ -18,7 +22,7 @@
 </script>
 
 <div class="mode-hero" data-tone={meta.tone}>
-  <CycleCore {phase} {suggested} variant="hero" />
+  <CycleCore {phase} {suggested} {reason} {maturity} variant="hero" />
   {#if children}
     <div class="hero-action">{@render children()}</div>
   {/if}

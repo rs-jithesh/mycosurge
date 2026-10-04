@@ -6,6 +6,8 @@ export type {
   RadarContact,
   GamePhase,
   TutorialUpgrades,
+  AdvisorMemory,
+  AdvisorState,
 } from './state';
 export {
   getRecommendedPhase,
@@ -14,6 +16,19 @@ export {
   GROWTH_PHASES,
 } from './phase';
 export type { GrowthPhase } from './phase';
+export {
+  evaluateAdvisor,
+  observePlayerChoice,
+  observePlayerAction,
+  recordHostEngaged,
+  recordCombatOutcome,
+  getAdvisorMaturity,
+  getAdvisorEvent,
+  applyCurve,
+  considerationsForPhase,
+} from './advisor';
+export type { AdvisorResult, AdvisorCandidate, AdvisorContribution, AdvisorEvent } from './advisor';
+export type { AdvisorMaturity, AdvisorPhase } from '@mycosurge/config';
 export { getSystemUnlocks } from './systems';
 export type { SystemId, SystemUnlocks } from './systems';
 export {
@@ -97,6 +112,20 @@ export {
 } from './radar';
 export { getReachCost, getReachBand, getNextReachTier, canExtendReach, extendReach } from './reach';
 export type { ReachResult } from './reach';
+export {
+  generateNetwork,
+  generateHostPlacements,
+  getHostVisibility,
+  getFirstContact,
+  catalogueHost,
+  isCatalogued,
+  getDefaultCordBranch,
+  getCordCost,
+  canBuildCord,
+  buildCord,
+  mulberry32,
+} from './network';
+export type { NetworkSegment, NetworkGeometry, HostPlacement, HostVisibility } from './network';
 export {
   applyVictory,
   applyDefeat,
