@@ -33,6 +33,9 @@
   let hostPct = $derived(hostMaxHp > 0 ? Math.max(0, (hostHp / hostMaxHp) * 100) : 0);
   let hpPct = $derived(maxHp > 0 ? Math.max(0, (hp / maxHp) * 100) : 0);
   let dialogEl = $state<HTMLDivElement>();
+  let coarsePointer = $state(
+    typeof window !== 'undefined' && (window.matchMedia?.('(pointer: coarse)').matches ?? false),
+  );
 
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') handleRetreat();
@@ -262,7 +265,14 @@
             {/if}
             <h2 class="objective-title">Drive off {host?.name ?? hostId}</h2>
           </div>
-          <p class="objective-sub">Spores fire automatically — focus on dodging.</p>
+          <p class="objective-sub">
+            {#if coarsePointer}
+              Drag anywhere on the arena to steer.
+            {:else}
+              Move with WASD or the arrow keys.
+            {/if}
+            Spores fire on their own — focus on dodging.
+          </p>
           {#if strain.id !== 'normal'}
             <p class="strain-line text-label-caps">Strain: {strain.name} — {strain.description}</p>
           {/if}
@@ -275,7 +285,34 @@
             <div class="track"><span class="fill-coral" style="width: {hostPct}%"></span></div>
             <span>{Math.round(hostPct)}%</span>
           </div>
-          <div class="control-hint">DRAG TO MOVE · SPORES AUTO-FIRE</div>
+          <div class="control-hint" data-input={coarsePointer ? 'touch' : 'keys'}>
+            {#if coarsePointer}
+              <svg
+                class="hint-icon"
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="9" cy="15" r="3.2" />
+                <path d="M11.4 12.6 L18 6" />
+                <path d="M14 6 L18 6 L18 10" />
+              </svg>
+              <span>Drag to move · spores fire on their own</span>
+            {:else}
+              <span class="keycaps" aria-hidden="true">
+                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+                <span class="hint-or">or</span>
+                <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
+              </span>
+              <span>Move · spores fire on their own</span>
+            {/if}
+          </div>
         </div>
 
         <div class="hpbar mine">
@@ -496,16 +533,58 @@
 
   .control-hint {
     position: absolute;
-    bottom: 14px;
+    bottom: 12px;
     left: 50%;
     transform: translateX(-50%);
-    white-space: nowrap;
-    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: calc(100% - 16px);
+    font-size: 12px;
     color: var(--on-surface);
-    background: var(--overlay);
+    background: color-mix(in srgb, var(--surface-container-highest) 92%, transparent);
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);
     padding: 6px 12px;
+    text-align: center;
+    white-space: normal;
+    pointer-events: none;
+  }
+
+  .control-hint .hint-icon {
+    flex: none;
+    color: var(--primary);
+  }
+
+  .keycaps {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex: none;
+  }
+
+  .keycaps kbd {
+    display: inline-grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border: 1px solid var(--outline-variant);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    background: var(--surface-container);
+    color: var(--on-surface);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  .hint-or {
+    margin: 0 2px;
+    color: var(--on-surface-variant);
+    font-size: 10px;
   }
 
   .combat-footer {
