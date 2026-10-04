@@ -955,4 +955,32 @@
       animation: none;
     }
   }
+  @media (max-width: 767px) {
+    /* Two rows: Back + title, then the tools; the status line truncates instead of
+       wrapping one token per line. */
+    .map-bar {
+      flex-wrap: wrap;
+      row-gap: 8px;
+    }
+
+    .map-title {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .map-sub {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .map-tools {
+      flex: 1 1 100%;
+      justify-content: flex-start;
+    }
+
+    .extend-btn {
+      flex: 1;
+    }
+  }
 </style>
