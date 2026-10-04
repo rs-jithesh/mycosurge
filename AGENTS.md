@@ -23,6 +23,11 @@ Focused checks from a package directory:
 - `cd packages/game-engine && npx vitest run` — game-logic tests
 - `cd apps/web && npx svelte-check --tsconfig ./tsconfig.json` — Svelte diagnostics
 
+## Branching
+
+Default working branch is **`develop`** (tracking `origin/develop`); `main` is the release
+line. Branch off `develop` and push/PR back into it.
+
 ## Monorepo Structure
 
 ```

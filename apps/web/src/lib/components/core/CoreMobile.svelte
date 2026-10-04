@@ -1,8 +1,6 @@
 <script lang="ts">
   import type { GrowthPhase, AdvisorMaturity } from '@mycosurge/game-engine';
   import { gameStore } from '$lib/stores/game.svelte';
-  import ResourcePanel from '$lib/components/ResourcePanel.svelte';
-  import LysatePanel from '$lib/components/LysatePanel.svelte';
   import PhaseDetailPanel from '$lib/components/PhaseDetailPanel.svelte';
   import StatusWarnings from './StatusWarnings.svelte';
   import ModeHero from './ModeHero.svelte';
@@ -38,10 +36,6 @@
   <StatusWarnings />
 
   <ModeSelector {phase} {recommended} {onselect} />
-
-  <ResourcePanel variant="compact" showLysate={false} />
-
-  <LysatePanel />
 
   {#if showSecondary}
     <PhaseDetailPanel {phase} variant="mobile" />

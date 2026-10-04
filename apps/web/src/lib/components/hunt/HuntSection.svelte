@@ -168,20 +168,30 @@
   {:else}
     {#if contacts.length === 0}
       <div class="empty-hunt">
+        <div class="idle-radar" aria-hidden="true">
+          <span class="ring"></span>
+          <span class="ring inner"></span>
+          <span class="radar-sweep"></span>
+          <span class="blip"></span>
+        </div>
         {#if noKnownSpecies}
           <p class="empty-title">No species catalogued yet</p>
           <p class="empty-sub">
-            Grow the network and meet a host at the frontier — drive it off and it joins the radar.
+            Hosts graze past the frontier. Grow the network, meet one at the edge and drive it off —
+            it will appear here to track.
           </p>
           <button class="cmd-btn secondary map-link" onclick={() => uiStore.openPanel('map')}>
             Open network map
           </button>
         {:else}
-          <p class="empty-title">No signals right now</p>
-          <p class="empty-sub">Wait for one to drift in, or ping the substrate.</p>
+          <p class="empty-title">Listening to the substrate</p>
+          <p class="empty-sub">
+            A host signal will drift in here — scan it to reveal the species, then engage to drive
+            it off for Lysate.
+          </p>
           {#if contacts.length < gameStore.radarSlots}
             <span class="text-data-mono sweep"
-              >Next sweep ~{Math.max(1, Math.ceil(gs.sonarTimer))}s</span
+              >Next signal ~{Math.max(1, Math.ceil(gs.sonarTimer))}s</span
             >
           {/if}
         {/if}
@@ -492,9 +502,84 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     text-align: center;
-    padding: 8px 0;
+    padding: 10px 0 4px;
+  }
+
+  /* Idle radar placeholder so the quiet Hunt panel reads as "waiting", not empty. */
+  .idle-radar {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    margin-bottom: 4px;
+  }
+
+  .idle-radar .ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid var(--outline-variant);
+    opacity: 0.5;
+  }
+
+  .idle-radar .ring.inner {
+    inset: 26%;
+  }
+
+  .idle-radar .radar-sweep {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      color-mix(in srgb, var(--primary) 32%, transparent),
+      transparent 28%
+    );
+    animation: radar-sweep 3.2s linear infinite;
+  }
+
+  .idle-radar .blip {
+    position: absolute;
+    top: 26%;
+    left: 64%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 8px var(--primary);
+    opacity: 0;
+    animation: radar-blip 3.2s ease-out infinite;
+  }
+
+  @keyframes radar-sweep {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes radar-blip {
+    0%,
+    72% {
+      opacity: 0;
+    }
+    82% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .idle-radar .radar-sweep,
+    .idle-radar .blip {
+      animation: none;
+    }
+
+    .idle-radar .blip {
+      opacity: 0.85;
+    }
   }
 
   .empty-title {
@@ -505,7 +590,9 @@
 
   .empty-sub {
     margin: 0;
+    max-width: 34ch;
     font-size: 12px;
+    line-height: 1.5;
     color: var(--on-surface-variant);
   }
 

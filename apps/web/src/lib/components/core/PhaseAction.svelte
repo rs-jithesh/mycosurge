@@ -103,7 +103,6 @@
         ? `${evenCost} ${resourceLabel('biomass')} → all directions`
         : `Need ${evenCost} ${resourceLabel('biomass')}`}
     </span>
-    <span class="action-sub">Open the map to grow a single direction</span>
   </button>
 {/if}
 
@@ -122,11 +121,18 @@
     font-size: 11px;
     font-weight: 500;
     opacity: 0.85;
+    /* Pin to two lines so a long label never changes the button height. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .action-btn.hero {
     padding: 14px;
-    min-height: 52px;
+    min-height: 84px;
+    justify-content: center;
     font-size: 15px;
   }
 </style>

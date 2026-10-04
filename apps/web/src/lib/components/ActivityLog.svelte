@@ -7,7 +7,57 @@
 
   let expanded = $state(false);
   let container = $state<HTMLDivElement>();
+  let panel = $state<HTMLDivElement>();
   let autoScroll = $state(true);
+
+  // Resizable when expanded (mobile): drag the top handle, capped at half the viewport.
+  let openHeight = $state(240);
+  let resizing = false;
+  let resizeStartY = 0;
+  let resizeStartH = 0;
+  const MIN_HEIGHT = 96;
+  const MAX_FRACTION = 0.5;
+
+  function maxHeight(): number {
+    return typeof window !== 'undefined' ? Math.round(window.innerHeight * MAX_FRACTION) : 400;
+  }
+
+  function clampHeight(h: number): number {
+    return Math.min(maxHeight(), Math.max(MIN_HEIGHT, h));
+  }
+
+  function startResize(event: PointerEvent) {
+    resizing = true;
+    resizeStartY = event.clientY;
+    resizeStartH = panel?.clientHeight ?? openHeight;
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  }
+
+  function moveResize(event: PointerEvent) {
+    if (!resizing) return;
+    // Dragging up grows the panel (it is anchored to the bottom of the screen).
+    openHeight = clampHeight(resizeStartH + (resizeStartY - event.clientY));
+  }
+
+  function endResize(event: PointerEvent) {
+    if (!resizing) return;
+    resizing = false;
+    (event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId);
+  }
+
+  function resizeKey(event: KeyboardEvent) {
+    const step = 24;
+    if (event.key === 'ArrowUp') openHeight = clampHeight(openHeight + step);
+    else if (event.key === 'ArrowDown') openHeight = clampHeight(openHeight - step);
+    else return;
+    event.preventDefault();
+  }
+
+  // Re-clamp the height whenever it opens (or the viewport changes).
+  $effect(() => {
+    if (expanded) openHeight = clampHeight(openHeight);
+  });
 
   function handleScroll() {
     if (!container) return;
@@ -37,7 +87,28 @@
   }
 </script>
 
-<div class="log-panel" class:embedded class:collapsible class:open={expanded}>
+<div
+  class="log-panel"
+  class:embedded
+  class:collapsible
+  class:open={expanded}
+  bind:this={panel}
+  style={collapsible && expanded ? `height: ${openHeight}px` : ''}
+>
+  {#if collapsible && expanded}
+    <button
+      type="button"
+      class="log-resize"
+      aria-label="Resize activity log"
+      onpointerdown={startResize}
+      onpointermove={moveResize}
+      onpointerup={endResize}
+      onpointercancel={endResize}
+      onkeydown={resizeKey}
+    >
+      <span class="log-grip" aria-hidden="true"></span>
+    </button>
+  {/if}
   {#if collapsible}
     <button
       class="log-header log-toggle text-label-caps"
@@ -132,7 +203,43 @@
   }
 
   .log-panel.collapsible.open {
-    max-height: 45vh;
+    max-height: 50vh;
+  }
+
+  /* Drag handle: sits at the top edge, drag up to grow the log. */
+  .log-resize {
+    flex-shrink: 0;
+    width: 100%;
+    height: 16px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    cursor: ns-resize;
+    touch-action: none;
+    background: var(--surface-container-low);
+  }
+
+  .log-grip {
+    width: 44px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--outline-variant);
+    transition: background var(--duration-fast) var(--ease-out-soft);
+  }
+
+  .log-resize:hover .log-grip {
+    background: var(--primary);
+  }
+
+  .log-resize:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+  }
+
+  .log-resize:focus-visible .log-grip {
+    background: var(--primary);
   }
 
   .log-toggle {

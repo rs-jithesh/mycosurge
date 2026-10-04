@@ -29,6 +29,9 @@
 
   let activeGenerators = $derived(GENERATORS.filter((g) => (gs.generators[g.id] ?? 0) > 0).length);
 
+  /** Cost of one focused step, shown on the button that opens the map. */
+  let focusedCost = $derived(gameStore.reachCost);
+
   let capRows = $derived([
     {
       resource: 'water' as const,
@@ -182,6 +185,14 @@
         <PhaseAction phase="expand" />
       {/if}
 
+      <div class="focused-grow">
+        <button class="cmd-btn secondary focused-btn" onclick={() => uiStore.openPanel('map')}>
+          Grow focused · {focusedCost}
+          {resourceLabel('biomass')}
+        </button>
+        <p class="hint">Open the map, then tap a wedge to grow in that direction.</p>
+      </div>
+
       <div class="map-section">
         {#if gameStore.cordBranchId}
           <span class="cord-status text-data-mono">Rhizomorph cord: active</span>
@@ -300,6 +311,18 @@
   }
 
   .cord-btn {
+    font-size: 12px;
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+
+  .focused-grow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .focused-btn {
     font-size: 12px;
     padding: 8px 12px;
     min-height: 40px;
@@ -511,6 +534,12 @@
   }
 
   /* ── Mobile: the mode hero owns the header and primary action ── */
+  .detail-panel.is-mobile {
+    /* Keep a floor on the phase panel so switching to a short phase doesn't collapse
+       the page (and yank the scroll position) after a tall one like Grow. */
+    min-height: 200px;
+  }
+
   .detail-panel.is-mobile .panel-body {
     padding: 12px;
     gap: 12px;

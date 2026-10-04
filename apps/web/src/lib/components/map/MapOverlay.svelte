@@ -29,6 +29,8 @@
 
   /** Screen-space radius of the drawn colony core; hover/taps inside it are ignored. */
   const CORE_HIT_PX = 13;
+  const MIN_ZOOM = 0.2;
+  const MAX_ZOOM = 6;
 
   // The viewport is measured in CSS pixels (1 viewBox unit == 1px), so panning is
   // direct. The map always shows the network's current scale band, in band-local mm.
@@ -70,6 +72,8 @@
 
   /** Per-wedge depth clamped to the current band, in local mm. */
   let localDepths = $derived(depths.map((d) => Math.max(0, Math.min(bandWidth, d - stage.minMm))));
+  /** The network's drawn radius — the deepest wedge, in local mm. */
+  let localReach = $derived(Math.max(0, Math.min(bandWidth, reach - stage.minMm)));
 
   // Desktop hover (fine pointer) and mobile select-then-grow both preview a wedge.
   let finePointer = $state(
@@ -78,18 +82,6 @@
   let hoverSector = $state<number | null>(null);
   let selectedSector = $state<number | null>(null);
   let activeSector = $derived(hoverSector ?? selectedSector);
-  let tipPos = $derived.by(() => {
-    const s = activeSector;
-    if (s === null) return null;
-    const a = sectorCentreAngle(s);
-    const r = Math.max(0, drawnDepths[s] ?? 0) + growStepMm + bandWidth * 0.02;
-    const x = cx + panX + Math.cos(a) * r * k;
-    const y = cy + panY + Math.sin(a) * r * k;
-    return {
-      x: Math.min(Math.max(x, 74), Math.max(74, viewW - 74)),
-      y: Math.min(Math.max(y, 28), Math.max(28, viewH - 28)),
-    };
-  });
   let cordBranch = $derived(
     gameStore.cordBranchId ? Number(gameStore.cordBranchId.split('-')[1]) : -1,
   );
@@ -270,7 +262,7 @@
       if (Math.hypot(event.clientX - tapStartX, event.clientY - tapStartY) > 8) tapMoved = true;
     } else if (pointers.size >= 2 && pinchDist > 0) {
       // Damped so a pinch feels less twitchy than raw distance ratio.
-      zoom = clamp(pinchZoom * Math.pow(pointerDistance() / pinchDist, 0.55), 0.2, 3.5);
+      zoom = clamp(pinchZoom * Math.pow(pointerDistance() / pinchDist, 0.55), MIN_ZOOM, MAX_ZOOM);
     }
   }
 
@@ -322,12 +314,16 @@
 
   function onWheel(event: WheelEvent) {
     event.preventDefault();
-    zoom = clamp(zoom * (event.deltaY < 0 ? 1.05 : 0.952), 0.2, 3.5);
+    zoom = clamp(zoom * (event.deltaY < 0 ? 1.05 : 0.952), MIN_ZOOM, MAX_ZOOM);
   }
 
   function fit() {
-    // The base scale already fits one full stage band; Fit just recentres.
-    zoom = 1;
+    // Fit the network the player actually has, not the whole band: show the deepest
+    // wedge plus a little breathing room so opening the map starts zoomed in.
+    const margin = Math.max(growStepMm * 2, bandWidth * 0.1);
+    const networkR = Math.max(localReach, bandWidth * 0.15);
+    const viewMm = Math.max(networkR + margin, bandWidth * 0.2);
+    zoom = clamp(bandWidth / viewMm, MIN_ZOOM, MAX_ZOOM);
     panX = 0;
     panY = 0;
   }
@@ -378,8 +374,13 @@
 
 <div class="map-overlay" role="dialog" aria-modal="true" aria-label="Network map">
   <header class="map-bar">
-    <button class="cmd-btn secondary bar-btn" onclick={onClose} aria-label="Back to Core">
-      ← Back
+    <button
+      class="cmd-btn secondary map-back"
+      onclick={onClose}
+      aria-label="Back to Core"
+      title="Back"
+    >
+      <span aria-hidden="true">←</span>
     </button>
     <div class="map-title">
       <span class="text-label-caps">Network</span>
@@ -411,15 +412,38 @@
       <button
         class="cmd-btn secondary zoom-btn"
         aria-label="Zoom in"
-        onclick={() => (zoom = clamp(zoom * 1.15, 0.2, 3.5))}>+</button
+        onclick={() => (zoom = clamp(zoom * 1.15, MIN_ZOOM, MAX_ZOOM))}>+</button
       >
       <button
         class="cmd-btn secondary zoom-btn"
         aria-label="Zoom out"
-        onclick={() => (zoom = clamp(zoom / 1.15, 0.2, 3.5))}>−</button
+        onclick={() => (zoom = clamp(zoom / 1.15, MIN_ZOOM, MAX_ZOOM))}>−</button
       >
     </div>
   </header>
+
+  <div class="map-info">
+    {#if activeSector !== null}
+      <span class="info-dir">
+        {SECTOR_LABELS[activeSector]} · {formatReach(stage.minMm + (drawnDepths[activeSector] ?? 0))
+          .label}
+      </span>
+      <span class="info-cost">{gameStore.reachCost} {resourceLabel('biomass')}</span>
+      <span class="info-hint">
+        {gs.biomass >= gameStore.reachCost
+          ? finePointer
+            ? 'Click to grow here'
+            : 'Tap again to grow here'
+          : 'Not enough Biomass'}
+      </span>
+    {:else}
+      <span class="info-hint">
+        {finePointer
+          ? 'Hover a wedge for its cost · click to grow · tap signals to engage'
+          : 'Tap a wedge to preview, tap again to grow · tap signals to engage'}
+      </span>
+    {/if}
+  </div>
 
   <div class="map-stage">
     <svg
@@ -689,30 +713,6 @@
         <span class="stage-ceremony-name">{ceremonyLabel}</span>
       </div>
     {/if}
-
-    <p class="map-legend text-label-caps">
-      {finePointer
-        ? 'Hover a wedge for its cost · click to grow · tap signals to engage'
-        : 'Tap a wedge to preview, tap again to grow · tap signals to engage'}
-    </p>
-
-    {#if activeSector !== null && tipPos}
-      <div class="sector-tip" style="left: {tipPos.x}px; top: {tipPos.y}px;">
-        <span class="tip-dir">
-          {SECTOR_LABELS[activeSector]} · {formatReach(
-            stage.minMm + (drawnDepths[activeSector] ?? 0),
-          ).label}
-        </span>
-        <span class="tip-cost">{gameStore.reachCost} {resourceLabel('biomass')}</span>
-        <span class="tip-sub">
-          {gs.biomass >= gameStore.reachCost
-            ? finePointer
-              ? 'Click to grow here'
-              : 'Tap again to grow here'
-            : 'Not enough Biomass'}
-        </span>
-      </div>
-    {/if}
   </div>
 </div>
 
@@ -767,6 +767,19 @@
     min-width: 34px;
   }
 
+  /* Compact icon back button — matches the zoom controls instead of a wide pill. */
+  .map-back {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    font-size: 17px;
+    line-height: 1;
+  }
+
   .extend-btn {
     padding: 5px 12px;
     font-size: 12px;
@@ -814,16 +827,33 @@
     }
   }
 
-  .map-legend {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 10px;
-    margin: 0;
-    text-align: center;
+  .map-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    flex-shrink: 0;
+    min-height: 30px;
+    padding: 5px var(--space-margin);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-container-lowest);
+    font-size: 12px;
     color: var(--on-surface-variant);
-    font-size: 10px;
-    pointer-events: none;
+  }
+
+  .info-dir {
+    font-family: var(--font-mono);
+    color: var(--on-surface);
+  }
+
+  .info-cost {
+    font-family: var(--font-mono);
+    color: var(--primary);
+  }
+
+  .info-hint {
+    color: var(--on-surface-variant);
   }
 
   .stage-ceremony {
@@ -872,39 +902,6 @@
     }
   }
 
-  .sector-tip {
-    position: absolute;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    padding: 6px 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: color-mix(in srgb, var(--surface-container-highest) 94%, transparent);
-    box-shadow: var(--shadow-sm);
-    white-space: nowrap;
-    pointer-events: none;
-    transform: translate(-50%, 8px);
-  }
-
-  .tip-dir {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--on-surface);
-  }
-
-  .tip-cost {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--primary);
-  }
-
-  .tip-sub {
-    font-size: 10px;
-    color: var(--on-surface-variant);
-  }
-
   /* The UA focus box on an SVG marker renders as a big rectangle around its
      bounding box (which includes the label). Suppress it and draw a tidy ring. */
   .host:focus,
@@ -945,6 +942,34 @@
 
     .contact .pulse {
       animation: none;
+    }
+  }
+  @media (max-width: 767px) {
+    /* Two rows: Back + title, then the tools; the status line truncates instead of
+       wrapping one token per line. */
+    .map-bar {
+      flex-wrap: wrap;
+      row-gap: 8px;
+    }
+
+    .map-title {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .map-sub {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .map-tools {
+      flex: 1 1 100%;
+      justify-content: flex-start;
+    }
+
+    .extend-btn {
+      flex: 1;
     }
   }
 </style>

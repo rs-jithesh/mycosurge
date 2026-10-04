@@ -12,6 +12,8 @@
   import ExpeditionsPanel from '$lib/components/panels/ExpeditionsPanel.svelte';
   import MapOverlay from '$lib/components/map/MapOverlay.svelte';
   import MiniRadar from '$lib/components/map/MiniRadar.svelte';
+  import ResourceStrip from '$lib/components/ResourceStrip.svelte';
+  import ResourcesPanel from '$lib/components/panels/ResourcesPanel.svelte';
   import BestiaryPanel from '$lib/components/bestiary/BestiaryPanel.svelte';
   import CombatModal from '$lib/components/CombatModal.svelte';
   import SystemsUnlocked from '$lib/components/SystemsUnlocked.svelte';
@@ -200,7 +202,7 @@
 
       {#if gameStore.cataloguedHosts.length > 0}
         <button
-          class="bestiary-btn"
+          class="bestiary-btn desktop-bestiary"
           aria-label="Open bestiary"
           title="Bestiary"
           onclick={() => uiStore.openPanel('bestiary')}
@@ -213,7 +215,9 @@
 
     <div class="top-bar-actions">
       {#if isFullGame}
-        <MiniRadar />
+        <div class="top-radar">
+          <MiniRadar />
+        </div>
       {/if}
       <span class="top-bar-status text-label-caps">● Online</span>
 
@@ -292,9 +296,36 @@
 
   <!-- Mobile Layout (hidden on desktop) -->
   <div class="mobile-layout">
+    {#if isFullGame}
+      <ResourceStrip />
+    {/if}
     <main class="content" class:content-full={!isFullGame}>
       {@render children()}
     </main>
+    {#if isFullGame}
+      <div class="mobile-action-bar">
+        <button
+          class="bestiary-btn"
+          aria-label="Open resources"
+          title="Resources"
+          onclick={() => uiStore.openPanel('resources')}
+        >
+          <span class="bestiary-glyph resources-glyph" aria-hidden="true">◫</span>
+          <span class="bestiary-label text-label-caps">Resources</span>
+        </button>
+        {#if gameStore.cataloguedHosts.length > 0}
+          <button
+            class="bestiary-btn"
+            aria-label="Open bestiary"
+            title="Bestiary"
+            onclick={() => uiStore.openPanel('bestiary')}
+          >
+            <span class="bestiary-glyph" aria-hidden="true">◈</span>
+            <span class="bestiary-label text-label-caps">Bestiary</span>
+          </button>
+        {/if}
+      </div>
+    {/if}
     {#if isFullGame}
       <ActivityLog collapsible />
     {/if}
@@ -315,6 +346,8 @@
   <MapOverlay onClose={() => uiStore.closeTop()} />
 {:else if uiStore.activePanel === 'bestiary'}
   <BestiaryPanel onClose={() => uiStore.closeTop()} />
+{:else if uiStore.activePanel === 'resources'}
+  <ResourcesPanel onClose={() => uiStore.closeTop()} />
 {/if}
 
 <!-- Combat is layered on top of the single Core view (Hunt) -->
@@ -374,6 +407,7 @@
     user-select: none;
     flex-shrink: 0;
     min-height: 48px;
+    position: relative;
   }
 
   .top-bar-brand {
@@ -413,6 +447,10 @@
     line-height: 1;
   }
 
+  .resources-glyph {
+    color: var(--primary);
+  }
+
   .top-bar-logo {
     width: 26px;
     height: 26px;
@@ -430,6 +468,10 @@
 
   .top-bar-status {
     color: var(--primary);
+  }
+
+  .top-radar {
+    display: inline-flex;
   }
 
   /* One overflow menu on every layout; developer tools unfold from it. */
@@ -544,8 +586,27 @@
       row-gap: 6px;
     }
 
-    .bestiary-label {
+    /* The bottom bestiary bar has room for its label; only the (hidden) top one drops it. */
+    .desktop-bestiary .bestiary-label {
       display: none;
+    }
+
+    /* Bestiary moves to the bottom bar on mobile; the top-bar one is desktop-only. */
+    .desktop-bestiary {
+      display: none;
+    }
+
+    /* Drop the decorative online dot on mobile — it adds no info and clutters the bar. */
+    .top-bar-status {
+      display: none;
+    }
+
+    .mobile-action-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 8px var(--space-margin) calc(8px + env(safe-area-inset-bottom, 0px));
+      border-top: 1px solid var(--border);
     }
   }
 
