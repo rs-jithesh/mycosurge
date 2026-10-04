@@ -103,7 +103,7 @@
       <div class="res-row" data-tone={m.tone} class:is-critical={m.critical}>
         <div class="res-top">
           <span class="res-name"
-            ><ResourceSymbol id={m.resource} />
+            ><ResourceSymbol id={m.resource} info />
             {#if m.full}<span class="full-tag text-label-caps">Full</span>{/if}</span
           >
           <span class="text-data-mono res-val">
@@ -140,7 +140,7 @@
 
     <div class="res-row reach-row" data-tone="mint">
       <div class="res-top">
-        <span class="res-name"><ResourceSymbol id="reach" /></span>
+        <span class="res-name"><ResourceSymbol id="reach" info /></span>
         <span class="text-data-mono res-val">
           <b>{reach}</b>
           <span class="cap">/ {reachMax} mm</span>

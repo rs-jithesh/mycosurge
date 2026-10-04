@@ -19,7 +19,12 @@
     disabled?: boolean;
   } = $props();
 
+  // Devices with a real pointer get hover; touch devices get tap-to-toggle.
+  const hasHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches;
+
   let open = $state(false);
+  let pinned = $state(false);
+  let resolved = $state<'top' | 'bottom'>('top');
   let anchor = $state<HTMLElement>();
   let left = $state(0);
   let top = $state(0);
@@ -28,27 +33,60 @@
   function place() {
     if (!anchor) return;
     const rect = anchor.getBoundingClientRect();
-    const margin = 132;
+    const margin = 132; // half the max tip width, keeps it on-screen
+    const gap = 10;
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+
+    // Flip when the preferred side has no room but the other side does.
+    let side = placement;
+    if (placement === 'top' && spaceAbove < 150 && spaceBelow > spaceAbove) side = 'bottom';
+    else if (placement === 'bottom' && spaceBelow < 150 && spaceAbove > spaceBelow) side = 'top';
+    resolved = side;
+
     left = Math.min(Math.max(rect.left + rect.width / 2, margin), window.innerWidth - margin);
-    top = placement === 'top' ? rect.top - 10 : rect.bottom + 10;
+    top =
+      side === 'top'
+        ? Math.max(rect.top - gap, 8)
+        : Math.min(rect.bottom + gap, window.innerHeight - 8);
   }
 
-  function show() {
+  function openNow() {
+    place();
+    open = true;
+  }
+
+  function showHover() {
     if (disabled || open) return;
-    timer = setTimeout(() => {
-      place();
-      open = true;
-    }, 110);
+    timer = setTimeout(openNow, 110);
   }
 
-  function hide() {
+  function hideHover() {
     if (timer) clearTimeout(timer);
     timer = null;
+    if (!pinned) open = false;
+  }
+
+  function close() {
+    pinned = false;
     open = false;
   }
 
+  function onAnchorClick() {
+    // Desktop keeps hover behaviour; touch toggles on tap.
+    if (hasHover || disabled) return;
+    if (timer) clearTimeout(timer);
+    timer = null;
+    if (open && pinned) {
+      close();
+    } else {
+      openNow();
+      pinned = true;
+    }
+  }
+
   function onKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') open = false;
+    if (event.key === 'Escape') close();
   }
 </script>
 
@@ -58,26 +96,32 @@
     class="tip-anchor"
     bind:this={anchor}
     aria-describedby={open ? 'active-tooltip' : undefined}
-    onmouseenter={show}
-    onmouseleave={hide}
-    onfocusin={show}
-    onfocusout={hide}
+    onmouseenter={showHover}
+    onmouseleave={hideHover}
+    onfocusin={showHover}
+    onfocusout={hideHover}
+    onclick={onAnchorClick}
     onkeydown={onKeydown}
   >
     {@render children()}
   </button>
 {:else}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
   <span
     class="tip-anchor"
     bind:this={anchor}
-    onmouseenter={show}
-    onmouseleave={hide}
-    onfocusin={show}
-    onfocusout={hide}
+    onmouseenter={showHover}
+    onmouseleave={hideHover}
+    onfocusin={showHover}
+    onfocusout={hideHover}
+    onclick={onAnchorClick}
   >
     {@render children()}
   </span>
+{/if}
+
+{#if open && pinned}
+  <button class="tip-backdrop" aria-label="Dismiss tooltip" onclick={close}></button>
 {/if}
 
 {#if open}
@@ -85,7 +129,7 @@
     id="active-tooltip"
     class="tip"
     data-tone={tone}
-    data-placement={placement}
+    data-placement={resolved}
     style="left: {left}px; top: {top}px;"
     role="tooltip"
   >
@@ -111,6 +155,16 @@
     outline-offset: 2px;
   }
 
+  /* Catches the tap that dismisses a pinned (touch) tooltip. */
+  .tip-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 399;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
   .tip {
     --tone: var(--primary);
     position: fixed;
@@ -119,7 +173,7 @@
     flex-direction: column;
     gap: 3px;
     width: max-content;
-    max-width: 240px;
+    max-width: min(240px, calc(100vw - 24px));
     padding: 8px 10px;
     border: 1px solid color-mix(in srgb, var(--tone) 45%, var(--border));
     border-radius: var(--radius-md);
