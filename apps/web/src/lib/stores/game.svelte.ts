@@ -243,13 +243,16 @@ function createGameStore() {
             offlineReport = report;
           }
         }
-        if (merged.gamePhase === 'active') assignNetworkSeed(merged);
+        // Assigned from the first frame so the tutorial's bloom and the map share one seed.
+        assignNetworkSeed(merged);
         return merged;
       }
     } catch {
       // corrupted save, start fresh
     }
-    return createInitialState();
+    const fresh = createInitialState();
+    assignNetworkSeed(fresh);
+    return fresh;
   }
 
   function saveState() {
@@ -637,6 +640,7 @@ function createGameStore() {
     localStorage.removeItem('mycosurge_unlock_seen');
     localStorage.removeItem(REVEAL_KEY);
     state = createInitialState();
+    assignNetworkSeed(state);
     offlineReport = null;
     revealState = { announced: [], seen: [] };
     allSystemsUnlocked = false;

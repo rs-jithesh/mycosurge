@@ -254,8 +254,8 @@
           </div>
           <div class="bloom-block">
             <ColonyBloom
+              seed={gameStore.networkSeed}
               reach={bloomReach}
-              maxReach={5}
               sensed={sensedSignal}
               burstToken={bloomBurst}
             />

@@ -108,14 +108,31 @@ contact and **not** the sector map. `getSystemUnlocks()` continues to gate Radar
 
 ## Decisions
 
-- **New bloom component, not an early `MapOverlay` mode.** The map is sector-shaped
-  and is exactly the trap; sectors/cords stay full-game.
+- **The bloom is the map, at small scale.** `ColonyBloom` draws `generateNetwork(seed, 1)`
+  — the *same seeded hyphae* as `MapOverlay` — so the tutorial organism and the full-game
+  map are the same network. The seed is now assigned at the first tutorial frame
+  (`assignNetworkSeed` in `game.store`), not only when the full game starts. Growth stays
+  undirected here; sectors/cords remain full-game. The bloom is **not** tappable — Absorb
+  is the only gather action.
+- **The bloom tracks `mycelialNetwork` only**, so it grows exactly when the player extends
+  hyphae — never from Water/Nutrients observation.
 - **Retune the existing tutorial and add the objective track**, rather than build a
   parallel onboarding system. `gamePhase` stays as the coarse gate.
 - **Reveal is derived, not persisted.** `isSignalSensed` reads `mycelialNetwork`, so
   there is no save migration for the new hook.
 - **Single source of truth for hook costs** lives in the engine
   (`tutorial.ts`); web content re-exports rather than duplicating.
+
+### Known limitation — the 5 mm band offset
+
+Stage 1 (`Microbial`) starts at `minMm: 5`, which is exactly the reach the tutorial hands
+off at, so the map's band-local reach is 0 on the first full-game frame: the map opens on
+the bare core and re-grows the band 5 → 10 mm using the same geometry the bloom showed.
+
+Making the map open with the tutorial's 5 mm pre-drawn means starting stage 1 at 0 mm, but
+`getReachCost` measures steps as `(reach − stage.minMm) / growMm` — so that would also raise
+the first expansion's price (≈10 → ≈44) and rebalance the economy. That is a deliberate
+scale-ladder change, not part of this hook; flagged here as a follow-up.
 
 ## Verification
 
