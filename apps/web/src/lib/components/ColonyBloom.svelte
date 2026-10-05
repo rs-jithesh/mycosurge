@@ -10,11 +10,16 @@
     maxReach = 5,
     sensed = false,
     burstToken = 0,
+    interactive = false,
+    onActivate,
   }: {
     reach?: number;
     maxReach?: number;
     sensed?: boolean;
     burstToken?: number;
+    /** Make the organism a tap target (e.g. tap to gather). */
+    interactive?: boolean;
+    onActivate?: () => void;
   } = $props();
 
   const CX = 100;
@@ -91,34 +96,49 @@
   let blip = $derived(point(HYPHAE[0].angle, length + 13));
 </script>
 
-<svg class="bloom" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-  <circle class="halo" cx={CX} cy={CY} r={haloRadius} />
+{#snippet bloom()}
+  <svg class="bloom" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+    <circle class="halo" cx={CX} cy={CY} r={haloRadius} />
 
-  {#each branches as b (b.id)}
-    <path class="hypha branch" d={b.d} pathLength="1" />
-  {/each}
+    {#each branches as b (b.id)}
+      <path class="hypha branch" d={b.d} pathLength="1" />
+    {/each}
 
-  {#each hyphae as h (h.id)}
-    <path class="hypha" d={h.d} pathLength="1" />
-    <path class="hypha-pulse" d={h.d} pathLength="1" style="animation-delay: {h.id * 0.5}s" />
-  {/each}
+    {#each hyphae as h (h.id)}
+      <path class="hypha" d={h.d} pathLength="1" />
+      <path class="hypha-pulse" d={h.d} pathLength="1" style="animation-delay: {h.id * 0.5}s" />
+    {/each}
 
-  {#if sensed}
-    <g class="blip" transform={`translate(${blip.x} ${blip.y})`}>
-      <circle class="blip-ring" r="6" />
-      <circle class="blip-dot" r="2" />
-    </g>
-  {/if}
-
-  <circle class="spore" cx={CX} cy={CY} r="9" />
-  <circle class="spore-core" cx={CX} cy={CY} r="4" />
-
-  {#key burstToken}
-    {#if burstToken > 0}
-      <circle class="burst" cx={CX} cy={CY} r="10" />
+    {#if sensed}
+      <g class="blip" transform={`translate(${blip.x} ${blip.y})`}>
+        <circle class="blip-ring" r="6" />
+        <circle class="blip-dot" r="2" />
+      </g>
     {/if}
-  {/key}
-</svg>
+
+    <circle class="spore" cx={CX} cy={CY} r="9" />
+    <circle class="spore-core" cx={CX} cy={CY} r="4" />
+
+    {#key burstToken}
+      {#if burstToken > 0}
+        <circle class="burst" cx={CX} cy={CY} r="10" />
+      {/if}
+    {/key}
+  </svg>
+{/snippet}
+
+{#if interactive}
+  <button
+    type="button"
+    class="bloom-tap"
+    aria-label="Absorb water and nutrients"
+    onclick={onActivate}
+  >
+    {@render bloom()}
+  </button>
+{:else}
+  {@render bloom()}
+{/if}
 
 <style>
   .bloom {
@@ -128,6 +148,27 @@
     height: auto;
     margin: 0 auto;
     overflow: visible;
+  }
+
+  .bloom-tap {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: transform 120ms var(--ease-out-soft);
+  }
+
+  .bloom-tap:active {
+    transform: scale(0.98);
+  }
+
+  .bloom-tap:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 4px;
   }
 
   .halo {

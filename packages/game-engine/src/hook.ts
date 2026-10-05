@@ -23,8 +23,10 @@ export type HookObjectiveId =
 export interface HookProgress {
   current: number;
   target: number;
-  /** Noun for the chip, e.g. `Water & Nutrients` or `Biomass`. */
+  /** Singular noun for the chip, e.g. `generator` or `Water & Nutrients`. */
   unit: string;
+  /** Plural form used when more than one remains; defaults to `unit`. */
+  unitPlural?: string;
 }
 
 export interface HookObjective {
@@ -100,7 +102,9 @@ export const HOOK_OBJECTIVES: readonly HookObjective[] = [
     done: hasTutorialGenerator,
     progress: (s) => {
       const count = tutorialGeneratorCount(s);
-      return count >= 1 ? null : { current: count, target: 1, unit: 'generator' };
+      return count >= 1
+        ? null
+        : { current: count, target: 1, unit: 'generator', unitPlural: 'generators' };
     },
   },
   {
@@ -110,7 +114,9 @@ export const HOOK_OBJECTIVES: readonly HookObjective[] = [
     done: (s) => tutorialGeneratorCount(s) >= 2,
     progress: (s) => {
       const count = tutorialGeneratorCount(s);
-      return count >= 2 ? null : { current: count, target: 2, unit: 'generators' };
+      return count >= 2
+        ? null
+        : { current: count, target: 2, unit: 'generator', unitPlural: 'generators' };
     },
   },
   {

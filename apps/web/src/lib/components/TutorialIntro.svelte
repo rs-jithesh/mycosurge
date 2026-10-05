@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import {
+    getHookProgress,
+    getNextHookObjective,
     getTutorialReserveCap,
     isSignalSensed,
     TUTORIAL_ABSORB_AMOUNT,
@@ -10,10 +12,12 @@
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { devStore } from '$lib/stores/dev.svelte';
+  import { logStore } from '$lib/stores/log.svelte';
   import ObjectiveBanner from './ObjectiveBanner.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import CountUp from './CountUp.svelte';
   import ColonyBloom from './ColonyBloom.svelte';
+  import NextGoalChip from './NextGoalChip.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
   import ActivityLog from './ActivityLog.svelte';
   import HuntSection from '$lib/components/hunt/HuntSection.svelte';
@@ -68,10 +72,23 @@
     bloomBurst += 1;
   }
 
+  // The always-close goal, derived from the engine's hook track.
+  let hookObjective = $derived(getNextHookObjective(s));
+  let hookProgress = $derived(getHookProgress(s));
+
   // Live production the tutorial actually applies: +1/s per generator, halved during shock.
   let shockMul = $derived(s.tutorialShockTimer > 0 ? 0.5 : 1);
   let waterRate = $derived(hasPump ? shockMul : 0);
   let nutrientRate = $derived(hasExudates ? shockMul : 0);
+
+  // The first reveal: note it once when the frontier signal is first sensed.
+  let signalAnnounced = false;
+  $effect(() => {
+    if (sensedSignal && !signalAnnounced) {
+      signalAnnounced = true;
+      logStore.info('A tremor at the edge of the hyphae — something is out there.');
+    }
+  });
 
   // Small "+2" pops on the Absorb button so a tap has a visible result.
   let absorbPops = $state<number[]>([]);
@@ -183,6 +200,10 @@
     tone={step.tone}
   />
 
+  {#if hookProgress}
+    <NextGoalChip objective={hookObjective} progress={hookProgress} />
+  {/if}
+
   {#if shock > 0}
     <div class="shock text-label-caps">⚠ {ONBOARDING_COPY.shock(Math.ceil(shock))}</div>
   {/if}
@@ -243,7 +264,12 @@
               maxReach={5}
               sensed={sensedSignal}
               burstToken={bloomBurst}
+              interactive
+              onActivate={absorb}
             />
+            {#each absorbPops as id (id)}
+              <span class="tap-pop text-data-mono">+{TUTORIAL_ABSORB_AMOUNT}</span>
+            {/each}
             <div class="bloom-caption">
               <span class="text-label-caps">Network</span>
               <span class="text-data-mono">{s.mycelialNetwork} / 5 mm</span>
@@ -271,9 +297,6 @@
               <button class="action-btn" class:current={stepId === 'feed'} onclick={absorb}>
                 <span class="action-verb">Absorb</span>
                 <span class="action-sub">{ONBOARDING_COPY.absorb.effect}</span>
-                {#each absorbPops as id (id)}
-                  <span class="tap-pop text-data-mono">+{TUTORIAL_ABSORB_AMOUNT}</span>
-                {/each}
               </button>
 
               <!-- Synthesize -->
@@ -568,6 +591,7 @@
   }
 
   .bloom-block {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -590,9 +614,10 @@
 
   .tap-pop {
     position: absolute;
-    top: 2px;
-    right: 10px;
-    color: var(--on-primary);
+    top: 6px;
+    left: 50%;
+    translate: -50% 0;
+    color: var(--primary);
     font-weight: 700;
     pointer-events: none;
     animation: tap-pop 700ms var(--ease-out-soft) forwards;
