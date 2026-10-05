@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   resolveTutorialStep,
+  TUTORIAL_GENERATOR_COST,
   TUTORIAL_GENERATORS,
   TUTORIAL_STEPS,
   TUTORIAL_TOTAL_STEPS,
@@ -18,10 +19,14 @@ describe('resolveTutorialStep', () => {
     expect(resolveTutorialStep({ phase: 'manager', biomass: 0, mycelialNetwork: 0 })).toBe('grow');
   });
 
-  it('moves to automate once 2 biomass is banked', () => {
-    expect(resolveTutorialStep({ phase: 'manager', biomass: 2, mycelialNetwork: 0 })).toBe(
-      'automate',
-    );
+  it('moves to automate once a generator is affordable', () => {
+    expect(
+      resolveTutorialStep({
+        phase: 'manager',
+        biomass: TUTORIAL_GENERATOR_COST,
+        mycelialNetwork: 0,
+      }),
+    ).toBe('automate');
   });
 
   it('moves to expand in explorer and beyond', () => {

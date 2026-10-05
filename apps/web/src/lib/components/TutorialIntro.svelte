@@ -210,9 +210,7 @@
               <!-- Absorb -->
               <button class="action-btn" class:current={stepId === 'feed'} onclick={absorb}>
                 <span class="action-verb">Absorb</span>
-                <span class="action-sub">
-                  +1 {resourceLabel('water', 'first')} · +1 {resourceLabel('nutrients', 'first')}
-                </span>
+                <span class="action-sub">{ONBOARDING_COPY.absorb.effect}</span>
               </button>
 
               <!-- Synthesize -->

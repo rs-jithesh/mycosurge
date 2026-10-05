@@ -1,7 +1,13 @@
 import type { GamePhase } from '@mycosurge/game-engine';
-import { TUTORIAL_EXTEND_COST } from '@mycosurge/game-engine';
+import {
+  TUTORIAL_ABSORB_AMOUNT,
+  TUTORIAL_EXTEND_COST,
+  TUTORIAL_GENERATOR_COST,
+} from '@mycosurge/game-engine';
 import { resourceLabel } from '@mycosurge/config';
 import type { IconKey } from './icons';
+
+export { TUTORIAL_GENERATOR_COST };
 
 export type Tone = 'mint' | 'amber' | 'coral' | 'cyan' | 'violet';
 export type TutorialStepId = 'feed' | 'grow' | 'automate' | 'expand';
@@ -38,7 +44,7 @@ export const TUTORIAL_STEPS: Record<TutorialStepId, TutorialStep> = {
     title: 'Turn resources into Biomass',
     description: 'Spend 10 Water + 10 Nutrients to grow 1 Biomass.',
     tone: 'mint',
-    hint: 'You need 2 Biomass to install your first generator.',
+    hint: `You need ${TUTORIAL_GENERATOR_COST} Biomass to install your first generator.`,
   },
   automate: {
     id: 'automate',
@@ -80,7 +86,7 @@ export function resolveTutorialStep(state: {
 }): TutorialStepId {
   const { phase, biomass } = state;
   if (phase === 'awakening') return 'feed';
-  if (phase === 'manager') return biomass >= 2 ? 'automate' : 'grow';
+  if (phase === 'manager') return biomass >= TUTORIAL_GENERATOR_COST ? 'automate' : 'grow';
   return 'expand';
 }
 
@@ -114,14 +120,12 @@ export const TUTORIAL_GENERATORS: TutorialGeneratorContent[] = [
   },
 ];
 
-export const TUTORIAL_GENERATOR_COST = 2;
-
 export const LOCK_REASONS = {
   synthesize: `Gather 10 ${resourceLabel('water', 'first')} + 10 ${resourceLabel(
     'nutrients',
     'first',
   )}`,
-  generators: `Gather 2 ${resourceLabel('biomass', 'first')}`,
+  generators: `Gather ${TUTORIAL_GENERATOR_COST} ${resourceLabel('biomass', 'first')}`,
   extend: 'Install a generator first',
 };
 
@@ -134,7 +138,10 @@ export const ONBOARDING_COPY = {
   activity: 'Activity',
   tools: 'Tools',
   network: 'Network',
-  absorb: { label: 'Absorb', effect: '+1 Water · +1 Nutrients' },
+  absorb: {
+    label: 'Absorb',
+    effect: `+${TUTORIAL_ABSORB_AMOUNT} Water · +${TUTORIAL_ABSORB_AMOUNT} Nutrients`,
+  },
   synthesize: { label: 'Synthesize Biomass', effect: '10 Water + 10 Nutrients → 1 Biomass' },
   extend: {
     label: 'Extend Hyphae',

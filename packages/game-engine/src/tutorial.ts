@@ -15,7 +15,22 @@ const REPEAT_MESSAGE = 'You draw in moisture and minerals.';
  * before capacity opens up. The cap lifts once enough Biomass is banked to automate.
  */
 export const TUTORIAL_RESERVE_CAP = 10;
-const AUTOMATE_BIOMASS = 2;
+
+/**
+ * What one Absorb grants during the hook. Deliberately generous: the first synthesis should
+ * be a handful of taps away, not ten, so an unlock lands every few seconds.
+ */
+export const TUTORIAL_ABSORB_AMOUNT = 2;
+
+/** Reserve cost of one synthesis. Kept at the canonical 10 + 10 the copy teaches. */
+export const TUTORIAL_SYNTH_WATER_COST = 10;
+export const TUTORIAL_SYNTH_NUTRIENT_COST = 10;
+
+/**
+ * Hook-only generator price. Lower than the full game's `GENERATORS.baseCost` on purpose —
+ * the real cost curve starts once the loop is learned.
+ */
+export const TUTORIAL_GENERATOR_COST = 1;
 
 /**
  * Effective Water/Nutrients capacity. During the feed/grow steps it is {@link TUTORIAL_RESERVE_CAP};
@@ -25,7 +40,7 @@ export function getTutorialReserveCap(state: GameState, resource: 'water' | 'nut
   const base = resource === 'water' ? state.waterCap : state.nutrientsCap;
   const early =
     state.gamePhase === 'awakening' ||
-    (state.gamePhase === 'manager' && state.biomass < AUTOMATE_BIOMASS);
+    (state.gamePhase === 'manager' && state.biomass < TUTORIAL_GENERATOR_COST);
   return early ? Math.min(base, TUTORIAL_RESERVE_CAP) : base;
 }
 
@@ -41,8 +56,16 @@ export function resetAbsorbCount(): void {
 }
 
 export function absorbResources(state: GameState): string {
-  state.water = fillPool(state.water, getTutorialReserveCap(state, 'water'), 1);
-  state.nutrients = fillPool(state.nutrients, getTutorialReserveCap(state, 'nutrients'), 1);
+  state.water = fillPool(
+    state.water,
+    getTutorialReserveCap(state, 'water'),
+    TUTORIAL_ABSORB_AMOUNT,
+  );
+  state.nutrients = fillPool(
+    state.nutrients,
+    getTutorialReserveCap(state, 'nutrients'),
+    TUTORIAL_ABSORB_AMOUNT,
+  );
 
   let message: string;
   if (_absorbCount < AWAKENING_MESSAGES.length) {
@@ -52,7 +75,11 @@ export function absorbResources(state: GameState): string {
   }
   _absorbCount++;
 
-  if (state.gamePhase === 'awakening' && state.water >= 10 && state.nutrients >= 10) {
+  if (
+    state.gamePhase === 'awakening' &&
+    state.water >= TUTORIAL_SYNTH_WATER_COST &&
+    state.nutrients >= TUTORIAL_SYNTH_NUTRIENT_COST
+  ) {
     state.gamePhase = 'manager';
   }
 
@@ -60,11 +87,14 @@ export function absorbResources(state: GameState): string {
 }
 
 export function synthesizeBiomass(state: GameState): { success: boolean; message: string } {
-  if (state.water < 10 || state.nutrients < 10) {
-    return { success: false, message: 'You need 10 Water and 10 Nutrients.' };
+  if (state.water < TUTORIAL_SYNTH_WATER_COST || state.nutrients < TUTORIAL_SYNTH_NUTRIENT_COST) {
+    return {
+      success: false,
+      message: `You need ${TUTORIAL_SYNTH_WATER_COST} Water and ${TUTORIAL_SYNTH_NUTRIENT_COST} Nutrients.`,
+    };
   }
-  state.water -= 10;
-  state.nutrients -= 10;
+  state.water -= TUTORIAL_SYNTH_WATER_COST;
+  state.nutrients -= TUTORIAL_SYNTH_NUTRIENT_COST;
   state.totalBiomassEarned += addBiomass(state, 1);
   return { success: true, message: 'Biomass formed — your cell has structural mass now.' };
 }
@@ -73,13 +103,16 @@ export function purchaseTutorialUpgrade(
   state: GameState,
   upgrade: 'osmoticPump' | 'enzymaticExudates',
 ): { success: boolean; message: string } {
-  if (state.biomass < 2) {
-    return { success: false, message: 'You need 2 Biomass to install a generator.' };
+  if (state.biomass < TUTORIAL_GENERATOR_COST) {
+    return {
+      success: false,
+      message: `You need ${TUTORIAL_GENERATOR_COST} Biomass to install a generator.`,
+    };
   }
   if (state.tutorialUpgrades[upgrade]) {
     return { success: false, message: 'That generator is already installed.' };
   }
-  state.biomass -= 2;
+  state.biomass -= TUTORIAL_GENERATOR_COST;
   state.tutorialUpgrades[upgrade] = true;
 
   if (state.gamePhase === 'manager') {
@@ -98,7 +131,7 @@ export function purchaseTutorialUpgrade(
  * step is a short demonstration rather than a grind (the full game's reach curve
  * takes over afterwards).
  */
-export const TUTORIAL_EXTEND_COST = 2;
+export const TUTORIAL_EXTEND_COST = 1;
 
 export function extendHyphae(state: GameState): { success: boolean; message: string } {
   if (state.biomass < TUTORIAL_EXTEND_COST) {

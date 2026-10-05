@@ -198,5 +198,19 @@ export {
   getTutorialShockMultiplier,
   getTutorialReserveCap,
   TUTORIAL_RESERVE_CAP,
+  TUTORIAL_ABSORB_AMOUNT,
+  TUTORIAL_SYNTH_WATER_COST,
+  TUTORIAL_SYNTH_NUTRIENT_COST,
+  TUTORIAL_GENERATOR_COST,
   TUTORIAL_EXTEND_COST,
 } from './tutorial';
+export {
+  HOOK_OBJECTIVES,
+  getNextHookObjective,
+  getHookProgress,
+  tutorialGeneratorCount,
+  isSignalSensed,
+  SENSE_REACH_THRESHOLD,
+  SENSE_REACH_RESOLVE,
+} from './hook';
+export type { HookObjective, HookObjectiveId, HookProgress } from './hook';
