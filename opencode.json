@@ -8,6 +8,11 @@
       "headers": {
         "X-Goog-Api-Key": "AQ.Ab8RN6IPxdgvvZbul0jmCD0AMJgdmr9eoMHBwIj_WuU-YMsYIw"
       }
+    },
+    "math-mcp": {
+      "type": "local",
+      "command": ["uv", "run", "--project", "/Users/rs-jithesh/projects/math-mcp", "math-mcp"],
+      "enabled": true
     }
   }
 }

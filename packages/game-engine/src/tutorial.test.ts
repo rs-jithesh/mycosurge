@@ -1,13 +1,32 @@
 import { describe, it, expect } from 'vitest';
-import { absorbResources, getTutorialReserveCap, TUTORIAL_RESERVE_CAP } from './tutorial';
+import {
+  absorbResources,
+  getTutorialReserveCap,
+  purchaseTutorialUpgrade,
+  TUTORIAL_ABSORB_AMOUNT,
+  TUTORIAL_GENERATOR_COST,
+  TUTORIAL_RESERVE_CAP,
+} from './tutorial';
 import { createInitialState } from './state';
 
 describe('absorbResources', () => {
-  it('adds one water and one nutrient', () => {
+  it('grants the hook absorb amount to water and nutrients', () => {
     const state = createInitialState();
     absorbResources(state);
-    expect(state.water).toBe(1);
-    expect(state.nutrients).toBe(1);
+    expect(state.water).toBe(TUTORIAL_ABSORB_AMOUNT);
+    expect(state.nutrients).toBe(TUTORIAL_ABSORB_AMOUNT);
+  });
+
+  it('reaches synthesis in a handful of taps', () => {
+    const state = createInitialState();
+    let taps = 0;
+    while (state.gamePhase === 'awakening' && taps < 20) {
+      absorbResources(state);
+      taps++;
+    }
+    // +2 per tap against a 10 cap: the first synthesis is five taps away.
+    expect(taps).toBe(5);
+    expect(state.gamePhase).toBe('manager');
   });
 
   it('never exceeds the water and nutrient caps', () => {
@@ -55,8 +74,28 @@ describe('getTutorialReserveCap', () => {
   it('opens to the full pool cap once automation is within reach', () => {
     const state = createInitialState();
     state.gamePhase = 'manager';
-    state.biomass = 2;
+    state.biomass = TUTORIAL_GENERATOR_COST;
     expect(getTutorialReserveCap(state, 'water')).toBe(state.waterCap);
     expect(getTutorialReserveCap(state, 'nutrients')).toBe(state.nutrientsCap);
+  });
+});
+
+describe('purchaseTutorialUpgrade', () => {
+  it('installs the first generator for the hook price', () => {
+    const state = createInitialState();
+    state.gamePhase = 'manager';
+    state.biomass = TUTORIAL_GENERATOR_COST;
+    const result = purchaseTutorialUpgrade(state, 'osmoticPump');
+    expect(result.success).toBe(true);
+    expect(state.biomass).toBe(0);
+    expect(state.gamePhase).toBe('explorer');
+  });
+
+  it('refuses without enough Biomass', () => {
+    const state = createInitialState();
+    state.gamePhase = 'manager';
+    state.biomass = TUTORIAL_GENERATOR_COST - 1;
+    const result = purchaseTutorialUpgrade(state, 'osmoticPump');
+    expect(result.success).toBe(false);
   });
 });

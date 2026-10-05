@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Tone } from '$lib/content/onboarding';
+  import CountUp from './CountUp.svelte';
 
   let {
     value,
@@ -10,6 +11,8 @@
     showValue = true,
     labelCaps = true,
     markers = [],
+    animate = false,
+    format,
   }: {
     value: number;
     max: number;
@@ -21,6 +24,10 @@
     labelCaps?: boolean;
     /** Decorative threshold ticks, as percentages (0–100). */
     markers?: number[];
+    /** Roll the numeric readout up to `value` instead of showing `valueText`. */
+    animate?: boolean;
+    /** Formatter for the animated readout (defaults to whole numbers). */
+    format?: (n: number) => string;
   } = $props();
 
   let pct = $derived(max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0);
@@ -36,7 +43,13 @@
         </span>
       {/if}
       {#if showValue}
-        <span class="val text-data-mono">{display}</span>
+        <span class="val text-data-mono">
+          {#if animate}
+            <CountUp {value} {format} />
+          {:else}
+            {display}
+          {/if}
+        </span>
       {/if}
     </div>
   {/if}
