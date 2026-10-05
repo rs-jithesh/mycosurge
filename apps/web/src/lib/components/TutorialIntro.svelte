@@ -57,16 +57,10 @@
   let shock = $derived(s.tutorialShockTimer);
 
   // ── Colony bloom ──
-  // The bloom grows with overall progress, not just network mm, so every early action
-  // visibly sprouts something. The caption still reports the true network length.
+  // The bloom is the network, so it grows only when the player extends hyphae — tapping
+  // Absorb changes reserves, not the organism. Generators are shown elsewhere.
   let sensedSignal = $derived(isSignalSensed(s));
-  let bloomReach = $derived.by(() => {
-    const reserve = Math.min(s.water, s.nutrients, 10) / 10;
-    const gens =
-      (s.tutorialUpgrades.osmoticPump ? 1 : 0) + (s.tutorialUpgrades.enzymaticExudates ? 1 : 0);
-    const biomass = s.totalBiomassEarned > 0 ? 0.4 : 0;
-    return Math.min(5, s.mycelialNetwork + reserve * 0.4 + gens * 0.6 + biomass);
-  });
+  let bloomReach = $derived(s.mycelialNetwork);
   let bloomBurst = $state(0);
   function burst() {
     bloomBurst += 1;
@@ -264,12 +258,7 @@
               maxReach={5}
               sensed={sensedSignal}
               burstToken={bloomBurst}
-              interactive
-              onActivate={absorb}
             />
-            {#each absorbPops as id (id)}
-              <span class="tap-pop text-data-mono">+{TUTORIAL_ABSORB_AMOUNT}</span>
-            {/each}
             <div class="bloom-caption">
               <span class="text-label-caps">Network</span>
               <span class="text-data-mono">{s.mycelialNetwork} / 5 mm</span>
@@ -297,6 +286,9 @@
               <button class="action-btn" class:current={stepId === 'feed'} onclick={absorb}>
                 <span class="action-verb">Absorb</span>
                 <span class="action-sub">{ONBOARDING_COPY.absorb.effect}</span>
+                {#each absorbPops as id (id)}
+                  <span class="tap-pop text-data-mono">+{TUTORIAL_ABSORB_AMOUNT}</span>
+                {/each}
               </button>
 
               <!-- Synthesize -->
@@ -591,7 +583,6 @@
   }
 
   .bloom-block {
-    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -614,10 +605,9 @@
 
   .tap-pop {
     position: absolute;
-    top: 6px;
-    left: 50%;
-    translate: -50% 0;
-    color: var(--primary);
+    top: 2px;
+    right: 10px;
+    color: var(--on-primary);
     font-weight: 700;
     pointer-events: none;
     animation: tap-pop 700ms var(--ease-out-soft) forwards;
