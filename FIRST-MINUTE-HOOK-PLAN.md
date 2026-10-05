@@ -1,6 +1,6 @@
 # First-Minute Hook — Plan
 
-Status: **in progress** — Phase 1 (engine) implemented; Phases 2–5 pending.
+Status: **in progress** — Phases 1–2 implemented; Phases 3–5 pending.
 
 ## Context
 
@@ -69,13 +69,17 @@ contact and **not** the sector map. `getSystemUnlocks()` continues to gate Radar
 
 ### Phase 2 — Colony bloom + number juice
 
-- [ ] **H5** `ColonyBloom.svelte`: a small seeded SVG organism (central spore + a few
-      hyphae) that unfurls as `mycelialNetwork` grows, with a pulse travelling along a
-      hypha and a burst on purchase. Present from t=0 as a tiny spore. Undirected —
-      explicitly no wedges. Reduced-motion aware.
-- [ ] **H6** Replace the hidden `Network` `ProgressBar` with the bloom.
-- [ ] **H7** Juice: wrap Water/Nutrients/Biomass totals in `CountUp`; add a live net
-      rate line (`gameStore.netResourceRate`); small "+N" pop on tap.
+- [x] **H5** `ColonyBloom.svelte`: a small SVG organism (central spore + five hyphae with
+      side branches) that unfurls as progress grows, with a light pulse travelling along
+      each hypha and a burst ring on purchase. Present from t=0 as a tiny spore.
+      Undirected — no wedges. Reduced-motion aware.
+- [x] **H6** Replace the hidden `Network` `ProgressBar` with the bloom (always visible in
+      the tutorial), with a live `X / 5 mm` caption. A faint sensed blip pulses at the
+      frontier once `isSignalSensed` is true.
+- [x] **H7** Juice: Water/Nutrients/Biomass readouts roll via `CountUp` (`ProgressBar`
+      gained an `animate`/`format` option); per-resource production rate line
+      (`+1.0/s`, halved in shock); a "+2" pop on tap; burst on synthesize/install/extend.
+      The bloom grows with overall progress (reserves + generators + network), not just mm.
 
 ### Phase 3 — Hook UI: one obvious action, goal always close
 

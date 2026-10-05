@@ -1,6 +1,11 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { getTutorialReserveCap, TUTORIAL_EXTEND_COST } from '@mycosurge/game-engine';
+  import {
+    getTutorialReserveCap,
+    isSignalSensed,
+    TUTORIAL_ABSORB_AMOUNT,
+    TUTORIAL_EXTEND_COST,
+  } from '@mycosurge/game-engine';
   import { resourceLabel } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
@@ -8,6 +13,7 @@
   import ObjectiveBanner from './ObjectiveBanner.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import CountUp from './CountUp.svelte';
+  import ColonyBloom from './ColonyBloom.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
   import ActivityLog from './ActivityLog.svelte';
   import HuntSection from '$lib/components/hunt/HuntSection.svelte';
@@ -37,7 +43,6 @@
 
   let waterMax = $derived(getTutorialReserveCap(s, 'water'));
   let nutrientMax = $derived(getTutorialReserveCap(s, 'nutrients'));
-  let showNetwork = $derived(stepId === 'expand' || isHandoff);
 
   let canSynthesize = $derived(s.water >= 10 && s.nutrients >= 10);
   let canInstall = $derived(s.biomass >= TUTORIAL_GENERATOR_COST);
@@ -46,6 +51,40 @@
   let hasPump = $derived(s.tutorialUpgrades.osmoticPump);
   let hasExudates = $derived(s.tutorialUpgrades.enzymaticExudates);
   let shock = $derived(s.tutorialShockTimer);
+
+  // ── Colony bloom ──
+  // The bloom grows with overall progress, not just network mm, so every early action
+  // visibly sprouts something. The caption still reports the true network length.
+  let sensedSignal = $derived(isSignalSensed(s));
+  let bloomReach = $derived.by(() => {
+    const reserve = Math.min(s.water, s.nutrients, 10) / 10;
+    const gens =
+      (s.tutorialUpgrades.osmoticPump ? 1 : 0) + (s.tutorialUpgrades.enzymaticExudates ? 1 : 0);
+    const biomass = s.totalBiomassEarned > 0 ? 0.4 : 0;
+    return Math.min(5, s.mycelialNetwork + reserve * 0.4 + gens * 0.6 + biomass);
+  });
+  let bloomBurst = $state(0);
+  function burst() {
+    bloomBurst += 1;
+  }
+
+  // Live production the tutorial actually applies: +1/s per generator, halved during shock.
+  let shockMul = $derived(s.tutorialShockTimer > 0 ? 0.5 : 1);
+  let waterRate = $derived(hasPump ? shockMul : 0);
+  let nutrientRate = $derived(hasExudates ? shockMul : 0);
+
+  // Small "+2" pops on the Absorb button so a tap has a visible result.
+  let absorbPops = $state<number[]>([]);
+  const popTimers: ReturnType<typeof setTimeout>[] = [];
+  function popAbsorb() {
+    const id = Date.now() + Math.random();
+    absorbPops = [...absorbPops, id];
+    popTimers.push(
+      setTimeout(() => {
+        absorbPops = absorbPops.filter((p) => p !== id);
+      }, 720),
+    );
+  }
 
   // Unlock states: every control stays visible; locked ones are dimmed with a reason.
   let synthAvailable = $derived(s.gamePhase !== 'awakening');
@@ -82,25 +121,30 @@
 
   onDestroy(() => {
     for (const t of flashTimers) clearTimeout(t);
+    for (const t of popTimers) clearTimeout(t);
   });
 
   function absorb() {
     gameStore.absorbResources();
+    popAbsorb();
   }
 
   function synthesize() {
     if (!canSynthesize) return;
     gameStore.synthesizeBiomass();
+    burst();
   }
 
   function buy(id: 'osmoticPump' | 'enzymaticExudates') {
     if (s.tutorialUpgrades[id] || !canInstall) return;
     gameStore.purchaseTutorialUpgrade(id);
+    burst();
   }
 
   function extend() {
     if (!canExtend) return;
     gameStore.extendHyphae();
+    burst();
   }
 
   function skipIntro() {
@@ -148,22 +192,34 @@
       <section class="panel area-resources">
         <div class="panel-body resources">
           <div class="res-grid">
-            <ProgressBar
-              tone="cyan"
-              label={resourceLabel('water', 'first')}
-              labelCaps={false}
-              value={s.water}
-              max={waterMax}
-              valueText={`${Math.floor(s.water)}/${Math.floor(waterMax)}`}
-            />
-            <ProgressBar
-              tone="violet"
-              label={resourceLabel('nutrients', 'first')}
-              labelCaps={false}
-              value={s.nutrients}
-              max={nutrientMax}
-              valueText={`${Math.floor(s.nutrients)}/${Math.floor(nutrientMax)}`}
-            />
+            <div class="res-cell">
+              <ProgressBar
+                tone="cyan"
+                label={resourceLabel('water', 'first')}
+                labelCaps={false}
+                value={s.water}
+                max={waterMax}
+                animate
+                format={(n) => `${Math.floor(n)}/${Math.floor(waterMax)}`}
+              />
+              {#if waterRate > 0}
+                <span class="rate text-data-mono">+{waterRate.toFixed(1)}/s</span>
+              {/if}
+            </div>
+            <div class="res-cell">
+              <ProgressBar
+                tone="violet"
+                label={resourceLabel('nutrients', 'first')}
+                labelCaps={false}
+                value={s.nutrients}
+                max={nutrientMax}
+                animate
+                format={(n) => `${Math.floor(n)}/${Math.floor(nutrientMax)}`}
+              />
+              {#if nutrientRate > 0}
+                <span class="rate text-data-mono">+{nutrientRate.toFixed(1)}/s</span>
+              {/if}
+            </div>
           </div>
           <div class="biomass-block">
             <ProgressBar
@@ -172,7 +228,8 @@
               labelCaps={false}
               value={s.biomass}
               max={s.maxBiomass}
-              valueText={`${Math.floor(s.biomass)}/${Math.floor(s.maxBiomass)}`}
+              animate
+              format={(n) => `${Math.floor(n)}/${Math.floor(s.maxBiomass)}`}
             />
             <span class="stat-sub text-data-mono">
               <span class="sub-arrow">↑</span>
@@ -180,15 +237,18 @@
               harvested
             </span>
           </div>
-          {#if showNetwork}
-            <ProgressBar
-              tone="mint"
-              label="Network"
-              value={s.mycelialNetwork}
-              max={5}
-              valueText={`${s.mycelialNetwork} / 5 mm`}
+          <div class="bloom-block">
+            <ColonyBloom
+              reach={bloomReach}
+              maxReach={5}
+              sensed={sensedSignal}
+              burstToken={bloomBurst}
             />
-          {/if}
+            <div class="bloom-caption">
+              <span class="text-label-caps">Network</span>
+              <span class="text-data-mono">{s.mycelialNetwork} / 5 mm</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -211,6 +271,9 @@
               <button class="action-btn" class:current={stepId === 'feed'} onclick={absorb}>
                 <span class="action-verb">Absorb</span>
                 <span class="action-sub">{ONBOARDING_COPY.absorb.effect}</span>
+                {#each absorbPops as id (id)}
+                  <span class="tap-pop text-data-mono">+{TUTORIAL_ABSORB_AMOUNT}</span>
+                {/each}
               </button>
 
               <!-- Synthesize -->
@@ -490,6 +553,65 @@
     color: var(--primary);
   }
 
+  .res-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .rate {
+    color: var(--primary);
+    font-size: 11px;
+    line-height: 1;
+    text-align: right;
+  }
+
+  .bloom-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding-top: 4px;
+  }
+
+  .bloom-caption {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-gutter);
+    width: 100%;
+    color: var(--on-surface-variant);
+  }
+
+  .bloom-caption .text-data-mono {
+    color: var(--primary);
+  }
+
+  .tap-pop {
+    position: absolute;
+    top: 2px;
+    right: 10px;
+    color: var(--on-primary);
+    font-weight: 700;
+    pointer-events: none;
+    animation: tap-pop 700ms var(--ease-out-soft) forwards;
+  }
+
+  @keyframes tap-pop {
+    0% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    25% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+  }
+
   /* Action groups */
   .actions {
     display: flex;
@@ -511,6 +633,7 @@
   /* Enabled actions are filled with the primary colour; disabled ones are
      strictly greyed out so it is obvious when you can act. */
   .action-btn {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
