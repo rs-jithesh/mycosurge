@@ -1,6 +1,7 @@
 # First-Minute Hook — Plan
 
-Status: **in progress** — Phases 1–2 implemented; Phases 3–5 pending.
+Status: **in progress** — Phases 1–4 implemented and documented; only the H12 playtest
+balance pass remains.
 
 ## Context
 
@@ -83,25 +84,27 @@ contact and **not** the sector map. `getSystemUnlocks()` continues to gate Radar
 
 ### Phase 3 — Hook UI: one obvious action, goal always close
 
-- [ ] **H8** `NextGoalChip.svelte` from `getHookProgress` — e.g. *"3 more Water →
-      shape Biomass"*, updating live.
-- [ ] **H9** Step 1 becomes the bloom as the tap target with one short line of copy;
-      long descriptions move behind the chip. Reveal panels progressively instead of
-      showing every locked control.
+- [x] **H8** `NextGoalChip.svelte` reads `getNextHookObjective` / `getHookProgress` and
+      shows a live *"N more <unit>"* delta plus the next action, with singular/plural
+      units. It sits under the objective banner and hides once the hunt begins.
+- [x] **H9** The bloom is the tap target during the hook — tap the organism to Absorb
+      (real `<button>` wrapper for keyboard/AT) — with the "+2" pop over it. The goal chip
+      carries the always-close objective; locked actions keep their reason + unlock flash.
 
 ### Phase 4 — First reveal + handoff + return
 
-- [ ] **H10** At `SENSE_REACH_THRESHOLD`, pulse a sensed blip at the bloom's edge
-      (dashed `--secondary`, reusing `.contact .pulse`) with one log line. Keep the
-      `HuntSection mode="tutorial"` → nematode handoff as the resolution at 5 mm.
-- [ ] **H11** Guarantee a warm first-return report for tutorial-completed saves
-      (`offline.ts`, `WelcomeBackDialog.svelte`).
+- [x] **H10** The sensed blip pulses at the bloom's frontier from `SENSE_REACH_THRESHOLD`
+      (3 mm), with one activity-log line the first time it appears. The existing
+      `HuntSection mode="tutorial"` → nematode handoff remains the resolution at 5 mm.
+- [x] **H11** Covered by the shipped offline system: `applyOfflineProgress` + the warm
+      `WelcomeBackDialog` already report the away-gain once the full game is active. No
+      code change needed.
 
 ### Phase 5 — Balance, QA, docs
 
 - [ ] **H12** Playtest the exact tap counts / time-to-unlock; optionally seed a start
-      reserve (a tuning knob, not yet implemented).
-- [ ] **H13** Update `GAME-DESIGN.md` §Onboarding and this plan's status.
+      reserve (a tuning knob, not yet implemented). **Needs a human playtest.**
+- [x] **H13** Updated `GAME-DESIGN.md` §Onboarding and this plan's status.
 
 ## Decisions
 
