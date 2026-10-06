@@ -39,6 +39,14 @@
   const SECTORS = 6;
   const TAU = Math.PI * 2;
 
+  // Hover previews on a mouse; a tap/click selects and stays lit on touch.
+  let hovered = $state<number | null>(null);
+  let selected = $state<number | null>(null);
+  let activeSector = $derived(hovered ?? selected);
+  let finePointer = $state(
+    typeof window !== 'undefined' && (window.matchMedia?.('(pointer: fine)').matches ?? false),
+  );
+
   let geometry = $derived(generateNetwork(seed, stageIndex));
   let bandWidth = $derived(Math.max(1e-6, geometry.maxMm));
   let k = $derived(RADIUS / bandWidth);
@@ -96,6 +104,10 @@
       />
     {/each}
 
+    {#if activeSector !== null}
+      <path class="sector-hl" d={wedgePath(activeSector, bandWidth * k)} />
+    {/if}
+
     {#if signal}
       <g class="signal" transform={`translate(${signal.x * k} ${signal.y * k})`}>
         <circle class="signal-ring" r="9" />
@@ -114,9 +126,21 @@
           role="button"
           tabindex="0"
           aria-label={`Grow sector ${i + 1}`}
-          onclick={() => grow(i)}
+          onpointerenter={() => {
+            if (finePointer) hovered = i;
+          }}
+          onpointerleave={() => {
+            if (hovered === i) hovered = null;
+          }}
+          onclick={() => {
+            selected = i;
+            grow(i);
+          }}
           onkeydown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') grow(i);
+            if (e.key === 'Enter' || e.key === ' ') {
+              selected = i;
+              grow(i);
+            }
           }}
         />
       {/each}
@@ -135,6 +159,13 @@
     fill: var(--primary);
     opacity: 0.07;
     transition: d var(--duration-normal) var(--ease-out-soft);
+  }
+
+  /* Highlight the wedge under the pointer (desktop) or the last tapped one (touch). */
+  .sector-hl {
+    fill: var(--primary);
+    opacity: 0.16;
+    pointer-events: none;
   }
 
   .hypha {
