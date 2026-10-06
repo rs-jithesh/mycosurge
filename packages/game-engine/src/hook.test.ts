@@ -36,7 +36,7 @@ describe('getNextHookObjective', () => {
     state.tutorialSectors[signalSectorFor(state)] = TUTORIAL_SIGNAL_STEPS;
     const objective = getNextHookObjective(state);
     expect(objective.id).toBe('reach-signal');
-    expect(objective.title).toBe('Engage the host');
+    expect(objective.tag).toBe('Threat detected');
   });
 });
 

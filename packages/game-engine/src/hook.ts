@@ -37,9 +37,9 @@ export function getNextHookObjective(state: GameState): HookObjective {
   if (isTutorialSignalReached(state)) {
     return {
       id: 'reach-signal',
-      tag: 'Signal reached',
-      title: 'Engage the host',
-      description: 'It has noticed you. Tap Engage to fight it.',
+      tag: 'Threat detected',
+      title: 'Something is on your hyphae',
+      description: 'Drive it off before it drains the network.',
       hint: 'Combat is real-time — dodge what it throws at you.',
       tone: 'coral',
     };

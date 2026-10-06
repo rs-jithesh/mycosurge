@@ -152,11 +152,8 @@
       {#if isHandoff}
         <section class="panel handoff-panel">
           <div class="panel-body handoff">
-            <span class="handoff-tag text-label-caps">Threat detected</span>
+            <span class="handoff-kicker text-label-caps">Hostile</span>
             <p class="handoff-name">Soil Nematode</p>
-            <p class="handoff-text">
-              Your reach woke something grazing on the hyphae. Drive it off.
-            </p>
             <button class="action-btn engage-btn" onclick={engageHost}>
               <span class="action-verb">Engage the host</span>
             </button>
@@ -204,16 +201,6 @@
                 </div>
               {/if}
             </div>
-          </div>
-        </section>
-      {:else}
-        <section class="panel hint-panel">
-          <div class="panel-body hint-body">
-            <span class="hint-title">Grow toward the signal</span>
-            <p class="hint-text">
-              Tap a wedge to push a hypha that way. The pulsing blip is the signal — reach it and
-              something answers.
-            </p>
           </div>
         </section>
       {/if}
@@ -469,39 +456,16 @@
     box-shadow: none;
   }
 
-  .hint-panel {
-    border-style: dashed;
-  }
-
-  .hint-body {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px;
-  }
-
-  .hint-title {
-    font-weight: 600;
-    color: var(--primary);
-  }
-
-  .hint-text {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--on-surface-variant);
-  }
-
   .handoff {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     padding: 12px;
     text-align: center;
   }
 
-  .handoff-tag {
+  .handoff-kicker {
     color: var(--alert);
   }
 
@@ -510,13 +474,6 @@
     font-size: 18px;
     font-weight: 700;
     color: var(--on-surface);
-  }
-
-  .handoff-text {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--on-surface-variant);
   }
 
   .engage-btn {
