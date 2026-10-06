@@ -17,8 +17,9 @@
   import SectorBoard from './SectorBoard.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
   import ActivityLog from './ActivityLog.svelte';
-  import HuntSection from '$lib/components/hunt/HuntSection.svelte';
   import { TUTORIAL_GENERATORS, LOCK_REASONS, ONBOARDING_COPY } from '$lib/content/onboarding';
+
+  const TUTORIAL_HOST_ID = 'soil_nematode';
 
   const BAND_MM = 5;
   const STEP_MM = BAND_MM / TUTORIAL_SIGNAL_STEPS;
@@ -73,6 +74,11 @@
   function growSector(sector: number) {
     if (!canGrow) return;
     gameStore.growTutorialSector(sector);
+  }
+
+  function engageHost() {
+    gameStore.engageHost(TUTORIAL_HOST_ID);
+    uiStore.openCombat(TUTORIAL_HOST_ID);
   }
 
   function skipIntro() {
@@ -144,7 +150,18 @@
 
     <div class="col-right">
       {#if isHandoff}
-        <HuntSection mode="tutorial" />
+        <section class="panel handoff-panel">
+          <div class="panel-body handoff">
+            <span class="handoff-tag text-label-caps">Threat detected</span>
+            <p class="handoff-name">Soil Nematode</p>
+            <p class="handoff-text">
+              Your reach woke something grazing on the hyphae. Drive it off.
+            </p>
+            <button class="action-btn engage-btn" onclick={engageHost}>
+              <span class="action-verb">Engage the host</span>
+            </button>
+          </div>
+        </section>
       {:else if economyRevealed && !signalReached}
         <section class="panel economy-panel">
           <div class="panel-body economy">
@@ -473,6 +490,38 @@
     font-size: 13px;
     line-height: 1.5;
     color: var(--on-surface-variant);
+  }
+
+  .handoff {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .handoff-tag {
+    color: var(--alert);
+  }
+
+  .handoff-name {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+
+  .handoff-text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--on-surface-variant);
+  }
+
+  .engage-btn {
+    width: 100%;
+    margin-top: 4px;
   }
 
   /* Desktop: two columns — the board leads, the controls sit beside it. */
