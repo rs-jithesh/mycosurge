@@ -318,7 +318,7 @@ describe('expandCap', () => {
   it('expands each resource through the shared helper', () => {
     const state = createInitialState();
     state.lysateBanked = 100;
-    expect(getCapExpandCost(state, 'water')).toBe(10);
+    expect(getCapExpandCost(state, 'water')).toBe(3);
     expect(expandCap(state, 'water')).toBe(true);
     expect(state.waterCap).toBe(110);
     expect(expandCap(state, 'nutrients')).toBe(true);

@@ -139,6 +139,6 @@ describe('getCheapestGeneratorCost', () => {
 describe('getCheapestExpandCost', () => {
   it('returns the base capacity expansion price', () => {
     const state = createInitialState();
-    expect(getCheapestExpandCost(state)).toBe(10);
+    expect(getCheapestExpandCost(state)).toBe(3);
   });
 });

@@ -304,12 +304,13 @@ describe('advisor calibration (grounded break-evens)', () => {
   it('switches from Grow to Hunt across lysateNeed 0.70', () => {
     const hunt = activeState();
     hunt.biomass = 50;
-    hunt.lysateBanked = 2.9; // lysateNeed 0.71
+    // lysateNeed = 1 − banked/expandCost; the cheapest expand cost is 3.
+    hunt.lysateBanked = 3 * 0.29; // lysateNeed 0.71
     expect(evaluateAdvisor(hunt).phase).toBe('hunt');
 
     const grow = activeState();
     grow.biomass = 50;
-    grow.lysateBanked = 3.1; // lysateNeed 0.69
+    grow.lysateBanked = 3 * 0.31; // lysateNeed 0.69
     expect(evaluateAdvisor(grow).phase).toBe('grow');
   });
 
