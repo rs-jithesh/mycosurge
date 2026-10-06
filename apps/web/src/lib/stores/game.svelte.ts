@@ -140,6 +140,8 @@ function createGameStore() {
   let allSystemsUnlocked = $state(false);
   let lastAdvisorPhase: GrowthPhase | null = null;
   let lastAdvisorLogAt = 0;
+  /** QA prototype mode (`?loop`): a throwaway state that never touches the save. */
+  let prototypeMode = false;
 
   function persistReveals() {
     try {
@@ -256,6 +258,8 @@ function createGameStore() {
   }
 
   function saveState() {
+    // The prototype (`?loop`) is throwaway — never overwrite the player's real save.
+    if (prototypeMode) return;
     state.lastSavedAt = Date.now();
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(state));
@@ -704,6 +708,25 @@ function createGameStore() {
     logStore.info('The intro is skipped; the network wakes fully grown.');
   }
 
+  /**
+   * QA prototype (`?loop`): boot straight into a combat-capable state with a tiny network,
+   * so the sector-expand → signal → hunt loop can be felt without the tutorial economy.
+   * Never saved, so a normal reload returns to the real game.
+   */
+  function startLoopPrototype() {
+    const fresh = createInitialState();
+    assignNetworkSeed(fresh);
+    fresh.gamePhase = 'active';
+    fresh.mycelialNetwork = REACH_START;
+    fresh.combatStats.hp = fresh.combatStats.maxHp;
+    state = fresh;
+    offlineReport = null;
+    allSystemsUnlocked = true;
+    revealState = { announced: [...ALL_SYSTEM_IDS], seen: [...ALL_SYSTEM_IDS] };
+    prototypeMode = true;
+    logStore.info('Prototype — grow toward the signal and engage.');
+  }
+
   return {
     get state() {
       return state;
@@ -890,6 +913,7 @@ function createGameStore() {
     purchaseTutorialUpgrade,
     extendHyphae,
     skipIntro,
+    startLoopPrototype,
   };
 }
 

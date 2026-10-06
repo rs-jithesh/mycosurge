@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { gameStore } from '$lib/stores/game.svelte';
   import TutorialIntro from '$lib/components/TutorialIntro.svelte';
+  import LoopPrototype from '$lib/components/LoopPrototype.svelte';
   import CoreDesktop from '$lib/components/core/CoreDesktop.svelte';
   import CoreMobile from '$lib/components/core/CoreMobile.svelte';
   import WelcomeBackDialog from '$lib/components/WelcomeBackDialog.svelte';
@@ -11,6 +12,8 @@
   import type { GrowthPhase } from '@mycosurge/game-engine';
 
   let isFullGame = $derived(gameStore.state.gamePhase === 'active');
+  /** `?loop` boots the throwaway sector-expand → signal → hunt prototype. */
+  let isLoop = $state(false);
 
   // The engine suggests a stage, but never switches for the player. The active stage
   // is seeded from the suggestion on load and then only changes when the player picks
@@ -31,7 +34,10 @@
   onMount(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      if (params.has('skipintro') && !isFullGame) {
+      if (params.has('loop')) {
+        gameStore.startLoopPrototype();
+        isLoop = true;
+      } else if (params.has('skipintro') && !isFullGame) {
         gameStore.skipIntro();
       }
     } catch {
@@ -40,39 +46,43 @@
   });
 </script>
 
-{#if !isFullGame}
-  <TutorialIntro />
-{/if}
+{#if isLoop}
+  <LoopPrototype />
+{:else}
+  {#if !isFullGame}
+    <TutorialIntro />
+  {/if}
 
-{#if gameStore.offlineReport || devStore.previewReport}
-  <WelcomeBackDialog
-    report={gameStore.offlineReport ?? devStore.previewReport!}
-    onDismiss={() => {
-      gameStore.dismissOfflineReport();
-      devStore.clearPreview();
-    }}
-  />
-{/if}
+  {#if gameStore.offlineReport || devStore.previewReport}
+    <WelcomeBackDialog
+      report={gameStore.offlineReport ?? devStore.previewReport!}
+      onDismiss={() => {
+        gameStore.dismissOfflineReport();
+        devStore.clearPreview();
+      }}
+    />
+  {/if}
 
-{#if isFullGame}
-  {#if viewport.isDesktop}
-    <CoreDesktop
-      {phase}
-      {recommended}
-      {suggested}
-      reason={advisor.explanation}
-      maturity={advisor.maturity}
-      onselect={selectPhase}
-    />
-  {:else}
-    <CoreMobile
-      {phase}
-      {recommended}
-      {suggested}
-      reason={advisor.explanation}
-      maturity={advisor.maturity}
-      onselect={selectPhase}
-    />
+  {#if isFullGame}
+    {#if viewport.isDesktop}
+      <CoreDesktop
+        {phase}
+        {recommended}
+        {suggested}
+        reason={advisor.explanation}
+        maturity={advisor.maturity}
+        onselect={selectPhase}
+      />
+    {:else}
+      <CoreMobile
+        {phase}
+        {recommended}
+        {suggested}
+        reason={advisor.explanation}
+        maturity={advisor.maturity}
+        onselect={selectPhase}
+      />
+    {/if}
   {/if}
 {/if}
 
