@@ -186,27 +186,31 @@ the trade is legible: **more complexity means lower raw efficiency but greater c
 
 ## Onboarding
 
-The first session is a fast four-step hook plus a threat handoff, gated by `gamePhase`
-(`awakening → manager → explorer → tactician → active`). The early curve is deliberately
-generous — costs drop to the hook prices in `tutorial.ts`, and the real cost curves only
-begin once the full game is active:
+The first session is a five-step hook that ends in a threat handoff, gated by `gamePhase`
+(`awakening → manager → explorer → tactician → active`). It follows a strict
+one-new-idea-at-a-time order and starts **Water-only** — Biomass is deliberately absent
+from the hook and arrives with the full game:
 
-1. **Feed** — Absorb grants +2 Water and +2 Nutrients, so the first synthesis is a handful
-   of taps away.
-2. **Grow** — Synthesise Biomass from 10 Water + 10 Nutrients.
-3. **Automate** — install a generator (1 Biomass in the hook; the second follows quickly).
-4. **Expand** — extend hyphae (1 Biomass per mm).
-5. **Threat** — a faint signal is sensed at the network's edge from 3 mm, then resolves
-   into the tutorial nematode at 5 mm. Scan it on the Radar and fight it; victory completes
-   the tutorial and unlocks the full game.
+1. **Draw water** — the only resource at the start; Absorb gathers Water.
+2. **Grow a hypha** — spend Water to extend the network. The first growth reveals
+   **Nutrients**.
+3. **Gather Nutrients** — Absorb now gathers Water and Nutrients together, and growth
+   costs both.
+4. **Automate** — install the Osmotic Pump (+Water/s) for Water, then the Enzymatic
+   Exudates (+Nutrients/s) for Water + Nutrients.
+5. **Threat** — a faint signal is sensed at the network's edge from 3 mm. Grow to 5 mm and
+   it resolves into the tutorial nematode. Scan it on the Radar and fight it; victory
+   completes the tutorial and unlocks the full game.
+
+All hook costs live in `packages/game-engine/src/tutorial.ts` (Water, then Water +
+Nutrients); the real Biomass cost curves only begin once the full game is active. The
+engine exposes the beat order as a pure hook track (`packages/game-engine/src/hook.ts`:
+`getNextHookObjective`, `getHookProgress`, `isSignalSensed`).
 
 The onboarding is juiced for first contact: an SVG **colony bloom** grows on screen (light
 pulses along the hyphae, a burst on purchases), resource readouts roll up, live production
 rates are shown, and a **next-goal chip** keeps the delta to the next objective a few
-seconds away. The engine exposes the beat order as a pure hook track
-(`packages/game-engine/src/hook.ts`: `getNextHookObjective`, `getHookProgress`,
-`isSignalSensed`). Locked actions are shown dimmed with a reason, then flash when they
-unlock.
+seconds away. Locked actions are shown dimmed with a reason, then flash when they unlock.
 
 Finishing the tutorial unlocks the **core chain** — Core and Radar — alongside a one-time
 "systems unlocked" overlay, and the first return reports what the network produced while

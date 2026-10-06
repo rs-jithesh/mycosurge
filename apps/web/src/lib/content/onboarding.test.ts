@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { TUTORIAL_GROW_NUTRIENT_COST, TUTORIAL_GROW_WATER_COST } from '@mycosurge/game-engine';
 import {
   resolveTutorialStep,
-  TUTORIAL_GENERATOR_COST,
   TUTORIAL_GENERATORS,
   TUTORIAL_STEPS,
   TUTORIAL_TOTAL_STEPS,
@@ -9,36 +9,34 @@ import {
 } from './onboarding';
 
 describe('resolveTutorialStep', () => {
-  it('starts at feed during awakening', () => {
-    expect(resolveTutorialStep({ phase: 'awakening', biomass: 0, mycelialNetwork: 0 })).toBe(
-      'feed',
-    );
+  it('starts at feed during awakening with no water', () => {
+    expect(resolveTutorialStep({ phase: 'awakening', water: 0, nutrients: 0 })).toBe('feed');
   });
 
-  it('moves to grow once managing with little biomass', () => {
-    expect(resolveTutorialStep({ phase: 'manager', biomass: 0, mycelialNetwork: 0 })).toBe('grow');
+  it('moves to grow once water can afford a hypha', () => {
+    expect(
+      resolveTutorialStep({ phase: 'awakening', water: TUTORIAL_GROW_WATER_COST, nutrients: 0 }),
+    ).toBe('grow');
   });
 
-  it('moves to automate once a generator is affordable', () => {
+  it('asks for nutrients once managing', () => {
+    expect(resolveTutorialStep({ phase: 'manager', water: 0, nutrients: 0 })).toBe('nutrients');
+  });
+
+  it('moves to automate once nutrients are gathered', () => {
     expect(
       resolveTutorialStep({
         phase: 'manager',
-        biomass: TUTORIAL_GENERATOR_COST,
-        mycelialNetwork: 0,
+        water: 0,
+        nutrients: TUTORIAL_GROW_NUTRIENT_COST,
       }),
     ).toBe('automate');
   });
 
   it('moves to expand in explorer and beyond', () => {
-    expect(resolveTutorialStep({ phase: 'explorer', biomass: 5, mycelialNetwork: 2 })).toBe(
-      'expand',
-    );
-    expect(resolveTutorialStep({ phase: 'tactician', biomass: 5, mycelialNetwork: 5 })).toBe(
-      'expand',
-    );
-    expect(resolveTutorialStep({ phase: 'active', biomass: 50, mycelialNetwork: 5 })).toBe(
-      'expand',
-    );
+    expect(resolveTutorialStep({ phase: 'explorer', water: 0, nutrients: 0 })).toBe('expand');
+    expect(resolveTutorialStep({ phase: 'tactician', water: 0, nutrients: 0 })).toBe('expand');
+    expect(resolveTutorialStep({ phase: 'active', water: 0, nutrients: 0 })).toBe('expand');
   });
 });
 

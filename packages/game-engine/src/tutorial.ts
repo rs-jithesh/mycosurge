@@ -8,39 +8,49 @@ export const AWAKENING_MESSAGES = [
   'Something stirs. You are awake.',
 ];
 
-const REPEAT_MESSAGE = 'You draw in moisture and minerals.';
+const WATER_MESSAGE = 'You draw water from the substrate.';
+const BOTH_MESSAGE = 'Water and minerals seep into the hyphae.';
 
 /**
- * Early tutorial reserves are deliberately tiny so the player learns the 10 + 10 synthesis
- * before capacity opens up. The cap lifts once enough Biomass is banked to automate.
+ * First-session tuning. **Water is the only resource at the start.** Nutrients are revealed
+ * by the first growth, and the whole hook is paid in Water (then Water + Nutrients). Biomass
+ * is deliberately absent — it arrives with the full game.
+ *
+ * Every value lives here so the opening can be tuned in one place and simulated by
+ * `first-session.sim.test.ts`.
  */
-export const TUTORIAL_RESERVE_CAP = 10;
+export const TUTORIAL_RESERVE_CAP = 12;
+/** What one Absorb grants, Water always and Nutrients once they are unlocked. */
+export const TUTORIAL_ABSORB_WATER = 2;
+export const TUTORIAL_ABSORB_NUTRIENTS = 2;
+/** Cost of one hypha (growth). Nutrients are only charged once unlocked. */
+export const TUTORIAL_GROW_WATER_COST = 3;
+export const TUTORIAL_GROW_NUTRIENT_COST = 2;
+/** Water price of the first generator — Osmotic Pump (+1 Water/s). */
+export const TUTORIAL_GENERATOR_WATER_COST = 6;
+/** Water + Nutrients price of the second generator — Enzymatic Exudates (+1 Nutrients/s). */
+export const TUTORIAL_GENERATOR2_WATER_COST = 6;
+export const TUTORIAL_GENERATOR2_NUTRIENT_COST = 6;
+/** Reach (mm) at which the sensed signal resolves into the tutorial threat. */
+export const TUTORIAL_REACH_TARGET = 5;
 
-/**
- * What one Absorb grants during the hook. Deliberately generous: the first synthesis should
- * be a handful of taps away, not ten, so an unlock lands every few seconds.
- */
-export const TUTORIAL_ABSORB_AMOUNT = 2;
-
-/** Reserve cost of one synthesis. Kept at the canonical 10 + 10 the copy teaches. */
+/** Full-game Biomass synthesis costs (kept, but not part of the first-session hook). */
 export const TUTORIAL_SYNTH_WATER_COST = 10;
 export const TUTORIAL_SYNTH_NUTRIENT_COST = 10;
 
-/**
- * Hook-only generator price. Lower than the full game's `GENERATORS.baseCost` on purpose —
- * the real cost curve starts once the loop is learned.
- */
-export const TUTORIAL_GENERATOR_COST = 1;
+/** Nutrients stay hidden until the first hypha grows. */
+export function nutrientsUnlocked(state: GameState): boolean {
+  return state.gamePhase !== 'awakening';
+}
 
 /**
- * Effective Water/Nutrients capacity. During the feed/grow steps it is {@link TUTORIAL_RESERVE_CAP};
- * from the automate step onward the real pool cap applies. Never reduces a value already above it.
+ * Effective Water/Nutrients capacity. During the water/grow steps it is
+ * {@link TUTORIAL_RESERVE_CAP}; from the first generator onward the real pool cap applies.
+ * Never reduces a value already above it.
  */
 export function getTutorialReserveCap(state: GameState, resource: 'water' | 'nutrients'): number {
   const base = resource === 'water' ? state.waterCap : state.nutrientsCap;
-  const early =
-    state.gamePhase === 'awakening' ||
-    (state.gamePhase === 'manager' && state.biomass < TUTORIAL_GENERATOR_COST);
+  const early = state.gamePhase === 'awakening' || state.gamePhase === 'manager';
   return early ? Math.min(base, TUTORIAL_RESERVE_CAP) : base;
 }
 
@@ -56,36 +66,67 @@ export function resetAbsorbCount(): void {
 }
 
 export function absorbResources(state: GameState): string {
-  state.water = fillPool(
-    state.water,
-    getTutorialReserveCap(state, 'water'),
-    TUTORIAL_ABSORB_AMOUNT,
-  );
-  state.nutrients = fillPool(
-    state.nutrients,
-    getTutorialReserveCap(state, 'nutrients'),
-    TUTORIAL_ABSORB_AMOUNT,
-  );
+  state.water = fillPool(state.water, getTutorialReserveCap(state, 'water'), TUTORIAL_ABSORB_WATER);
+  if (nutrientsUnlocked(state)) {
+    state.nutrients = fillPool(
+      state.nutrients,
+      getTutorialReserveCap(state, 'nutrients'),
+      TUTORIAL_ABSORB_NUTRIENTS,
+    );
+  }
 
   let message: string;
   if (_absorbCount < AWAKENING_MESSAGES.length) {
     message = AWAKENING_MESSAGES[_absorbCount];
   } else {
-    message = REPEAT_MESSAGE;
+    message = nutrientsUnlocked(state) ? BOTH_MESSAGE : WATER_MESSAGE;
   }
   _absorbCount++;
-
-  if (
-    state.gamePhase === 'awakening' &&
-    state.water >= TUTORIAL_SYNTH_WATER_COST &&
-    state.nutrients >= TUTORIAL_SYNTH_NUTRIENT_COST
-  ) {
-    state.gamePhase = 'manager';
-  }
-
   return message;
 }
 
+/**
+ * Grow one hypha. Paid in Water (and Nutrients once they are unlocked). The first growth
+ * reveals Nutrients; reaching {@link TUTORIAL_REACH_TARGET} after the first generator hands
+ * off to the tutorial threat.
+ */
+export function extendHyphae(state: GameState): { success: boolean; message: string } {
+  const waterCost = TUTORIAL_GROW_WATER_COST;
+  const nutrientCost = nutrientsUnlocked(state) ? TUTORIAL_GROW_NUTRIENT_COST : 0;
+  if (state.water < waterCost || state.nutrients < nutrientCost) {
+    return {
+      success: false,
+      message:
+        nutrientCost > 0
+          ? `You need ${waterCost} Water and ${nutrientCost} Nutrients.`
+          : `You need ${waterCost} Water.`,
+    };
+  }
+  state.water -= waterCost;
+  state.nutrients -= nutrientCost;
+  state.mycelialNetwork += 1;
+
+  // The first growth opens Nutrients — the second resource of the session.
+  if (state.gamePhase === 'awakening') {
+    state.gamePhase = 'manager';
+  }
+
+  const message =
+    state.mycelialNetwork === 1
+      ? 'Your first hypha threads into the dark substrate.'
+      : `Network extended — ${state.mycelialNetwork}mm of hyphae.`;
+
+  if (state.mycelialNetwork >= TUTORIAL_REACH_TARGET && state.gamePhase === 'explorer') {
+    state.gamePhase = 'tactician';
+  }
+
+  return { success: true, message };
+}
+
+/**
+ * Full-game Synthesis (10 Water + 10 Nutrients → 1 Biomass). Not used by the first-session
+ * hook — Biomass arrives with the full game — but kept for the store and future use.
+ */
 export function synthesizeBiomass(state: GameState): { success: boolean; message: string } {
   if (state.water < TUTORIAL_SYNTH_WATER_COST || state.nutrients < TUTORIAL_SYNTH_NUTRIENT_COST) {
     return {
@@ -103,20 +144,34 @@ export function purchaseTutorialUpgrade(
   state: GameState,
   upgrade: 'osmoticPump' | 'enzymaticExudates',
 ): { success: boolean; message: string } {
-  if (state.biomass < TUTORIAL_GENERATOR_COST) {
-    return {
-      success: false,
-      message: `You need ${TUTORIAL_GENERATOR_COST} Biomass to install a generator.`,
-    };
-  }
   if (state.tutorialUpgrades[upgrade]) {
     return { success: false, message: 'That generator is already installed.' };
   }
-  state.biomass -= TUTORIAL_GENERATOR_COST;
+  if (!nutrientsUnlocked(state)) {
+    return { success: false, message: 'Establish your first growth first.' };
+  }
+
+  const cost =
+    upgrade === 'osmoticPump'
+      ? { water: TUTORIAL_GENERATOR_WATER_COST, nutrients: 0 }
+      : { water: TUTORIAL_GENERATOR2_WATER_COST, nutrients: TUTORIAL_GENERATOR2_NUTRIENT_COST };
+
+  if (state.water < cost.water || state.nutrients < cost.nutrients) {
+    return {
+      success: false,
+      message:
+        cost.nutrients > 0
+          ? `You need ${cost.water} Water and ${cost.nutrients} Nutrients.`
+          : `You need ${cost.water} Water.`,
+    };
+  }
+
+  state.water -= cost.water;
+  state.nutrients -= cost.nutrients;
   state.tutorialUpgrades[upgrade] = true;
 
   if (state.gamePhase === 'manager') {
-    state.gamePhase = 'explorer';
+    state.gamePhase = state.mycelialNetwork >= TUTORIAL_REACH_TARGET ? 'tactician' : 'explorer';
   }
 
   const messages: Record<string, string> = {
@@ -124,35 +179,6 @@ export function purchaseTutorialUpgrade(
     enzymaticExudates: 'Enzymatic Exudates installed — +1 Nutrients per second.',
   };
   return { success: true, message: messages[upgrade] };
-}
-
-/**
- * Biomass cost of one tutorial reach extension. Deliberately low so the Expand
- * step is a short demonstration rather than a grind (the full game's reach curve
- * takes over afterwards).
- */
-export const TUTORIAL_EXTEND_COST = 1;
-
-export function extendHyphae(state: GameState): { success: boolean; message: string } {
-  if (state.biomass < TUTORIAL_EXTEND_COST) {
-    return {
-      success: false,
-      message: `You need ${TUTORIAL_EXTEND_COST} Biomass to extend your network.`,
-    };
-  }
-  state.biomass -= TUTORIAL_EXTEND_COST;
-  state.mycelialNetwork += 1;
-
-  const message =
-    state.mycelialNetwork === 1
-      ? 'Your first hypha threads into the dark substrate.'
-      : `Network extended — ${state.mycelialNetwork}mm of hyphae.`;
-
-  if (state.mycelialNetwork >= 5 && state.gamePhase === 'explorer') {
-    state.gamePhase = 'tactician';
-  }
-
-  return { success: true, message };
 }
 
 export function getTutorialShockMultiplier(state: GameState): number {

@@ -1,63 +1,97 @@
 import { describe, it, expect } from 'vitest';
 import {
   absorbResources,
+  extendHyphae,
   getTutorialReserveCap,
+  nutrientsUnlocked,
   purchaseTutorialUpgrade,
-  TUTORIAL_ABSORB_AMOUNT,
-  TUTORIAL_GENERATOR_COST,
+  TUTORIAL_ABSORB_NUTRIENTS,
+  TUTORIAL_ABSORB_WATER,
+  TUTORIAL_GENERATOR2_NUTRIENT_COST,
+  TUTORIAL_GENERATOR2_WATER_COST,
+  TUTORIAL_GENERATOR_WATER_COST,
+  TUTORIAL_GROW_NUTRIENT_COST,
+  TUTORIAL_GROW_WATER_COST,
   TUTORIAL_RESERVE_CAP,
 } from './tutorial';
 import { createInitialState } from './state';
 
 describe('absorbResources', () => {
-  it('grants the hook absorb amount to water and nutrients', () => {
+  it('gathers only Water before the first growth', () => {
     const state = createInitialState();
     absorbResources(state);
-    expect(state.water).toBe(TUTORIAL_ABSORB_AMOUNT);
-    expect(state.nutrients).toBe(TUTORIAL_ABSORB_AMOUNT);
+    expect(state.water).toBe(TUTORIAL_ABSORB_WATER);
+    expect(state.nutrients).toBe(0);
+    expect(nutrientsUnlocked(state)).toBe(false);
   });
 
-  it('reaches synthesis in a handful of taps', () => {
+  it('gathers Water and Nutrients once they are unlocked', () => {
     const state = createInitialState();
-    let taps = 0;
-    while (state.gamePhase === 'awakening' && taps < 20) {
-      absorbResources(state);
-      taps++;
-    }
-    // +2 per tap against a 10 cap: the first synthesis is five taps away.
-    expect(taps).toBe(5);
-    expect(state.gamePhase).toBe('manager');
-  });
-
-  it('never exceeds the water and nutrient caps', () => {
-    const state = createInitialState();
-    state.water = state.waterCap;
-    state.nutrients = state.nutrientsCap;
+    state.gamePhase = 'manager';
     absorbResources(state);
-    expect(state.water).toBe(state.waterCap);
-    expect(state.nutrients).toBe(state.nutrientsCap);
-  });
-
-  it('advances the phase once both pools reach the threshold', () => {
-    const state = createInitialState();
-    state.water = 9;
-    state.nutrients = 9;
-    absorbResources(state);
-    expect(state.gamePhase).toBe('manager');
+    expect(state.water).toBe(TUTORIAL_ABSORB_WATER);
+    expect(state.nutrients).toBe(TUTORIAL_ABSORB_NUTRIENTS);
   });
 
   it('holds early reserves at the small tutorial cap', () => {
     const state = createInitialState();
     for (let i = 0; i < 25; i++) absorbResources(state);
     expect(state.water).toBe(TUTORIAL_RESERVE_CAP);
-    expect(state.nutrients).toBe(TUTORIAL_RESERVE_CAP);
+  });
+});
+
+describe('extendHyphae', () => {
+  it('spends Water to grow the first hypha and reveals Nutrients', () => {
+    const state = createInitialState();
+    state.water = TUTORIAL_GROW_WATER_COST;
+    const result = extendHyphae(state);
+    expect(result.success).toBe(true);
+    expect(state.mycelialNetwork).toBe(1);
+    expect(state.water).toBe(0);
+    expect(state.gamePhase).toBe('manager');
+    expect(nutrientsUnlocked(state)).toBe(true);
   });
 
-  it('does not reduce reserves already above the early cap', () => {
+  it('charges Water and Nutrients after the unlock', () => {
     const state = createInitialState();
-    state.water = 50;
-    absorbResources(state);
-    expect(state.water).toBe(50);
+    state.gamePhase = 'manager';
+    state.water = TUTORIAL_GROW_WATER_COST;
+    state.nutrients = TUTORIAL_GROW_NUTRIENT_COST;
+    expect(extendHyphae(state).success).toBe(true);
+    expect(state.water).toBe(0);
+    expect(state.nutrients).toBe(0);
+  });
+
+  it('refuses without the reserves', () => {
+    const state = createInitialState();
+    expect(extendHyphae(state).success).toBe(false);
+  });
+});
+
+describe('purchaseTutorialUpgrade', () => {
+  it('is gated until the first growth', () => {
+    const state = createInitialState();
+    expect(purchaseTutorialUpgrade(state, 'osmoticPump').success).toBe(false);
+  });
+
+  it('installs the first generator for Water', () => {
+    const state = createInitialState();
+    state.gamePhase = 'manager';
+    state.water = TUTORIAL_GENERATOR_WATER_COST;
+    const result = purchaseTutorialUpgrade(state, 'osmoticPump');
+    expect(result.success).toBe(true);
+    expect(state.water).toBe(0);
+    expect(state.gamePhase).toBe('explorer');
+  });
+
+  it('charges Water and Nutrients for the second generator', () => {
+    const state = createInitialState();
+    state.gamePhase = 'manager';
+    state.water = TUTORIAL_GENERATOR2_WATER_COST;
+    state.nutrients = TUTORIAL_GENERATOR2_NUTRIENT_COST;
+    expect(purchaseTutorialUpgrade(state, 'enzymaticExudates').success).toBe(true);
+    expect(state.water).toBe(0);
+    expect(state.nutrients).toBe(0);
   });
 });
 
@@ -67,35 +101,13 @@ describe('getTutorialReserveCap', () => {
     expect(getTutorialReserveCap(state, 'water')).toBe(TUTORIAL_RESERVE_CAP);
 
     state.gamePhase = 'manager';
-    state.biomass = 0;
     expect(getTutorialReserveCap(state, 'nutrients')).toBe(TUTORIAL_RESERVE_CAP);
   });
 
-  it('opens to the full pool cap once automation is within reach', () => {
+  it('opens to the full pool once a generator is installed', () => {
     const state = createInitialState();
-    state.gamePhase = 'manager';
-    state.biomass = TUTORIAL_GENERATOR_COST;
+    state.gamePhase = 'explorer';
     expect(getTutorialReserveCap(state, 'water')).toBe(state.waterCap);
     expect(getTutorialReserveCap(state, 'nutrients')).toBe(state.nutrientsCap);
-  });
-});
-
-describe('purchaseTutorialUpgrade', () => {
-  it('installs the first generator for the hook price', () => {
-    const state = createInitialState();
-    state.gamePhase = 'manager';
-    state.biomass = TUTORIAL_GENERATOR_COST;
-    const result = purchaseTutorialUpgrade(state, 'osmoticPump');
-    expect(result.success).toBe(true);
-    expect(state.biomass).toBe(0);
-    expect(state.gamePhase).toBe('explorer');
-  });
-
-  it('refuses without enough Biomass', () => {
-    const state = createInitialState();
-    state.gamePhase = 'manager';
-    state.biomass = TUTORIAL_GENERATOR_COST - 1;
-    const result = purchaseTutorialUpgrade(state, 'osmoticPump');
-    expect(result.success).toBe(false);
   });
 });

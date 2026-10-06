@@ -1,29 +1,35 @@
 import type { GameState } from './state';
 import {
-  TUTORIAL_EXTEND_COST,
-  TUTORIAL_GENERATOR_COST,
-  TUTORIAL_SYNTH_NUTRIENT_COST,
-  TUTORIAL_SYNTH_WATER_COST,
+  TUTORIAL_GENERATOR2_NUTRIENT_COST,
+  TUTORIAL_GENERATOR2_WATER_COST,
+  TUTORIAL_GENERATOR_WATER_COST,
+  TUTORIAL_GROW_NUTRIENT_COST,
+  TUTORIAL_GROW_WATER_COST,
+  TUTORIAL_REACH_TARGET,
 } from './tutorial';
 
 /**
- * The ordered beats of the first minute. This is a *view* over the tutorial state, not a
+ * The ordered beats of the first session. This is a *view* over the tutorial state, not a
  * second progression system: each objective is a pure predicate over `GameState`, so the
  * hook never needs its own persisted progress and existing saves need no migration.
+ *
+ * Order reflects one-new-idea-at-a-time: Water → first growth (which reveals Nutrients) →
+ * gather Nutrients → first generator → second generator → reach the signal. Biomass is not
+ * part of the hook.
  */
 export type HookObjectiveId =
-  | 'absorb'
-  | 'shape-biomass'
+  | 'absorb-water'
+  | 'first-growth'
+  | 'gather-nutrients'
   | 'first-generator'
   | 'second-generator'
-  | 'extend'
-  | 'sense';
+  | 'reach';
 
 /** Live progress toward the next objective, for the always-close goal chip. */
 export interface HookProgress {
   current: number;
   target: number;
-  /** Singular noun for the chip, e.g. `generator` or `Water & Nutrients`. */
+  /** Singular noun for the chip, e.g. `generator` or `Water`. */
   unit: string;
   /** Plural form used when more than one remains; defaults to `unit`. */
   unitPlural?: string;
@@ -60,7 +66,7 @@ function hasTutorialGenerator(state: GameState): boolean {
 export const SENSE_REACH_THRESHOLD = 3;
 
 /** Reach at which the sensed signal resolves into the scripted tutorial threat. */
-export const SENSE_REACH_RESOLVE = 5;
+export const SENSE_REACH_RESOLVE = TUTORIAL_REACH_TARGET;
 
 /**
  * True while a faint blip should pulse at the edge of the bloom. Purely derived from
@@ -72,34 +78,38 @@ export function isSignalSensed(state: GameState): boolean {
 
 export const HOOK_OBJECTIVES: readonly HookObjective[] = [
   {
-    id: 'absorb',
-    title: 'Draw water and nutrients from the substrate',
-    action: 'Tap the spore to absorb',
-    done: (s) => s.gamePhase !== 'awakening',
+    id: 'absorb-water',
+    title: 'Draw water from the substrate',
+    action: 'Tap Absorb',
+    done: (s) => s.water >= TUTORIAL_GROW_WATER_COST || s.mycelialNetwork >= 1,
     progress: (s) =>
-      s.gamePhase === 'awakening'
-        ? {
-            current: Math.min(s.water, s.nutrients),
-            target: TUTORIAL_SYNTH_WATER_COST,
-            unit: 'Water & Nutrients',
-          }
-        : null,
+      s.water >= TUTORIAL_GROW_WATER_COST || s.mycelialNetwork >= 1
+        ? null
+        : { current: s.water, target: TUTORIAL_GROW_WATER_COST, unit: 'Water' },
   },
   {
-    id: 'shape-biomass',
-    title: 'Shape Biomass from your reserves',
-    action: `Spend ${TUTORIAL_SYNTH_WATER_COST} Water + ${TUTORIAL_SYNTH_NUTRIENT_COST} Nutrients`,
-    done: (s) => s.totalBiomassEarned >= 1,
+    id: 'first-growth',
+    title: 'Grow your first hypha',
+    action: `Spend ${TUTORIAL_GROW_WATER_COST} Water`,
+    done: (s) => s.mycelialNetwork >= 1,
     progress: (s) =>
-      s.totalBiomassEarned >= 1
+      s.mycelialNetwork >= 1 ? null : { current: s.mycelialNetwork, target: 1, unit: 'mm' },
+  },
+  {
+    id: 'gather-nutrients',
+    title: 'The substrate yields Nutrients too',
+    action: 'Tap Absorb to gather Nutrients',
+    done: (s) => s.nutrients >= TUTORIAL_GROW_NUTRIENT_COST || hasTutorialGenerator(s),
+    progress: (s) =>
+      s.nutrients >= TUTORIAL_GROW_NUTRIENT_COST || hasTutorialGenerator(s)
         ? null
-        : { current: s.totalBiomassEarned, target: 1, unit: 'Biomass' },
+        : { current: s.nutrients, target: TUTORIAL_GROW_NUTRIENT_COST, unit: 'Nutrients' },
   },
   {
     id: 'first-generator',
-    title: 'Install a generator so resources make themselves',
-    action: 'Pick one — you can install the other next',
-    done: hasTutorialGenerator,
+    title: 'Install a generator so water makes itself',
+    action: `Spend ${TUTORIAL_GENERATOR_WATER_COST} Water — pick either`,
+    done: (s) => hasTutorialGenerator(s),
     progress: (s) => {
       const count = tutorialGeneratorCount(s);
       return count >= 1
@@ -110,7 +120,7 @@ export const HOOK_OBJECTIVES: readonly HookObjective[] = [
   {
     id: 'second-generator',
     title: 'Install the second generator',
-    action: `Spend ${TUTORIAL_GENERATOR_COST} Biomass`,
+    action: `Spend ${TUTORIAL_GENERATOR2_WATER_COST} Water + ${TUTORIAL_GENERATOR2_NUTRIENT_COST} Nutrients`,
     done: (s) => tutorialGeneratorCount(s) >= 2,
     progress: (s) => {
       const count = tutorialGeneratorCount(s);
@@ -120,26 +130,14 @@ export const HOOK_OBJECTIVES: readonly HookObjective[] = [
     },
   },
   {
-    id: 'extend',
-    title: 'Extend your hyphae across the substrate',
-    action: `Spend ${TUTORIAL_EXTEND_COST} Biomass to grow the network`,
-    done: (s) => s.mycelialNetwork >= 1,
-    progress: (s) =>
-      s.mycelialNetwork >= 1 ? null : { current: s.mycelialNetwork, target: 1, unit: 'mm' },
-  },
-  {
-    id: 'sense',
+    id: 'reach',
     title: 'Reach deeper — something is out there',
-    action: 'Extend until the signal resolves',
-    done: (s) => s.mycelialNetwork >= SENSE_REACH_RESOLVE,
+    action: 'Grow toward the signal',
+    done: (s) => s.mycelialNetwork >= TUTORIAL_REACH_TARGET,
     progress: (s) =>
-      s.mycelialNetwork >= SENSE_REACH_RESOLVE
+      s.mycelialNetwork >= TUTORIAL_REACH_TARGET
         ? null
-        : {
-            current: s.mycelialNetwork,
-            target: SENSE_REACH_RESOLVE,
-            unit: 'mm',
-          },
+        : { current: s.mycelialNetwork, target: TUTORIAL_REACH_TARGET, unit: 'mm' },
   },
 ];
 

@@ -1,7 +1,13 @@
 # First-Minute Hook — Plan
 
-Status: **in progress** — Phases 1–4 implemented and documented; only the H12 playtest
-balance pass remains.
+Status: **superseded** — see _Superseded_ note below the doc header.
+
+> **Superseded by the tutorial revamp (branch `tutorial-revamp`):** the hook now starts
+> **Water-only**, reveals **Nutrients** via the first growth, and defers **Biomass** to the
+> full game. Hook costs live in `packages/game-engine/src/tutorial.ts` as `TUTORIAL_*`
+> (Water, then Water + Nutrients), and the beats are `absorb-water → first-growth →
+gather-nutrients → first-generator → second-generator → reach`. The Biomass-centric
+> phases and H-numbers below are historical.
 
 ## Context
 
@@ -13,13 +19,13 @@ asset (the network you can watch spread) only appears late.
 Audit of the current first run (`packages/game-engine/src/tutorial.ts`,
 `apps/web/src/lib/components/TutorialIntro.svelte`):
 
-| Brief requirement             | Today                                                                                        | Gap                                                              |
-| ----------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Immediate action + result     | `Absorb` gives +1 Water/+1 Nutrients, shown as static text; nothing visibly grows             | No rolling numbers, no growth, copy read before play             |
-| New unlock every 5–10 s       | First synthesis = 10 taps; first generator = 2 Biomass (~25–30 taps); 4 steps total            | Cadence slow and lumpy                                           |
-| Goal visible and close        | Banner states "spend 10 + 10", not a live "N more" delta                                       | Delta is never counted down                                      |
-| First reveal in ~2 min        | No sensed blip before the full game; radar only spawns once a host is catalogued              | Missing entirely                                                 |
-| Growth you can see            | Network is a hidden `ProgressBar` shown only on step 4; the radial map is full-game only       | No visible spread in minute one                                  |
+| Brief requirement         | Today                                                                                    | Gap                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Immediate action + result | `Absorb` gives +1 Water/+1 Nutrients, shown as static text; nothing visibly grows        | No rolling numbers, no growth, copy read before play |
+| New unlock every 5–10 s   | First synthesis = 10 taps; first generator = 2 Biomass (~25–30 taps); 4 steps total      | Cadence slow and lumpy                               |
+| Goal visible and close    | Banner states "spend 10 + 10", not a live "N more" delta                                 | Delta is never counted down                          |
+| First reveal in ~2 min    | No sensed blip before the full game; radar only spawns once a host is catalogued         | Missing entirely                                     |
+| Growth you can see        | Network is a hidden `ProgressBar` shown only on step 4; the radial map is full-game only | No visible spread in minute one                      |
 
 Assets that already exist: `CountUp.svelte` (rolling numbers, reduced-motion aware)
 and the SVG hyphae rendering in `map/MapOverlay.svelte` (`generateNetwork`, hyphae
@@ -42,13 +48,13 @@ contact and **not** the sector map. `getSystemUnlocks()` continues to gate Radar
 
 ## Target first five minutes
 
-| Time      | Player does        | Unlock / reveal                          | Curve (hook)                      |
-| --------- | ------------------ | ---------------------------------------- | --------------------------------- |
-| 0:00–0:30 | Taps the spore     | Water/Nutrients roll up                  | Absorb +2, cap 10 → synth in ~5 t |
-| 0:30–1:30 | Shapes Biomass     | Generator #1, then #2                    | 1 Biomass each                    |
-| 1:30–2:30 | Extends reach      | Bloom branches; **faint blip sensed**    | 1 Biomass per mm                  |
-| 2:30–4:00 | Fights nematode    | Lysate burst; full game begins           | existing tutorial handoff         |
-| 4:00–5:00 | Hits a cap         | Learns cap → upgrade → return            | full-game curves take over        |
+| Time      | Player does     | Unlock / reveal                       | Curve (hook)                      |
+| --------- | --------------- | ------------------------------------- | --------------------------------- |
+| 0:00–0:30 | Taps the spore  | Water/Nutrients roll up               | Absorb +2, cap 10 → synth in ~5 t |
+| 0:30–1:30 | Shapes Biomass  | Generator #1, then #2                 | 1 Biomass each                    |
+| 1:30–2:30 | Extends reach   | Bloom branches; **faint blip sensed** | 1 Biomass per mm                  |
+| 2:30–4:00 | Fights nematode | Lysate burst; full game begins        | existing tutorial handoff         |
+| 4:00–5:00 | Hits a cap      | Learns cap → upgrade → return         | full-game curves take over        |
 
 ## Work breakdown
 
@@ -85,7 +91,7 @@ contact and **not** the sector map. `getSystemUnlocks()` continues to gate Radar
 ### Phase 3 — Hook UI: one obvious action, goal always close
 
 - [x] **H8** `NextGoalChip.svelte` reads `getNextHookObjective` / `getHookProgress` and
-      shows a live *"N more <unit>"* delta plus the next action, with singular/plural
+      shows a live _"N more <unit>"_ delta plus the next action, with singular/plural
       units. It sits under the objective banner and hides once the hunt begins.
 - [x] **H9** The bloom is the tap target during the hook — tap the organism to Absorb
       (real `<button>` wrapper for keyboard/AT) — with the "+2" pop over it. The goal chip
@@ -109,7 +115,7 @@ contact and **not** the sector map. `getSystemUnlocks()` continues to gate Radar
 ## Decisions
 
 - **The bloom is the map, at small scale.** `ColonyBloom` draws `generateNetwork(seed, 1)`
-  — the *same seeded hyphae* as `MapOverlay` — so the tutorial organism and the full-game
+  — the _same seeded hyphae_ as `MapOverlay` — so the tutorial organism and the full-game
   map are the same network. The seed is now assigned at the first tutorial frame
   (`assignNetworkSeed` in `game.store`), not only when the full game starts. Growth stays
   undirected here; sectors/cords remain full-game. The bloom is **not** tappable — Absorb

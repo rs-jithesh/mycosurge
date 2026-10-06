@@ -654,9 +654,6 @@ function createGameStore() {
   function absorbResources() {
     const message = engineAbsorb(state);
     logStore.info(message);
-    if (state.gamePhase === 'manager') {
-      logStore.info('Reserves brim — Biomass can now be shaped.');
-    }
     saveState();
   }
 
@@ -664,9 +661,6 @@ function createGameStore() {
     const result = engineSynthesize(state);
     if (result.success) {
       logStore.info(result.message);
-      if (state.biomass >= 2) {
-        logStore.info('A generator can now be grown to feed you.');
-      }
     }
     saveState();
   }
@@ -683,9 +677,13 @@ function createGameStore() {
   }
 
   function extendHyphae() {
+    const wasAwakening = state.gamePhase === 'awakening';
     const result = engineExtend(state);
     if (result.success) {
       logStore.info(result.message);
+      if (wasAwakening && state.gamePhase === 'manager') {
+        logStore.success('The substrate yields Nutrients — Absorb now gathers both.');
+      }
       if (state.mycelialNetwork >= 5) {
         logStore.warn('Something is grazing on your outer hyphae. Head to the Radar.');
       }

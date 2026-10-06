@@ -5,8 +5,14 @@
     getNextHookObjective,
     getTutorialReserveCap,
     isSignalSensed,
-    TUTORIAL_ABSORB_AMOUNT,
-    TUTORIAL_EXTEND_COST,
+    nutrientsUnlocked,
+    TUTORIAL_ABSORB_NUTRIENTS,
+    TUTORIAL_ABSORB_WATER,
+    TUTORIAL_GENERATOR2_NUTRIENT_COST,
+    TUTORIAL_GENERATOR2_WATER_COST,
+    TUTORIAL_GENERATOR_WATER_COST,
+    TUTORIAL_GROW_NUTRIENT_COST,
+    TUTORIAL_GROW_WATER_COST,
   } from '@mycosurge/game-engine';
   import { resourceLabel } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
@@ -15,7 +21,6 @@
   import { logStore } from '$lib/stores/log.svelte';
   import ObjectiveBanner from './ObjectiveBanner.svelte';
   import ProgressBar from './ProgressBar.svelte';
-  import CountUp from './CountUp.svelte';
   import ColonyBloom from './ColonyBloom.svelte';
   import NextGoalChip from './NextGoalChip.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
@@ -26,38 +31,49 @@
     HANDOFF_STEP,
     resolveTutorialStep,
     TUTORIAL_GENERATORS,
-    TUTORIAL_GENERATOR_COST,
     LOCK_REASONS,
     ONBOARDING_COPY,
   } from '$lib/content/onboarding';
 
   let s = $derived(gameStore.state);
 
-  const fmtWhole = (n: number) => Math.floor(n).toString();
-
   let isHandoff = $derived(s.gamePhase === 'tactician');
   let stepId = $derived(
-    resolveTutorialStep({
-      phase: s.gamePhase,
-      biomass: s.biomass,
-      mycelialNetwork: s.mycelialNetwork,
-    }),
+    resolveTutorialStep({ phase: s.gamePhase, water: s.water, nutrients: s.nutrients }),
   );
   let step = $derived(isHandoff ? HANDOFF_STEP : TUTORIAL_STEPS[stepId]);
 
+  let nutrientsShown = $derived(nutrientsUnlocked(s));
   let waterMax = $derived(getTutorialReserveCap(s, 'water'));
   let nutrientMax = $derived(getTutorialReserveCap(s, 'nutrients'));
 
-  let canSynthesize = $derived(s.water >= 10 && s.nutrients >= 10);
-  let canInstall = $derived(s.biomass >= TUTORIAL_GENERATOR_COST);
-  let canExtend = $derived(s.biomass >= TUTORIAL_EXTEND_COST);
+  let canGrow = $derived(
+    s.water >= TUTORIAL_GROW_WATER_COST &&
+      (!nutrientsShown || s.nutrients >= TUTORIAL_GROW_NUTRIENT_COST),
+  );
+  let growCostText = $derived(
+    nutrientsShown ? ONBOARDING_COPY.grow.effectBoth : ONBOARDING_COPY.grow.effectWater,
+  );
 
   let hasPump = $derived(s.tutorialUpgrades.osmoticPump);
   let hasExudates = $derived(s.tutorialUpgrades.enzymaticExudates);
   let shock = $derived(s.tutorialShockTimer);
 
+  function canAffordGenerator(id: 'osmoticPump' | 'enzymaticExudates'): boolean {
+    return id === 'osmoticPump'
+      ? s.water >= TUTORIAL_GENERATOR_WATER_COST
+      : s.water >= TUTORIAL_GENERATOR2_WATER_COST &&
+          s.nutrients >= TUTORIAL_GENERATOR2_NUTRIENT_COST;
+  }
+
+  function generatorCostText(id: 'osmoticPump' | 'enzymaticExudates'): string {
+    return id === 'osmoticPump'
+      ? `${TUTORIAL_GENERATOR_WATER_COST} Water`
+      : `${TUTORIAL_GENERATOR2_WATER_COST} Water + ${TUTORIAL_GENERATOR2_NUTRIENT_COST} Nutrients`;
+  }
+
   // ── Colony bloom ──
-  // The bloom is the network, so it grows only when the player extends hyphae — tapping
+  // The bloom is the network, so it grows only when the player grows hyphae — tapping
   // Absorb changes reserves, not the organism. Generators are shown elsewhere.
   let sensedSignal = $derived(isSignalSensed(s));
   let bloomReach = $derived(s.mycelialNetwork);
@@ -97,37 +113,18 @@
     );
   }
 
-  // Unlock states: every control stays visible; locked ones are dimmed with a reason.
-  let synthAvailable = $derived(s.gamePhase !== 'awakening');
-  let genAvailable = $derived(
-    s.biomass >= TUTORIAL_GENERATOR_COST || s.gamePhase === 'explorer' || isHandoff,
-  );
-  let extendAvailable = $derived(s.gamePhase === 'explorer' || isHandoff);
-
-  // Flash a control the moment it unlocks so the change is announced.
-  let flash = $state<{ synth: boolean; gen: boolean; extend: boolean }>({
-    synth: false,
-    gen: false,
-    extend: false,
-  });
-  let prevAvailable: { synth: boolean; gen: boolean; extend: boolean } | null = null;
+  // Generators unlock with Nutrients; flash them the moment they appear.
+  let genAvailable = $derived(nutrientsShown);
+  let flashGen = $state(false);
   const flashTimers: ReturnType<typeof setTimeout>[] = [];
+  let prevGenAvailable: boolean | null = null;
 
   $effect(() => {
-    const now = { synth: synthAvailable, gen: genAvailable, extend: extendAvailable };
-    if (prevAvailable) {
-      for (const key of Object.keys(now) as (keyof typeof now)[]) {
-        if (now[key] && !prevAvailable[key]) {
-          flash[key] = true;
-          flashTimers.push(
-            setTimeout(() => {
-              flash[key] = false;
-            }, 1500),
-          );
-        }
-      }
+    if (prevGenAvailable !== null && genAvailable && !prevGenAvailable) {
+      flashGen = true;
+      flashTimers.push(setTimeout(() => (flashGen = false), 1500));
     }
-    prevAvailable = { ...now };
+    prevGenAvailable = genAvailable;
   });
 
   onDestroy(() => {
@@ -140,20 +137,14 @@
     popAbsorb();
   }
 
-  function synthesize() {
-    if (!canSynthesize) return;
-    gameStore.synthesizeBiomass();
-    burst();
-  }
-
   function buy(id: 'osmoticPump' | 'enzymaticExudates') {
-    if (s.tutorialUpgrades[id] || !canInstall) return;
+    if (s.tutorialUpgrades[id] || !canAffordGenerator(id)) return;
     gameStore.purchaseTutorialUpgrade(id);
     burst();
   }
 
-  function extend() {
-    if (!canExtend) return;
+  function grow() {
+    if (!canGrow) return;
     gameStore.extendHyphae();
     burst();
   }
@@ -207,7 +198,7 @@
       <section class="panel area-resources">
         <div class="panel-body resources">
           <div class="res-grid">
-            <div class="res-cell">
+            <div class="res-cell" class:wide={!nutrientsShown}>
               <ProgressBar
                 tone="cyan"
                 label={resourceLabel('water', 'first')}
@@ -221,36 +212,22 @@
                 <span class="rate text-data-mono">+{waterRate.toFixed(1)}/s</span>
               {/if}
             </div>
-            <div class="res-cell">
-              <ProgressBar
-                tone="violet"
-                label={resourceLabel('nutrients', 'first')}
-                labelCaps={false}
-                value={s.nutrients}
-                max={nutrientMax}
-                animate
-                format={(n) => `${Math.floor(n)}/${Math.floor(nutrientMax)}`}
-              />
-              {#if nutrientRate > 0}
-                <span class="rate text-data-mono">+{nutrientRate.toFixed(1)}/s</span>
-              {/if}
-            </div>
-          </div>
-          <div class="biomass-block">
-            <ProgressBar
-              tone="amber"
-              label={resourceLabel('biomass', 'first')}
-              labelCaps={false}
-              value={s.biomass}
-              max={s.maxBiomass}
-              animate
-              format={(n) => `${Math.floor(n)}/${Math.floor(s.maxBiomass)}`}
-            />
-            <span class="stat-sub text-data-mono">
-              <span class="sub-arrow">↑</span>
-              <CountUp value={s.totalBiomassEarned} format={fmtWhole} />
-              harvested
-            </span>
+            {#if nutrientsShown}
+              <div class="res-cell">
+                <ProgressBar
+                  tone="violet"
+                  label={resourceLabel('nutrients', 'first')}
+                  labelCaps={false}
+                  value={s.nutrients}
+                  max={nutrientMax}
+                  animate
+                  format={(n) => `${Math.floor(n)}/${Math.floor(nutrientMax)}`}
+                />
+                {#if nutrientRate > 0}
+                  <span class="rate text-data-mono">+{nutrientRate.toFixed(1)}/s</span>
+                {/if}
+              </div>
+            {/if}
           </div>
           <div class="bloom-block">
             <ColonyBloom
@@ -285,63 +262,26 @@
               <!-- Absorb -->
               <button class="action-btn" class:current={stepId === 'feed'} onclick={absorb}>
                 <span class="action-verb">Absorb</span>
-                <span class="action-sub">{ONBOARDING_COPY.absorb.effect}</span>
+                <span class="action-sub">
+                  {nutrientsShown
+                    ? ONBOARDING_COPY.absorb.effectBoth
+                    : ONBOARDING_COPY.absorb.effectWater}
+                </span>
                 {#each absorbPops as id (id)}
-                  <span class="tap-pop text-data-mono">+{TUTORIAL_ABSORB_AMOUNT}</span>
+                  <span class="tap-pop text-data-mono">+{TUTORIAL_ABSORB_WATER}</span>
                 {/each}
               </button>
 
-              <!-- Synthesize -->
-              {#if synthAvailable}
-                <button
-                  class="action-btn"
-                  class:current={stepId === 'grow'}
-                  class:flash={flash.synth}
-                  disabled={!canSynthesize}
-                  onclick={synthesize}
-                >
-                  <span class="action-verb">Synthesize Biomass</span>
-                  <span class="action-sub">
-                    {canSynthesize
-                      ? `10 ${resourceLabel('water', 'first')} + 10 ${resourceLabel(
-                          'nutrients',
-                          'first',
-                        )} → 1 ${resourceLabel('biomass', 'first')}`
-                      : `Need 10 ${resourceLabel('water', 'first')} + 10 ${resourceLabel(
-                          'nutrients',
-                          'first',
-                        )}`}
-                  </span>
-                </button>
-              {:else}
-                <div class="action-btn locked">
-                  <span class="action-verb">Synthesize Biomass</span>
-                  <span class="action-sub">{LOCK_REASONS.synthesize}</span>
-                </div>
-              {/if}
-
-              <!-- Extend -->
-              {#if extendAvailable}
-                <button
-                  class="action-btn"
-                  class:current={stepId === 'expand'}
-                  class:flash={flash.extend}
-                  disabled={!canExtend}
-                  onclick={extend}
-                >
-                  <span class="action-verb">Extend Hyphae</span>
-                  <span class="action-sub">
-                    {canExtend
-                      ? `${TUTORIAL_EXTEND_COST} ${resourceLabel('biomass', 'first')} → +1mm network`
-                      : `Need ${TUTORIAL_EXTEND_COST} ${resourceLabel('biomass', 'first')}`}
-                  </span>
-                </button>
-              {:else}
-                <div class="action-btn locked">
-                  <span class="action-verb">Extend Hyphae</span>
-                  <span class="action-sub">{LOCK_REASONS.extend}</span>
-                </div>
-              {/if}
+              <!-- Grow -->
+              <button
+                class="action-btn"
+                class:current={stepId === 'grow' || stepId === 'nutrients' || stepId === 'expand'}
+                disabled={!canGrow}
+                onclick={grow}
+              >
+                <span class="action-verb">Grow Hyphae</span>
+                <span class="action-sub">{canGrow ? growCostText : LOCK_REASONS.grow}</span>
+              </button>
             </div>
 
             <!-- Generators -->
@@ -362,12 +302,11 @@
                     {:else}
                       <button
                         class="install-btn"
-                        class:flash={flash.gen}
-                        disabled={!canInstall}
+                        class:flash={flashGen}
+                        disabled={!canAffordGenerator(gen.id)}
                         onclick={() => buy(gen.id)}
                       >
-                        {TUTORIAL_GENERATOR_COST}
-                        <span class="install-unit">{resourceLabel('biomass', 'first')}</span>
+                        {generatorCostText(gen.id)}
                       </button>
                     {/if}
                   </div>
@@ -552,27 +491,15 @@
     gap: 10px;
   }
 
-  .biomass-block {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .stat-sub {
-    align-self: flex-end;
-    color: var(--on-surface-variant);
-    font-size: 11px;
-  }
-
-  .stat-sub .sub-arrow {
-    color: var(--primary);
-  }
-
   .res-cell {
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 0;
+  }
+
+  .res-cell.wide {
+    grid-column: 1 / -1;
   }
 
   .rate {
@@ -735,10 +662,6 @@
     opacity: 1;
   }
 
-  .action-btn.flash {
-    animation: unlock-flash 1.5s var(--ease-out-soft);
-  }
-
   @keyframes unlock-flash {
     0% {
       box-shadow: 0 0 0 0 var(--primary-glow);
@@ -823,16 +746,6 @@
       transform 120ms var(--ease-out-soft),
       background-color var(--duration-fast) var(--ease-out-soft),
       box-shadow var(--duration-fast) var(--ease-out-soft);
-  }
-
-  .install-unit {
-    font-size: 10px;
-    font-weight: 500;
-    opacity: 0.82;
-  }
-
-  .install-btn:disabled .install-unit {
-    opacity: 1;
   }
 
   .install-btn:hover:not(:disabled) {

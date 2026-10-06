@@ -1,16 +1,16 @@
 import type { GamePhase } from '@mycosurge/game-engine';
 import {
-  TUTORIAL_ABSORB_AMOUNT,
-  TUTORIAL_EXTEND_COST,
-  TUTORIAL_GENERATOR_COST,
+  TUTORIAL_ABSORB_NUTRIENTS,
+  TUTORIAL_ABSORB_WATER,
+  TUTORIAL_GENERATOR_WATER_COST,
+  TUTORIAL_GROW_NUTRIENT_COST,
+  TUTORIAL_GROW_WATER_COST,
 } from '@mycosurge/game-engine';
 import { resourceLabel } from '@mycosurge/config';
 import type { IconKey } from './icons';
 
-export { TUTORIAL_GENERATOR_COST };
-
 export type Tone = 'mint' | 'amber' | 'coral' | 'cyan' | 'violet';
-export type TutorialStepId = 'feed' | 'grow' | 'automate' | 'expand';
+export type TutorialStepId = 'feed' | 'grow' | 'nutrients' | 'automate' | 'expand';
 
 export interface TutorialStep {
   id: TutorialStepId;
@@ -23,7 +23,7 @@ export interface TutorialStep {
   hint?: string;
 }
 
-export const TUTORIAL_TOTAL_STEPS = 4;
+export const TUTORIAL_TOTAL_STEPS = 5;
 
 export const TUTORIAL_STEPS: Record<TutorialStepId, TutorialStep> = {
   feed: {
@@ -31,38 +31,48 @@ export const TUTORIAL_STEPS: Record<TutorialStepId, TutorialStep> = {
     index: 1,
     total: TUTORIAL_TOTAL_STEPS,
     tag: 'Objective',
-    title: 'Draw water and nutrients from the substrate',
-    description: 'Tap Absorb to feed your spore.',
+    title: 'Draw water from the substrate',
+    description: 'Tap Absorb to gather water.',
     tone: 'mint',
-    hint: "Water and nutrients drain over time — you'll learn to make them yourself soon.",
+    hint: 'Water is all you need right now.',
   },
   grow: {
     id: 'grow',
     index: 2,
     total: TUTORIAL_TOTAL_STEPS,
     tag: 'Objective',
-    title: 'Turn resources into Biomass',
-    description: 'Spend 10 Water + 10 Nutrients to grow 1 Biomass.',
+    title: 'Grow your first hypha',
+    description: `Spend ${TUTORIAL_GROW_WATER_COST} Water to push out a hypha.`,
     tone: 'mint',
-    hint: `You need ${TUTORIAL_GENERATOR_COST} Biomass to install your first generator.`,
+    hint: 'Growth reveals what else the substrate holds.',
+  },
+  nutrients: {
+    id: 'nutrients',
+    index: 3,
+    total: TUTORIAL_TOTAL_STEPS,
+    tag: 'New',
+    title: 'Nutrients appear',
+    description: 'Tap Absorb to gather Water and Nutrients.',
+    tone: 'violet',
+    hint: 'Nutrients feed your reach — growth needs both now.',
   },
   automate: {
     id: 'automate',
-    index: 3,
+    index: 4,
     total: TUTORIAL_TOTAL_STEPS,
     tag: 'Objective',
     title: 'Install a generator so resources make themselves',
-    description: 'Pick one — you can install the other later.',
+    description: `Spend ${TUTORIAL_GENERATOR_WATER_COST} Water — you can install the other next.`,
     tone: 'mint',
     hint: "Generators keep working while you're away. That's the whole point.",
   },
   expand: {
     id: 'expand',
-    index: 4,
+    index: 5,
     total: TUTORIAL_TOTAL_STEPS,
     tag: 'Objective',
-    title: 'Extend your hyphae across the substrate',
-    description: `Spend ${TUTORIAL_EXTEND_COST} Biomass to grow your network by 1mm.`,
+    title: 'Reach deeper across the substrate',
+    description: `Spend ${TUTORIAL_GROW_WATER_COST} Water + ${TUTORIAL_GROW_NUTRIENT_COST} Nutrients per mm.`,
     tone: 'mint',
     hint: 'Reach 5mm and something will find you.',
   },
@@ -70,7 +80,7 @@ export const TUTORIAL_STEPS: Record<TutorialStepId, TutorialStep> = {
 
 export const HANDOFF_STEP: TutorialStep = {
   id: 'expand',
-  index: 4,
+  index: 5,
   total: TUTORIAL_TOTAL_STEPS,
   tag: 'Threat detected',
   title: 'Confront the nematode on your outer hyphae',
@@ -81,12 +91,14 @@ export const HANDOFF_STEP: TutorialStep = {
 
 export function resolveTutorialStep(state: {
   phase: GamePhase;
-  biomass: number;
-  mycelialNetwork: number;
+  water: number;
+  nutrients: number;
 }): TutorialStepId {
-  const { phase, biomass } = state;
-  if (phase === 'awakening') return 'feed';
-  if (phase === 'manager') return biomass >= TUTORIAL_GENERATOR_COST ? 'automate' : 'grow';
+  const { phase, water, nutrients } = state;
+  if (phase === 'awakening') return water >= TUTORIAL_GROW_WATER_COST ? 'grow' : 'feed';
+  if (phase === 'manager') {
+    return nutrients >= TUTORIAL_GROW_NUTRIENT_COST ? 'automate' : 'nutrients';
+  }
   return 'expand';
 }
 
@@ -121,12 +133,8 @@ export const TUTORIAL_GENERATORS: TutorialGeneratorContent[] = [
 ];
 
 export const LOCK_REASONS = {
-  synthesize: `Gather 10 ${resourceLabel('water', 'first')} + 10 ${resourceLabel(
-    'nutrients',
-    'first',
-  )}`,
-  generators: `Gather ${TUTORIAL_GENERATOR_COST} ${resourceLabel('biomass', 'first')}`,
-  extend: 'Install a generator first',
+  grow: `Gather ${TUTORIAL_GROW_WATER_COST} ${resourceLabel('water', 'first')}`,
+  generators: `Gather ${TUTORIAL_GENERATOR_WATER_COST} ${resourceLabel('water', 'first')}`,
 };
 
 export const ONBOARDING_COPY = {
@@ -140,14 +148,15 @@ export const ONBOARDING_COPY = {
   network: 'Network',
   absorb: {
     label: 'Absorb',
-    effect: `+${TUTORIAL_ABSORB_AMOUNT} Water · +${TUTORIAL_ABSORB_AMOUNT} Nutrients`,
+    effectWater: `+${TUTORIAL_ABSORB_WATER} Water`,
+    effectBoth: `+${TUTORIAL_ABSORB_WATER} Water · +${TUTORIAL_ABSORB_NUTRIENTS} Nutrients`,
   },
-  synthesize: { label: 'Synthesize Biomass', effect: '10 Water + 10 Nutrients → 1 Biomass' },
-  extend: {
-    label: 'Extend Hyphae',
-    effect: `${TUTORIAL_EXTEND_COST} Biomass → +1mm network`,
+  grow: {
+    label: 'Grow Hyphae',
+    effectWater: `${TUTORIAL_GROW_WATER_COST} Water → +1mm network`,
+    effectBoth: `${TUTORIAL_GROW_WATER_COST} Water + ${TUTORIAL_GROW_NUTRIENT_COST} Nutrients → +1mm`,
   },
-  install: { label: 'Install', cost: (cost: number) => `Cost: ${cost} Biomass` },
+  install: { label: 'Install', cost: (cost: number) => `Cost: ${cost} Water` },
   shock: (seconds: number) => `Recovering from shock — production halved for ${seconds}s`,
 };
 
@@ -163,7 +172,7 @@ export const UNLOCKED_SYSTEMS: UnlockCard[] = [
     glyph: '❋',
     icon: 'core',
     name: 'Core',
-    blurb: 'Manage Water, Nutrients and Biomass. Install and upgrade generators.',
+    blurb: 'Manage Water and Nutrients. Install and upgrade generators.',
   },
   {
     glyph: '◈',
