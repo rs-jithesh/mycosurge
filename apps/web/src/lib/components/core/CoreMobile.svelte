@@ -2,6 +2,7 @@
   import type { GrowthPhase, AdvisorMaturity } from '@mycosurge/game-engine';
   import { gameStore } from '$lib/stores/game.svelte';
   import PhaseDetailPanel from '$lib/components/PhaseDetailPanel.svelte';
+  import NetworkMap from '$lib/components/map/NetworkMap.svelte';
   import StatusWarnings from './StatusWarnings.svelte';
   import ModeHero from './ModeHero.svelte';
   import ModeSelector from './ModeSelector.svelte';
@@ -10,7 +11,7 @@
   let {
     phase,
     recommended,
-    suggested,
+    suggested = null,
     reason = null,
     maturity = null,
     onselect,
@@ -29,11 +30,14 @@
 </script>
 
 <div class="core-mobile">
+  <!-- The map leads on mobile too. -->
+  <div class="map-wrap"><NetworkMap /></div>
+
+  <StatusWarnings />
+
   <ModeHero {phase} {suggested} {reason} {maturity}>
     <PhaseAction {phase} variant="hero" />
   </ModeHero>
-
-  <StatusWarnings />
 
   <ModeSelector {phase} {recommended} {onselect} />
 
@@ -47,5 +51,9 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .map-wrap {
+    height: min(52vh, 420px);
   }
 </style>

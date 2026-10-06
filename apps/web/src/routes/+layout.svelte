@@ -10,8 +10,6 @@
   import ActivityLog from '$lib/components/ActivityLog.svelte';
   import EvolutionPanel from '$lib/components/panels/EvolutionPanel.svelte';
   import ExpeditionsPanel from '$lib/components/panels/ExpeditionsPanel.svelte';
-  import MapOverlay from '$lib/components/map/MapOverlay.svelte';
-  import MiniRadar from '$lib/components/map/MiniRadar.svelte';
   import ResourceStrip from '$lib/components/ResourceStrip.svelte';
   import ResourcesPanel from '$lib/components/panels/ResourcesPanel.svelte';
   import BestiaryPanel from '$lib/components/bestiary/BestiaryPanel.svelte';
@@ -214,11 +212,6 @@
     </div>
 
     <div class="top-bar-actions">
-      {#if isFullGame}
-        <div class="top-radar">
-          <MiniRadar />
-        </div>
-      {/if}
       <span class="top-bar-status text-label-caps">● Online</span>
 
       <div class="overflow-wrap">
@@ -342,8 +335,6 @@
   <EvolutionPanel onClose={() => uiStore.closeTop()} />
 {:else if uiStore.activePanel === 'expeditions'}
   <ExpeditionsPanel onClose={() => uiStore.closeTop()} />
-{:else if uiStore.activePanel === 'map'}
-  <MapOverlay onClose={() => uiStore.closeTop()} />
 {:else if uiStore.activePanel === 'bestiary'}
   <BestiaryPanel onClose={() => uiStore.closeTop()} />
 {:else if uiStore.activePanel === 'resources'}
@@ -468,10 +459,6 @@
 
   .top-bar-status {
     color: var(--primary);
-  }
-
-  .top-radar {
-    display: inline-flex;
   }
 
   /* One overflow menu on every layout; developer tools unfold from it. */

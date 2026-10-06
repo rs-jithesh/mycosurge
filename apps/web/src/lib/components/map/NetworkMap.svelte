@@ -25,8 +25,6 @@
   import { uiStore } from '$lib/stores/ui.svelte';
   import { logStore } from '$lib/stores/log.svelte';
 
-  let { onClose }: { onClose: () => void } = $props();
-
   /** Screen-space radius of the drawn colony core; hover/taps inside it are ignored. */
   const CORE_HIT_PX = 13;
   const MIN_ZOOM = 0.2;
@@ -372,16 +370,8 @@
   const canExtend = $derived(gs.biomass >= gameStore.evenCost);
 </script>
 
-<div class="map-overlay" role="dialog" aria-modal="true" aria-label="Network map">
+<div class="map-overlay" role="group" aria-label="Network map">
   <header class="map-bar">
-    <button
-      class="cmd-btn secondary map-back"
-      onclick={onClose}
-      aria-label="Back to Core"
-      title="Back"
-    >
-      <span aria-hidden="true">←</span>
-    </button>
     <div class="map-title">
       <span class="text-label-caps">Network</span>
       <span class="text-data-mono map-sub">
@@ -719,12 +709,16 @@
 <style>
   .map-overlay {
     --cord: color-mix(in srgb, var(--primary) 55%, #0d1512);
-    position: fixed;
-    inset: 0;
-    z-index: 160;
+    position: relative;
     display: flex;
     flex-direction: column;
-    background: var(--background);
+    height: 100%;
+    min-height: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-container);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
   }
 
   .map-bar {
@@ -765,19 +759,6 @@
 
   .zoom-btn {
     min-width: 34px;
-  }
-
-  /* Compact icon back button — matches the zoom controls instead of a wide pill. */
-  .map-back {
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
-    padding: 0;
-    display: grid;
-    place-items: center;
-    border-radius: var(--radius-sm);
-    font-size: 17px;
-    line-height: 1;
   }
 
   .extend-btn {

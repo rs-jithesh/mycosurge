@@ -29,9 +29,6 @@
 
   let activeGenerators = $derived(GENERATORS.filter((g) => (gs.generators[g.id] ?? 0) > 0).length);
 
-  /** Cost of one focused step, shown on the button that opens the map. */
-  let focusedCost = $derived(gameStore.reachCost);
-
   let capRows = $derived([
     {
       resource: 'water' as const,
@@ -185,13 +182,10 @@
         <PhaseAction phase="expand" />
       {/if}
 
-      <div class="focused-grow">
-        <button class="cmd-btn secondary focused-btn" onclick={() => uiStore.openPanel('map')}>
-          Grow focused · {focusedCost}
-          {resourceLabel('biomass')}
-        </button>
-        <p class="hint">Open the map, then tap a wedge to grow in that direction.</p>
-      </div>
+      <p class="hint">
+        Grow by tapping a wedge on the map — each step extends that direction. Reach works from
+        every stage.
+      </p>
 
       <div class="map-section">
         {#if gameStore.cordBranchId}
@@ -207,9 +201,6 @@
           </button>
         {/if}
       </div>
-      <p class="hint">
-        Grow the network from the radar in the top bar — reach works from every stage.
-      </p>
 
       {#if gameStore.unlockedSystems.evolution}
         <div class="genome-available text-data-mono">
@@ -311,18 +302,6 @@
   }
 
   .cord-btn {
-    font-size: 12px;
-    padding: 8px 12px;
-    min-height: 40px;
-  }
-
-  .focused-grow {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .focused-btn {
     font-size: 12px;
     padding: 8px 12px;
     min-height: 40px;

@@ -180,9 +180,6 @@
             Hosts graze past the frontier. Grow the network, meet one at the edge and drive it off —
             it will appear here to track.
           </p>
-          <button class="cmd-btn secondary map-link" onclick={() => uiStore.openPanel('map')}>
-            Open network map
-          </button>
         {:else}
           <p class="empty-title">Listening to the substrate</p>
           <p class="empty-sub">
@@ -276,13 +273,6 @@
         <button class="cmd-btn ping-btn" bind:this={pingBtn} disabled={!canPing} onclick={ping}>
           Ping substrate · {SCAN_WATER_COST}
           {resourceLabel('water')}
-        </button>
-        <button
-          class="cmd-btn secondary"
-          onclick={() => uiStore.openPanel('map')}
-          title="Open the network map"
-        >
-          Network map
         </button>
       </div>
     {/if}
@@ -594,12 +584,6 @@
     font-size: 12px;
     line-height: 1.5;
     color: var(--on-surface-variant);
-  }
-
-  .map-link {
-    margin-top: 8px;
-    font-size: 12px;
-    padding: 8px 12px;
   }
 
   .sweep {
