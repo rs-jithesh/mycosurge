@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   absorbResources,
   canGrowTutorial,
+  generatorUpgradeCost,
   getTutorialReserveCap,
   getTutorialSectorDepths,
   grantTutorialStart,
@@ -9,11 +10,16 @@ import {
   isTutorialSignalReached,
   purchaseTutorialUpgrade,
   signalSectorFor,
+  tutorialGeneratorRate,
+  tutorialTick,
+  upgradeTutorialGenerators,
+  TUTORIAL_ABSORB_COOLDOWN,
   TUTORIAL_ABSORB_NUTRIENTS,
   TUTORIAL_ABSORB_WATER,
   TUTORIAL_GENERATOR2_NUTRIENT_COST,
   TUTORIAL_GENERATOR2_WATER_COST,
   TUTORIAL_GENERATOR_WATER_COST,
+  TUTORIAL_MAX_GENERATOR_TIER,
   TUTORIAL_RESERVE_CAP,
   TUTORIAL_SECTOR_NUTRIENT_COST,
   TUTORIAL_SECTOR_WATER_COST,
@@ -42,15 +48,27 @@ describe('grantTutorialStart', () => {
 });
 
 describe('absorbResources', () => {
-  it('grants Water and Nutrients, clamped to the tutorial cap', () => {
+  it('grants Water and Nutrients once, then waits out the cooldown', () => {
     const state = createInitialState();
     state.water = 0;
     state.nutrients = 0;
-    absorbResources(state);
+    expect(absorbResources(state)).not.toBeNull();
     expect(state.water).toBe(TUTORIAL_ABSORB_WATER);
     expect(state.nutrients).toBe(TUTORIAL_ABSORB_NUTRIENTS);
+    expect(absorbResources(state)).toBeNull();
 
-    for (let i = 0; i < 20; i++) absorbResources(state);
+    tutorialTick(state, TUTORIAL_ABSORB_COOLDOWN);
+    expect(absorbResources(state)).not.toBeNull();
+  });
+
+  it('clamps to the tutorial cap', () => {
+    const state = createInitialState();
+    state.water = 0;
+    state.nutrients = 0;
+    for (let i = 0; i < 40; i++) {
+      tutorialTick(state, TUTORIAL_ABSORB_COOLDOWN);
+      absorbResources(state);
+    }
     expect(state.water).toBe(TUTORIAL_RESERVE_CAP);
     expect(state.nutrients).toBe(TUTORIAL_RESERVE_CAP);
   });
@@ -111,5 +129,41 @@ describe('purchaseTutorialUpgrade', () => {
     expect(purchaseTutorialUpgrade(state, 'enzymaticExudates').success).toBe(true);
     expect(state.water).toBe(0);
     expect(state.nutrients).toBe(0);
+  });
+});
+
+describe('generator upgrades', () => {
+  it('raises the per-generator rate and costs resources', () => {
+    const state = freshTutorial();
+    state.tutorialUpgrades.osmoticPump = true;
+    const base = tutorialGeneratorRate(state);
+    const cost = generatorUpgradeCost(state);
+    expect(cost).not.toBeNull();
+    state.water = cost!.water;
+    state.nutrients = cost!.nutrients;
+    expect(upgradeTutorialGenerators(state).success).toBe(true);
+    expect(state.tutorialGeneratorTier).toBe(1);
+    expect(tutorialGeneratorRate(state)).toBeGreaterThan(base);
+  });
+
+  it('stops at the max tier', () => {
+    const state = freshTutorial();
+    state.tutorialUpgrades.osmoticPump = true;
+    for (let i = 0; i < TUTORIAL_MAX_GENERATOR_TIER; i++) {
+      const cost = generatorUpgradeCost(state)!;
+      state.water = cost.water;
+      state.nutrients = cost.nutrients;
+      expect(upgradeTutorialGenerators(state).success).toBe(true);
+    }
+    expect(generatorUpgradeCost(state)).toBeNull();
+    expect(upgradeTutorialGenerators(state).success).toBe(false);
+  });
+
+  it('needs a generator installed first', () => {
+    const state = freshTutorial();
+    const cost = generatorUpgradeCost(state)!;
+    state.water = cost.water;
+    state.nutrients = cost.nutrients;
+    expect(upgradeTutorialGenerators(state).success).toBe(false);
   });
 });

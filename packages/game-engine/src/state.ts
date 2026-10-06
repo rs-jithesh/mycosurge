@@ -124,6 +124,8 @@ export interface GameState {
    * `reachSectors`.
    */
   tutorialSectors: number[];
+  /** How many times the tutorial generators have been upgraded (0–2). */
+  tutorialGeneratorTier: number;
   /**
    * Per-wedge growth beyond the base circle, newest design. Empty = a uniform
    * circle at `mycelialNetwork` (legacy/tutorial); otherwise each entry is the
@@ -199,6 +201,7 @@ export function createInitialState(): GameState {
     manualCooldown: 0,
     mycelialNetwork: 0,
     tutorialSectors: [],
+    tutorialGeneratorTier: 0,
     reachSectors: [],
     networkSeed: 0,
     cordBranchId: null,

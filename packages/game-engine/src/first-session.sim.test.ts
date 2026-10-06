@@ -8,6 +8,8 @@ import {
   growTutorialSector,
   isTutorialSignalReached,
   signalSectorFor,
+  tutorialTick,
+  TUTORIAL_ABSORB_COOLDOWN,
   TUTORIAL_RESERVE_CAP,
   TUTORIAL_SIGNAL_STEPS,
 } from './tutorial';
@@ -19,7 +21,7 @@ function fresh() {
   return state;
 }
 
-describe('first-session pace (goal first)', () => {
+describe('first-session pace (goal first, generator-driven)', () => {
   it('the opening store cannot reach the signal on its own', () => {
     const state = fresh();
     const sector = signalSectorFor(state);
@@ -31,15 +33,16 @@ describe('first-session pace (goal first)', () => {
     expect(isTutorialSignalReached(state)).toBe(false);
   });
 
-  it('takes a couple of full refills to finish the reach', () => {
+  it('takes many refills of tapping to finish the reach', () => {
     const state = fresh();
     const sector = signalSectorFor(state);
     let refills = 0;
     let guard = 0;
 
-    while (!isTutorialSignalReached(state) && guard++ < 200) {
+    while (!isTutorialSignalReached(state) && guard++ < 5000) {
       if (!canGrowTutorial(state)) {
         while (state.water < TUTORIAL_RESERVE_CAP || state.nutrients < TUTORIAL_RESERVE_CAP) {
+          tutorialTick(state, TUTORIAL_ABSORB_COOLDOWN);
           absorbResources(state);
         }
         refills++;
@@ -50,7 +53,8 @@ describe('first-session pace (goal first)', () => {
 
     expect(isTutorialSignalReached(state)).toBe(true);
     expect(getTutorialSectorDepths(state)[sector]).toBe(TUTORIAL_SIGNAL_STEPS);
-    expect(refills).toBeGreaterThanOrEqual(2);
-    expect(refills).toBeLessThanOrEqual(4);
+    // Deliberately slow: tapping alone needs several full-pool cycles, which is the
+    // pressure that makes generators (and their upgrades) worth building.
+    expect(refills).toBeGreaterThanOrEqual(3);
   });
 });

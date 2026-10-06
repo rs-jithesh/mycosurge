@@ -22,6 +22,9 @@ import {
   synthesizeBiomass as engineSynthesize,
   purchaseTutorialUpgrade as enginePurchaseUpgrade,
   growTutorialSector as engineGrowTutorialSector,
+  upgradeTutorialGenerators as engineUpgradeGenerators,
+  tutorialGeneratorRate,
+  generatorUpgradeCost,
   grantTutorialStart,
   canGrowTutorial,
   signalSectorFor,
@@ -669,8 +672,15 @@ function createGameStore() {
 
   function absorbResources() {
     const message = engineAbsorb(state);
-    logStore.info(message);
+    if (message) logStore.info(message);
     saveState();
+  }
+
+  function upgradeTutorialGenerators() {
+    const result = engineUpgradeGenerators(state);
+    if (result.success) logStore.success(result.message);
+    saveState();
+    return result.success;
   }
 
   function synthesizeBiomass() {
@@ -910,9 +920,19 @@ function createGameStore() {
     get canGrowTutorial() {
       return canGrowTutorial(state);
     },
+    get tutorialGeneratorTier() {
+      return state.tutorialGeneratorTier;
+    },
+    get tutorialGeneratorRate() {
+      return tutorialGeneratorRate(state);
+    },
+    get generatorUpgradeCost() {
+      return generatorUpgradeCost(state);
+    },
     absorbResources,
     synthesizeBiomass,
     purchaseTutorialUpgrade,
+    upgradeTutorialGenerators,
     growTutorialSector,
     skipIntro,
   };

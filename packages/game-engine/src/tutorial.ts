@@ -18,25 +18,71 @@ const BOTH_MESSAGE = 'Water and minerals seep into the hyphae.';
  * tuned in one place (and checked by `first-session.sim.test.ts`).
  */
 export const TUTORIAL_SECTORS = 6;
-/** Grows needed in the signal's sector to resolve it — set so the store needs ~2 refills. */
-export const TUTORIAL_SIGNAL_STEPS = 12;
+/** Grows needed in the signal's sector — long enough that tapping alone is a slog. */
+export const TUTORIAL_SIGNAL_STEPS = 20;
 /** Starting store, enough for a couple of grows and no more. */
-export const TUTORIAL_START_WATER = 20;
-export const TUTORIAL_START_NUTRIENTS = 20;
-export const TUTORIAL_RESERVE_CAP = 50;
-/** What one Absorb grants. Both resources are available from the start. */
-export const TUTORIAL_ABSORB_WATER = 10;
-export const TUTORIAL_ABSORB_NUTRIENTS = 10;
+export const TUTORIAL_START_WATER = 24;
+export const TUTORIAL_START_NUTRIENTS = 24;
+export const TUTORIAL_RESERVE_CAP = 60;
+/** What one Absorb grants, and the pause before it can be used again. Generators beat it. */
+export const TUTORIAL_ABSORB_WATER = 6;
+export const TUTORIAL_ABSORB_NUTRIENTS = 6;
+export const TUTORIAL_ABSORB_COOLDOWN = 1.2;
 /** Cost of one sector grow. */
-export const TUTORIAL_SECTOR_WATER_COST = 10;
-export const TUTORIAL_SECTOR_NUTRIENT_COST = 8;
+export const TUTORIAL_SECTOR_WATER_COST = 12;
+export const TUTORIAL_SECTOR_NUTRIENT_COST = 10;
 /** Water price of the first generator — Osmotic Pump (+Water/s). */
-export const TUTORIAL_GENERATOR_WATER_COST = 20;
+export const TUTORIAL_GENERATOR_WATER_COST = 30;
 /** Water + Nutrients price of the second generator — Enzymatic Exudates (+Nutrients/s). */
-export const TUTORIAL_GENERATOR2_WATER_COST = 25;
-export const TUTORIAL_GENERATOR2_NUTRIENT_COST = 25;
-/** Passive income per installed generator (per second). */
-export const TUTORIAL_GENERATOR_RATE = 3;
+export const TUTORIAL_GENERATOR2_WATER_COST = 40;
+export const TUTORIAL_GENERATOR2_NUTRIENT_COST = 40;
+/** Base passive income per installed generator (per second); scales with the tier. */
+export const TUTORIAL_GENERATOR_RATE = 2;
+/** How many times the two generators can be upgraded. */
+export const TUTORIAL_MAX_GENERATOR_TIER = 2;
+/** Cost of each generator upgrade, indexed by the tier it buys. */
+export const TUTORIAL_GENERATOR_UPGRADE_COST = [
+  { water: 50, nutrients: 30 },
+  { water: 80, nutrients: 50 },
+] as const;
+
+/** Per-generator output at the current tier. */
+export function tutorialGeneratorRate(state: GameState): number {
+  return TUTORIAL_GENERATOR_RATE * (1 + state.tutorialGeneratorTier);
+}
+
+/** The cost of the next generator upgrade, or null when fully upgraded. */
+export function generatorUpgradeCost(
+  state: GameState,
+): { water: number; nutrients: number } | null {
+  const tier = state.tutorialGeneratorTier;
+  if (tier >= TUTORIAL_MAX_GENERATOR_TIER) return null;
+  return TUTORIAL_GENERATOR_UPGRADE_COST[tier];
+}
+
+/** Buy the next generator upgrade (up to {@link TUTORIAL_MAX_GENERATOR_TIER} times). */
+export function upgradeTutorialGenerators(state: GameState): { success: boolean; message: string } {
+  const cost = generatorUpgradeCost(state);
+  if (!cost) {
+    return { success: false, message: 'The generators are fully upgraded.' };
+  }
+  if (!state.tutorialUpgrades.osmoticPump && !state.tutorialUpgrades.enzymaticExudates) {
+    return { success: false, message: 'Install a generator first.' };
+  }
+  if (state.water < cost.water || state.nutrients < cost.nutrients) {
+    return {
+      success: false,
+      message: `You need ${cost.water} Water and ${cost.nutrients} Nutrients.`,
+    };
+  }
+  state.water -= cost.water;
+  state.nutrients -= cost.nutrients;
+  state.tutorialGeneratorTier += 1;
+  return {
+    success: true,
+    message: `Generators upgraded — +${tutorialGeneratorRate(state)} per second each.`,
+  };
+}
 /** Full-game Biomass synthesis costs (kept, but not part of the first-session hook). */
 export const TUTORIAL_SYNTH_WATER_COST = 10;
 export const TUTORIAL_SYNTH_NUTRIENT_COST = 10;
@@ -90,13 +136,17 @@ export function grantTutorialStart(state: GameState): void {
   state.tutorialSectors = [];
 }
 
-export function absorbResources(state: GameState): string {
+/** Returns the flavour line, or `null` while still on cooldown (so the tap does nothing). */
+export function absorbResources(state: GameState): string | null {
+  if (state.manualCooldown > 0) return null;
+
   state.water = fillPool(state.water, getTutorialReserveCap(state, 'water'), TUTORIAL_ABSORB_WATER);
   state.nutrients = fillPool(
     state.nutrients,
     getTutorialReserveCap(state, 'nutrients'),
     TUTORIAL_ABSORB_NUTRIENTS,
   );
+  state.manualCooldown = TUTORIAL_ABSORB_COOLDOWN;
 
   let message: string;
   if (_absorbCount < AWAKENING_MESSAGES.length) {
@@ -226,21 +276,26 @@ export function applyTutorialDefeat(state: GameState): string[] {
 }
 
 export function tutorialTick(state: GameState, deltaSec: number): void {
+  if (state.manualCooldown > 0) {
+    state.manualCooldown = Math.max(0, state.manualCooldown - deltaSec);
+  }
+
   if (state.gamePhase !== 'active') {
     const shockMul = getTutorialShockMultiplier(state);
+    const rate = tutorialGeneratorRate(state);
 
     if (state.tutorialUpgrades.osmoticPump) {
       state.water = fillPool(
         state.water,
         getTutorialReserveCap(state, 'water'),
-        TUTORIAL_GENERATOR_RATE * deltaSec * shockMul,
+        rate * deltaSec * shockMul,
       );
     }
     if (state.tutorialUpgrades.enzymaticExudates) {
       state.nutrients = fillPool(
         state.nutrients,
         getTutorialReserveCap(state, 'nutrients'),
-        TUTORIAL_GENERATOR_RATE * deltaSec * shockMul,
+        rate * deltaSec * shockMul,
       );
     }
   }
@@ -251,14 +306,17 @@ export function tutorialTick(state: GameState, deltaSec: number): void {
 }
 
 export function completeTutorial(state: GameState): void {
+  // Tutorial upgrades carry into the full game as generator levels.
+  const level = 1 + state.tutorialGeneratorTier;
   if (state.tutorialUpgrades.osmoticPump) {
-    state.generators['osmotic_pump'] = 1;
+    state.generators['osmotic_pump'] = level;
   }
   if (state.tutorialUpgrades.enzymaticExudates) {
-    state.generators['enzymatic_exudates'] = 1;
+    state.generators['enzymatic_exudates'] = level;
   }
   state.gamePhase = 'active';
   // Reach continues into the full game from the tutorial's 5 mm (even when skipped).
   state.mycelialNetwork = Math.max(state.mycelialNetwork, REACH_START);
+  state.manualCooldown = 0;
   _absorbCount = 0;
 }

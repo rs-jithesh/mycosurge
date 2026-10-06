@@ -36,12 +36,30 @@
   let hasPump = $derived(s.tutorialUpgrades.osmoticPump);
   let hasExudates = $derived(s.tutorialUpgrades.enzymaticExudates);
   let shock = $derived(s.tutorialShockTimer);
+  let absorbReady = $derived(s.manualCooldown <= 0);
 
   // The economy is hidden until the player first can't afford to grow — then it is the answer.
   let economyRevealed = $state(false);
   $effect(() => {
     if (!canGrow || hasPump || hasExudates) economyRevealed = true;
   });
+
+  let upgradeCost = $derived(gameStore.generatorUpgradeCost);
+  let canAffordUpgrade = $derived.by(() => {
+    const cost = upgradeCost;
+    return cost !== null && s.water >= cost.water && s.nutrients >= cost.nutrients;
+  });
+
+  function generatorEffectText(id: 'osmoticPump' | 'enzymaticExudates'): string {
+    const rate = gameStore.tutorialGeneratorRate;
+    return id === 'osmoticPump'
+      ? `+${rate} ${resourceLabel('water', 'first')} / sec`
+      : `+${rate} ${resourceLabel('nutrients', 'first')} / sec`;
+  }
+
+  function upgradeGenerators() {
+    gameStore.upgradeTutorialGenerators();
+  }
 
   function canAffordGenerator(id: 'osmoticPump' | 'enzymaticExudates'): boolean {
     return id === 'osmoticPump'
@@ -162,9 +180,18 @@
           <div class="panel-body economy">
             <div class="group">
               <span class="group-label text-label-caps">Keep growing — gather</span>
-              <button class="action-btn" class:current={objective.id === 'gather'} onclick={absorb}>
+              <button
+                class="action-btn"
+                class:current={objective.id === 'gather'}
+                disabled={!absorbReady}
+                onclick={absorb}
+              >
                 <span class="action-verb">Absorb</span>
-                <span class="action-sub">{ONBOARDING_COPY.absorb.effect}</span>
+                <span class="action-sub">
+                  {absorbReady
+                    ? ONBOARDING_COPY.absorb.effect
+                    : `Recovering — ${Math.ceil(s.manualCooldown)}s`}
+                </span>
               </button>
             </div>
 
@@ -177,7 +204,7 @@
                     <span class="gen-glyph"><ResourceIcon name={gen.icon} size={34} round /></span>
                     <span class="gen-info">
                       <span class="gen-name">{gen.recommended ? '★ ' : ''}{gen.name}</span>
-                      <span class="gen-rate text-data-mono">{gen.effect}</span>
+                      <span class="gen-rate text-data-mono">{generatorEffectText(gen.id)}</span>
                     </span>
                     {#if owned}
                       <span class="gen-owned text-label-caps">Installed</span>
@@ -192,6 +219,15 @@
                     {/if}
                   </div>
                 {/each}
+                {#if (hasPump || hasExudates) && upgradeCost}
+                  <button
+                    class="upgrade-btn"
+                    disabled={!canAffordUpgrade}
+                    onclick={upgradeGenerators}
+                  >
+                    Upgrade generators · {upgradeCost.water} W · {upgradeCost.nutrients} N
+                  </button>
+                {/if}
               {:else}
                 <div class="action-btn locked">
                   <span class="action-verb">Install a generator</span>
@@ -482,6 +518,31 @@
     opacity: 0.5;
     cursor: not-allowed;
     box-shadow: none;
+  }
+
+  .upgrade-btn {
+    width: 100%;
+    margin-top: 2px;
+    font: inherit;
+    font-weight: 600;
+    color: var(--primary);
+    background: transparent;
+    border: 1px dashed var(--outline);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    cursor: pointer;
+  }
+
+  .upgrade-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    background: var(--surface-container-high);
+  }
+
+  .upgrade-btn:disabled {
+    color: var(--on-surface-variant);
+    border-color: var(--border);
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .handoff {
