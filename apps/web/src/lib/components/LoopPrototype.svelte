@@ -3,48 +3,93 @@
   import { goto } from '$app/navigation';
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
+  import SectorBoard from './SectorBoard.svelte';
 
   /**
-   * Throwaway QA prototype (`?loop`): the core loop with no economy — pick a direction,
-   * grow toward the sensed signal, engage the host. Reachable at `/?loop`.
+   * Throwaway QA prototype (`?loop`) of the goal-first opening:
+   *   you wake with a store of resources and a signal far away →
+   *   spend it, run dry, can't reach it → the economy is revealed as the answer →
+   *   build up, finish the reach, hunt.
+   * Reachable at `/?loop`. Never touches the save.
    */
 
   const SECTORS = 6;
-  const STEPS = 3;
-  const STEP_PX = 40;
-  const CX = 170;
-  const CY = 170;
-  const MAX_DIST = STEPS * STEP_PX;
-  const DIRECTIONS = ['North', 'North-East', 'South-East', 'South', 'South-West', 'North-West'];
+  const STEPS = 8;
+  const BAND_MM = 5;
+  const STEP_MM = BAND_MM / STEPS;
+
+  const START_WATER = 40;
+  const START_NUTRIENTS = 40;
+  const CAP = 60;
+  const GROW_WATER = 8;
+  const GROW_NUTRIENTS = 6;
+  const ABSORB = 4;
+  const PUMP_COST = 20;
+  const EXUDATES_WATER = 25;
+  const EXUDATES_NUTRIENTS = 25;
+  const PRODUCTION = 2;
   const HOST_ID = 'soil_nematode';
 
-  let reach = $state<number[]>(Array.from({ length: SECTORS }, () => 0));
+  let water = $state(START_WATER);
+  let nutrients = $state(START_NUTRIENTS);
+  let depthSteps = $state<number[]>(Array.from({ length: SECTORS }, () => 0));
   let signalSector = $state(0);
+  let pump = $state(false);
+  let exudates = $state(false);
   let fought = $state(false);
+  let economyRevealed = $state(false);
 
   onMount(() => {
     signalSector = Math.floor(Math.random() * SECTORS);
   });
 
-  function angle(i: number): number {
-    return (i / SECTORS) * Math.PI * 2 - Math.PI / 2;
+  let depthsMm = $derived(depthSteps.map((s) => s * STEP_MM));
+  let signalMm = STEPS * STEP_MM;
+  let signalReached = $derived(depthSteps[signalSector] >= STEPS);
+  let stepsAway = $derived(Math.max(0, STEPS - depthSteps[signalSector]));
+  let canGrow = $derived(water >= GROW_WATER && nutrients >= GROW_NUTRIENTS);
+  let stuck = $derived(!signalReached && !canGrow);
+
+  // The economy appears the first time the player can't afford to grow — the reveal.
+  $effect(() => {
+    if (stuck) economyRevealed = true;
+  });
+
+  // Passive production from installed generators.
+  $effect(() => {
+    const id = setInterval(() => {
+      if (pump) water = Math.min(CAP, water + PRODUCTION);
+      if (exudates) nutrients = Math.min(CAP, nutrients + PRODUCTION);
+    }, 1000);
+    return () => clearInterval(id);
+  });
+
+  function grow(sector: number) {
+    if (signalReached || !canGrow) return;
+    if (depthSteps[sector] >= STEPS) return;
+    water -= GROW_WATER;
+    nutrients -= GROW_NUTRIENTS;
+    const next = depthSteps.slice();
+    next[sector] += 1;
+    depthSteps = next;
   }
 
-  function point(i: number, dist: number) {
-    const a = angle(i);
-    return { x: CX + Math.cos(a) * dist, y: CY + Math.sin(a) * dist };
+  function absorb() {
+    water = Math.min(CAP, water + ABSORB);
+    nutrients = Math.min(CAP, nutrients + ABSORB);
   }
 
-  let signalReached = $derived(reach[signalSector] >= STEPS);
-  let stepsAway = $derived(Math.max(0, STEPS - reach[signalSector]));
-  let signalPoint = $derived(point(signalSector, MAX_DIST));
+  function buyPump() {
+    if (pump || water < PUMP_COST) return;
+    water -= PUMP_COST;
+    pump = true;
+  }
 
-  function grow(i: number) {
-    if (signalReached) return;
-    if (reach[i] >= STEPS) return;
-    const next = reach.slice();
-    next[i] = Math.min(STEPS, next[i] + 1);
-    reach = next;
+  function buyExudates() {
+    if (exudates || water < EXUDATES_WATER || nutrients < EXUDATES_NUTRIENTS) return;
+    water -= EXUDATES_WATER;
+    nutrients -= EXUDATES_NUTRIENTS;
+    exudates = true;
   }
 
   function engage() {
@@ -54,12 +99,16 @@
   }
 
   function again() {
-    reach = Array.from({ length: SECTORS }, () => 0);
+    water = START_WATER;
+    nutrients = START_NUTRIENTS;
+    depthSteps = Array.from({ length: SECTORS }, () => 0);
     signalSector = Math.floor(Math.random() * SECTORS);
+    pump = false;
+    exudates = false;
     fought = false;
+    economyRevealed = false;
   }
 
-  // Note when a fight ends so the recap can appear.
   let wasInCombat = false;
   $effect(() => {
     const active = uiStore.combatHostId !== null;
@@ -74,74 +123,79 @@
 
 <div class="proto">
   <div class="proto-head">
-    <span class="proto-tag text-label-caps">Prototype</span>
-    <h1 class="proto-title">Reach the signal</h1>
+    <span class="proto-tag text-label-caps">Prototype · goal first</span>
+    <h1 class="proto-title">Something is out there</h1>
     <p class="proto-sub">
-      Pick a direction and grow toward the blip. When it solidifies, engage — that's the loop.
+      You wake with a store of water and minerals — and a signal at the edge. Grow toward it.
     </p>
   </div>
 
-  <svg class="board" viewBox="0 0 340 340" role="group" aria-label="Expansion prototype">
-    <circle class="guide-ring" cx={CX} cy={CY} r={MAX_DIST} />
-
-    {#each Array.from({ length: SECTORS }) as _, i (i)}
-      {@const end = point(i, MAX_DIST)}
-      <line class="guide" x1={CX} y1={CY} x2={end.x} y2={end.y} />
-    {/each}
-
-    {#each Array.from({ length: SECTORS }) as _, i (i)}
-      {@const end = point(i, reach[i] * STEP_PX)}
-      <line class="spoke" x1={CX} y1={CY} x2={end.x} y2={end.y} />
-      {#if reach[i] > 0}
-        <circle class="node" cx={end.x} cy={end.y} r="4" />
-      {/if}
-    {/each}
-
-    <g
-      class="blip"
-      class:reached={signalReached}
-      transform={`translate(${signalPoint.x} ${signalPoint.y})`}
+  <div class="hud">
+    <span class="res" data-tone="water"
+      >Water <b class="text-data-mono">{Math.floor(water)}</b></span
     >
-      <circle class="blip-ring" r="9" />
-      <circle class="blip-dot" r="3" />
-    </g>
+    <span class="res" data-tone="nutrients"
+      >Nutrients <b class="text-data-mono">{Math.floor(nutrients)}</b></span
+    >
+  </div>
 
-    <circle class="spore" cx={CX} cy={CY} r="8" />
-    <circle class="spore-core" cx={CX} cy={CY} r="3" />
+  <SectorBoard
+    depths={depthsMm}
+    seed={gameStore.networkSeed}
+    stageIndex={1}
+    {signalSector}
+    {signalMm}
+    growStepMm={STEP_MM}
+    interactive={!signalReached}
+    onGrow={grow}
+    label="Expansion prototype"
+  />
 
-    {#each Array.from({ length: SECTORS }) as _, i (i)}
-      {@const end = point(i, MAX_DIST)}
-      <line
-        class="hit"
-        x1={CX}
-        y1={CY}
-        x2={end.x}
-        y2={end.y}
-        role="button"
-        tabindex="0"
-        aria-label={`Grow ${DIRECTIONS[i]}`}
-        onclick={() => grow(i)}
-        onkeydown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') grow(i);
-        }}
-      />
-    {/each}
-  </svg>
-
-  <div class="proto-foot">
+  <div class="foot">
     {#if fought}
-      <span class="status reached">Loop complete — that's the whole game in miniature.</span>
+      <span class="status won"
+        >That was the loop — reach, then fight. A tutorial would end here.</span
+      >
       <button class="cmd-btn" onclick={again}>Run it again</button>
     {:else if signalReached}
-      <span class="status reached">Signal reached.</span>
+      <span class="status won">Signal reached.</span>
       <button class="cmd-btn engage" onclick={engage}>Engage the host</button>
     {:else}
       <span class="status text-data-mono"
         >{stepsAway} step{stepsAway === 1 ? '' : 's'} to the signal</span
       >
-      <span class="status hint">Tap the direction the blip is in.</span>
+      {#if !economyRevealed}
+        <span class="status hint">Tap the wedges to grow toward the blip.</span>
+      {:else}
+        <span class="status hint">Out of resources to grow. Gather, then build.</span>
+      {/if}
     {/if}
   </div>
+
+  {#if economyRevealed && !signalReached}
+    <div class="economy">
+      <span class="economy-label text-label-caps">Resource handling</span>
+      <div class="economy-row">
+        <button class="cmd-btn" onclick={absorb}>
+          Absorb · +{ABSORB} Water +{ABSORB} Nutrients
+        </button>
+      </div>
+      <div class="economy-row">
+        <button class="cmd-btn secondary" disabled={pump || water < PUMP_COST} onclick={buyPump}>
+          Osmotic Pump · {PUMP_COST} Water {pump ? '· installed' : ''}
+        </button>
+        <button
+          class="cmd-btn secondary"
+          disabled={exudates || water < EXUDATES_WATER || nutrients < EXUDATES_NUTRIENTS}
+          onclick={buyExudates}
+        >
+          Enzymatic Exudates · {EXUDATES_WATER} W + {EXUDATES_NUTRIENTS} N
+          {exudates ? '· installed' : ''}
+        </button>
+      </div>
+      <span class="hint">Generators keep producing — that's what funds the reach.</span>
+    </div>
+  {/if}
 
   <button class="leave" onclick={leave}>Leave prototype →</button>
 </div>
@@ -151,8 +205,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
-    max-width: 420px;
+    gap: 14px;
+    max-width: 440px;
     margin: 0 auto;
     padding: var(--space-gutter) 0 var(--space-margin);
   }
@@ -182,103 +236,41 @@
     color: var(--on-surface-variant);
   }
 
-  .board {
-    width: 100%;
-    max-width: 360px;
-    height: auto;
-    touch-action: manipulation;
+  .hud {
+    display: flex;
+    gap: 16px;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface-container);
   }
 
-  .guide-ring {
-    fill: none;
-    stroke: var(--outline-variant);
-    stroke-width: 1;
-    stroke-dasharray: 4 6;
-    opacity: 0.5;
+  .res {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  .guide {
-    stroke: var(--outline-variant);
-    stroke-width: 1;
-    opacity: 0.25;
+  .res b {
+    color: var(--on-surface);
   }
 
-  .spoke {
-    stroke: var(--primary);
-    stroke-width: 4;
-    stroke-linecap: round;
-    opacity: 0.85;
+  .res[data-tone='water'] b {
+    color: var(--secondary);
   }
 
-  .node {
-    fill: var(--primary);
+  .res[data-tone='nutrients'] b {
+    color: var(--nutrient);
   }
 
-  .spore {
-    fill: var(--surface-container-high);
-    stroke: var(--primary);
-    stroke-width: 2.5;
-  }
-
-  .spore-core {
-    fill: var(--primary);
-  }
-
-  .blip-ring {
-    fill: none;
-    stroke: var(--secondary);
-    stroke-width: 2;
-    stroke-dasharray: 3 3;
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: pulse 1.4s ease-in-out infinite;
-  }
-
-  .blip-dot {
-    fill: var(--secondary);
-  }
-
-  .blip.reached .blip-ring {
-    stroke: var(--warning);
-    stroke-dasharray: none;
-    animation: none;
-  }
-
-  .blip.reached .blip-dot {
-    fill: var(--warning);
-  }
-
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.35;
-      transform: scale(1.4);
-    }
-  }
-
-  .hit {
-    stroke: transparent;
-    stroke-width: 46;
-    stroke-linecap: round;
-    pointer-events: stroke;
-    cursor: pointer;
-  }
-
-  .hit:focus-visible {
-    stroke: color-mix(in srgb, var(--primary) 25%, transparent);
-    outline: none;
-  }
-
-  .proto-foot {
+  .foot {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    min-height: 64px;
+    min-height: 56px;
     text-align: center;
   }
 
@@ -286,7 +278,7 @@
     color: var(--on-surface-variant);
   }
 
-  .status.reached {
+  .status.won {
     color: var(--warning);
     font-weight: 600;
   }
@@ -299,6 +291,43 @@
     min-width: 200px;
   }
 
+  .economy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-container);
+    text-align: center;
+  }
+
+  .economy-label {
+    color: var(--primary);
+  }
+
+  .economy-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .economy-row .cmd-btn {
+    font-size: 12px;
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 11px;
+    color: var(--on-surface-variant);
+  }
+
   .leave {
     background: transparent;
     border: none;
@@ -307,11 +336,5 @@
     font-size: 12px;
     text-decoration: underline;
     cursor: pointer;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .blip-ring {
-      animation: none;
-    }
   }
 </style>
