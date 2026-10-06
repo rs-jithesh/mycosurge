@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { fade, fly } from 'svelte/transition';
   import {
     getNextHookObjective,
     getTutorialReserveCap,
@@ -19,21 +19,16 @@
   import { TUTORIAL_GENERATORS, LOCK_REASONS, ONBOARDING_COPY } from '$lib/content/onboarding';
 
   const TUTORIAL_HOST_ID = 'soil_nematode';
-
   const BAND_MM = 5;
   const STEP_MM = BAND_MM / TUTORIAL_SIGNAL_STEPS;
 
   let s = $derived(gameStore.state);
   let isHandoff = $derived(s.gamePhase === 'tactician');
-
-  // The board is undirected until the signal resolves; the objective and the board is the
-  // whole first beat, so no numeric goal chip — the blip *is* the goal.
   let objective = $derived(getNextHookObjective(s));
 
   let waterMax = $derived(getTutorialReserveCap(s, 'water'));
   let nutrientMax = $derived(getTutorialReserveCap(s, 'nutrients'));
-  let depths = $derived(gameStore.tutorialSectorDepths);
-  let depthsMm = $derived(depths.map((d) => d * STEP_MM));
+  let depthsMm = $derived(gameStore.tutorialSectorDepths.map((d) => d * STEP_MM));
   let signalSector = $derived(gameStore.tutorialSignalSector);
   let signalReached = $derived(gameStore.tutorialSignalReached);
   let canGrow = $derived(gameStore.canGrowTutorial);
@@ -47,9 +42,6 @@
   $effect(() => {
     if (!canGrow || hasPump || hasExudates) economyRevealed = true;
   });
-
-  // Whether the right column has anything to show; if not, the board takes the width.
-  let hasSidePanel = $derived(isHandoff || (economyRevealed && !signalReached));
 
   function canAffordGenerator(id: 'osmoticPump' | 'enzymaticExudates'): boolean {
     return id === 'osmoticPump'
@@ -100,59 +92,50 @@
     {/if}
   </header>
 
-  <ObjectiveBanner
-    tag={objective.tag}
-    title={objective.title}
-    description={objective.description}
-    hint={objective.hint}
-    tone={objective.tone}
-  />
+  <div class="res-grid">
+    <ProgressBar
+      tone="cyan"
+      label={resourceLabel('water', 'first')}
+      labelCaps={false}
+      value={s.water}
+      max={waterMax}
+      animate
+      format={(n) => `${Math.floor(n)}/${Math.floor(waterMax)}`}
+    />
+    <ProgressBar
+      tone="violet"
+      label={resourceLabel('nutrients', 'first')}
+      labelCaps={false}
+      value={s.nutrients}
+      max={nutrientMax}
+      animate
+      format={(n) => `${Math.floor(n)}/${Math.floor(nutrientMax)}`}
+    />
+  </div>
 
   {#if shock > 0}
     <div class="shock text-label-caps">⚠ {ONBOARDING_COPY.shock(Math.ceil(shock))}</div>
   {/if}
 
-  <div class="tut-grid" class:single={!hasSidePanel}>
-    <div class="col-left">
-      <div class="res-grid">
-        <ProgressBar
-          tone="cyan"
-          label={resourceLabel('water', 'first')}
-          labelCaps={false}
-          value={s.water}
-          max={waterMax}
-          animate
-          format={(n) => `${Math.floor(n)}/${Math.floor(waterMax)}`}
-        />
-        <ProgressBar
-          tone="violet"
-          label={resourceLabel('nutrients', 'first')}
-          labelCaps={false}
-          value={s.nutrients}
-          max={nutrientMax}
-          animate
-          format={(n) => `${Math.floor(n)}/${Math.floor(nutrientMax)}`}
-        />
-      </div>
-
-      <section class="panel board-panel">
-        <SectorBoard
-          depths={depthsMm}
-          seed={gameStore.networkSeed}
-          stageIndex={1}
-          {signalSector}
-          signalMm={BAND_MM}
-          growStepMm={STEP_MM}
-          interactive={!signalReached && canGrow}
-          onGrow={growSector}
-          label="Your network"
-        />
-      </section>
+  <div class="tut-grid">
+    <!-- Left: the instructions, then the controls that fade in when they're needed. -->
+    <div class="col-intro">
+      {#key objective.title}
+        <div class="fade-wrap" transition:fade={{ duration: 450 }}>
+          <ObjectiveBanner
+            tag={objective.tag}
+            title={objective.title}
+            description={objective.description}
+            hint={objective.hint}
+            tone={objective.tone}
+          />
+        </div>
+      {/key}
     </div>
 
-    <div class="col-right">
+    <div class="col-controls">
       {#if isHandoff}
-        <section class="panel handoff-panel">
+        <section class="panel handoff-panel" transition:fly={{ y: 8, duration: 350 }}>
           <div class="panel-body handoff">
             <span class="handoff-kicker text-label-caps">Hostile</span>
             <p class="handoff-name">Soil Nematode</p>
@@ -162,7 +145,7 @@
           </div>
         </section>
       {:else if economyRevealed && !signalReached}
-        <section class="panel economy-panel">
+        <section class="panel economy-panel" transition:fly={{ y: 8, duration: 350 }}>
           <div class="panel-body economy">
             <div class="group">
               <span class="group-label text-label-caps">Keep growing — gather</span>
@@ -207,6 +190,23 @@
         </section>
       {/if}
     </div>
+
+    <!-- Right: the map. -->
+    <div class="col-map">
+      <section class="panel board-panel">
+        <SectorBoard
+          depths={depthsMm}
+          seed={gameStore.networkSeed}
+          stageIndex={1}
+          {signalSector}
+          signalMm={BAND_MM}
+          growStepMm={STEP_MM}
+          interactive={!signalReached && canGrow}
+          onGrow={growSector}
+          label="Your network"
+        />
+      </section>
+    </div>
   </div>
 </div>
 
@@ -218,20 +218,6 @@
     max-width: 560px;
     margin: 0 auto;
     padding: var(--space-gutter) 0 var(--space-margin);
-  }
-
-  .tut-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .col-left,
-  .col-right {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-width: 0;
   }
 
   .tut-head {
@@ -270,6 +256,12 @@
     border-color: var(--on-surface-variant);
   }
 
+  .res-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
   .shock {
     border: 1px solid var(--alert);
     background: var(--error-container);
@@ -279,18 +271,33 @@
     text-align: center;
   }
 
+  /* Mobile: one column — instructions, map, controls. */
+  .tut-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .col-intro,
+  .col-controls,
+  .col-map {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  /* Reserve room so the banner cross-fade never jumps the layout. */
+  .col-intro {
+    min-height: 108px;
+  }
+
   .panel {
     background: var(--surface-container);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
-  }
-
-  .res-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
   }
 
   .board-panel {
@@ -479,7 +486,7 @@
     margin-top: 4px;
   }
 
-  /* Desktop: two columns — the board leads, the controls sit beside it. */
+  /* Desktop: instructions + controls on the left, the map on the right. */
   @media (min-width: 768px) and (orientation: landscape) {
     .tutorial-frame {
       max-width: 1040px;
@@ -487,20 +494,24 @@
 
     .tut-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+      grid-template-areas:
+        'intro map'
+        'controls map';
       gap: 16px;
       align-items: start;
     }
 
-    /* No side panel (yet): let the board take the width, capped so it stays sane. */
-    .tut-grid.single {
-      grid-template-columns: minmax(0, 1fr);
+    .col-intro {
+      grid-area: intro;
     }
 
-    .tut-grid.single .col-left {
-      width: 100%;
-      max-width: 680px;
-      margin: 0 auto;
+    .col-controls {
+      grid-area: controls;
+    }
+
+    .col-map {
+      grid-area: map;
     }
   }
 </style>
