@@ -8,6 +8,7 @@
   } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
+  import { numberPrecision } from '$lib/format';
   import { phaseMeta } from '$lib/content/phases';
   import ResourceIcon from './ResourceIcon.svelte';
   import ResourceSymbol from './ResourceSymbol.svelte';
@@ -151,16 +152,18 @@
                   <span class="text-data-mono gen-lv">Lv.{level}</span>
                 </div>
                 <div class="text-data-mono gen-rate">
-                  +{gen.baseRate * level}
+                  +{numberPrecision(gen.baseRate * level)}
                   <ResourceSymbol id={gen.resource} />/s
                   {#if level < gen.maxLevel}<span class="gen-next"
-                      >→ +{gen.baseRate * (level + 1)}</span
+                      >→ +{numberPrecision(gen.baseRate * (level + 1))}</span
                     >{/if}
                 </div>
                 {#if gen.consumes}
                   <div class="text-data-mono gen-consume">
-                    −{(gen.consumes.water ?? 0) * level}
-                    <ResourceSymbol id="water" /> · −{(gen.consumes.nutrients ?? 0) * level}
+                    −{numberPrecision((gen.consumes.water ?? 0) * level)}
+                    <ResourceSymbol id="water" /> · −{numberPrecision(
+                      (gen.consumes.nutrients ?? 0) * level,
+                    )}
                     <ResourceSymbol id="nutrients" /> /s
                   </div>
                 {/if}
