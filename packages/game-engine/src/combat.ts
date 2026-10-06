@@ -90,6 +90,7 @@ export function applyVictory(state: GameState, hostId: string): CombatResult {
   result.biomassEarned = addBiomass(state, result.biomassEarned);
   state.totalBiomassEarned += result.biomassEarned;
   state.lysateRaw += result.lysateEarned;
+  state.lysateEarned += result.lysateEarned;
 
   if (result.hostDefeated && !alreadyGrownOver) {
     state.grownOverHosts = [...state.grownOverHosts, hostId];

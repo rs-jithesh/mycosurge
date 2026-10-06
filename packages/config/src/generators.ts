@@ -1,3 +1,5 @@
+export type GeneratorResource = 'water' | 'nutrients' | 'biomass';
+
 export interface GeneratorDef {
   id: string;
   name: string;
@@ -6,7 +8,16 @@ export interface GeneratorDef {
   baseCost: number;
   costScale: number;
   maxLevel: number;
-  resource: 'water' | 'nutrients';
+  resource: GeneratorResource;
+  /**
+   * Converter generators also drain these pools per second per level, turning them into
+   * `resource`. The drain is capped by what's available (see `tickIdle`).
+   */
+  consumes?: { water?: number; nutrients?: number };
+  /** Resource spent to build/upgrade it. Defaults to Biomass. */
+  costResource?: 'biomass' | 'lysate';
+  /** When true, it only unlocks once the network has won its first fight (Lysate exists). */
+  requiresVictory?: boolean;
 }
 
 export const GENERATORS: GeneratorDef[] = [
@@ -29,6 +40,20 @@ export const GENERATORS: GeneratorDef[] = [
     costScale: 1.5,
     maxLevel: 10,
     resource: 'nutrients',
+  },
+  {
+    id: 'biosynthesis',
+    name: 'Biosynthesis',
+    description: 'Assimilates Water and Nutrients into Biomass on its own.',
+    baseRate: 0.1,
+    /** Priced in Lysate: combat funds automation. */
+    baseCost: 4,
+    costScale: 1.5,
+    maxLevel: 10,
+    resource: 'biomass',
+    consumes: { water: 0.5, nutrients: 0.5 },
+    costResource: 'lysate',
+    requiresVictory: true,
   },
 ];
 

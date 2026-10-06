@@ -8,8 +8,15 @@ import {
 } from '@mycosurge/config';
 import { createInitialState } from './state';
 import type { GameState } from './state';
-import { tickIdle, getNetResourceRate, getUpkeepRate, getResourceProduction } from './math';
-import { purchaseGenerator } from './generators';
+import {
+  tickIdle,
+  getNetResourceRate,
+  getUpkeepRate,
+  getResourceProduction,
+  getEffectiveBiomassPerSec,
+  getBiomassConverterOutput,
+} from './math';
+import { purchaseGenerator, isGeneratorUnlocked } from './generators';
 import { manualSynthesize } from './manual';
 
 const MINUTE = 60;
@@ -41,15 +48,18 @@ function buyCheapestGenerator(state: GameState): boolean {
   let bestId: string | null = null;
   let bestCost = Number.POSITIVE_INFINITY;
   for (const gen of GENERATORS) {
+    if (!isGeneratorUnlocked(state, gen)) continue;
     const level = state.generators[gen.id] ?? 0;
     if (level >= gen.maxLevel) continue;
     const cost = getGeneratorCost(gen.baseCost, level, gen.costScale);
+    const wallet = gen.costResource === 'lysate' ? state.lysateBanked : state.biomass;
+    if (wallet < cost) continue;
     if (cost < bestCost) {
       bestCost = cost;
       bestId = gen.id;
     }
   }
-  if (bestId === null || state.biomass < bestCost) return false;
+  if (bestId === null) return false;
   return purchaseGenerator(state, bestId);
 }
 
@@ -144,5 +154,48 @@ describe('30-minute balance simulation', () => {
     expect(state.totalBiomassEarned - earnedBeforeLastMinute).toBeGreaterThan(0);
     expect(getNetResourceRate(state, 'water')).toBeGreaterThan(0);
     expect(state.water + state.nutrients).toBeGreaterThan(0);
+  });
+});
+
+describe('Biosynthesis generator', () => {
+  const bio = GENERATORS.find((g) => g.id === 'biosynthesis')!;
+
+  it('is locked until the network has earned Lysate', () => {
+    const state = fullGameState();
+    expect(isGeneratorUnlocked(state, bio)).toBe(false);
+    state.lysateEarned = 5;
+    expect(isGeneratorUnlocked(state, bio)).toBe(true);
+  });
+
+  it('is bought with Lysate, not Biomass', () => {
+    const state = fullGameState();
+    state.lysateEarned = 5;
+    state.biomass = 0;
+    state.lysateBanked = bio.baseCost;
+    expect(purchaseGenerator(state, bio.id)).toBe(true);
+    expect(state.generators[bio.id]).toBe(1);
+    expect(state.lysateBanked).toBe(0);
+    expect(state.biomass).toBe(0);
+  });
+
+  it('adds to the Biomass rate and drains Water/Nutrients over a tick', () => {
+    const state = fullGameState();
+    state.lysateEarned = 5;
+    state.generators[bio.id] = 1;
+    expect(getBiomassConverterOutput(state)).toBeCloseTo(bio.baseRate);
+    expect(getEffectiveBiomassPerSec(state)).toBeGreaterThan(
+      getEffectiveBiomassPerSec({ ...state, generators: {} }),
+    );
+
+    state.water = state.waterCap;
+    state.nutrients = state.nutrientsCap;
+    state.biomass = 0;
+    const waterBefore = state.water;
+    const nutrientBefore = state.nutrients;
+    for (let i = 0; i < 10; i++) tickIdle(state, 0.1);
+
+    expect(state.biomass).toBeGreaterThan(0);
+    expect(state.water).toBeLessThan(waterBefore);
+    expect(state.nutrients).toBeLessThan(nutrientBefore);
   });
 });

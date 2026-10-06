@@ -244,6 +244,14 @@ function createGameStore() {
             .map(([id]) => id);
         }
 
+        // Migration: older saves predate the lifetime Lysate counter.
+        if (
+          merged.lysateEarned === 0 &&
+          (merged.lysateBanked > 0 || merged.lysateRaw > 0 || merged.cataloguedHosts.length > 0)
+        ) {
+          merged.lysateEarned = Math.max(1, merged.lysateBanked + merged.lysateRaw);
+        }
+
         const elapsed = merged.lastSavedAt > 0 ? (Date.now() - merged.lastSavedAt) / 1000 : 0;
         if (elapsed > 0) {
           const report = applyOfflineProgress(merged, elapsed);

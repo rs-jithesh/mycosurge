@@ -107,7 +107,8 @@ export function isStarving(state: GameState): boolean {
   return waterRatio < STARVATION_STATE_THRESHOLD || nutrientRatio < STARVATION_STATE_THRESHOLD;
 }
 
-export function getEffectiveBiomassPerSec(state: GameState): number {
+/** Passive Biomass per second (base + mutations), under the trauma/starvation gates. */
+function getPassiveBiomassPerSec(state: GameState): number {
   if (state.isInTrauma) return 0;
   // Starvation halts passive growth in the full game (the tutorial manages its own economy).
   if (state.gamePhase === 'active' && isStarving(state)) return 0;
@@ -116,6 +117,30 @@ export function getEffectiveBiomassPerSec(state: GameState): number {
   const skillBonus = getProliferationBonus(state.skillAllocations);
 
   return state.baseBiomassPerSec * efficiency * (1 + skillBonus);
+}
+
+/** Biomass per second a Biomass converter could make at its current level. */
+export function getBiomassConverterOutput(state: GameState): number {
+  const def = GENERATORS.find((g) => g.resource === 'biomass');
+  if (!def) return 0;
+  const level = state.generators[def.id] ?? 0;
+  return def.baseRate * level;
+}
+
+/** Water/Nutrients per second a Biomass converter drains, before availability capping. */
+export function getBiomassConverterConsumption(
+  state: GameState,
+  resource: 'water' | 'nutrients',
+): number {
+  const def = GENERATORS.find((g) => g.resource === 'biomass');
+  if (!def?.consumes) return 0;
+  const level = state.generators[def.id] ?? 0;
+  return (def.consumes[resource] ?? 0) * level;
+}
+
+/** Total Biomass per second: the passive trickle plus any Biomass converters. */
+export function getEffectiveBiomassPerSec(state: GameState): number {
+  return getPassiveBiomassPerSec(state) + getBiomassConverterOutput(state);
 }
 
 export function getWaterPercent(state: GameState): number {
@@ -181,10 +206,15 @@ export function getResourceProduction(state: GameState, resource: PoolResource):
   return generatorRate + fixation;
 }
 
-/** Total drain on a pool: the baseline depletion plus metabolic upkeep. */
-export function getResourceDrain(state: GameState, resource: PoolResource): number {
+/** Baseline drain: depletion plus metabolic upkeep, without converter consumption. */
+function getBaseResourceDrain(state: GameState, resource: PoolResource): number {
   const base = resource === 'water' ? WATER_DEPLETION_RATE : NUTRIENT_DEPLETION_RATE;
   return base + getUpkeepRate(state, resource);
+}
+
+/** Total drain on a pool: the baseline plus whatever Biomass converters consume. */
+export function getResourceDrain(state: GameState, resource: PoolResource): number {
+  return getBaseResourceDrain(state, resource) + getBiomassConverterConsumption(state, resource);
 }
 
 /** Net flow for a pool (production − drain); negative means it is being drawn down. */
@@ -270,8 +300,11 @@ export function tickIdle(state: GameState, deltaSec: number): void {
     return;
   }
 
-  state.water = Math.max(0, state.water - getResourceDrain(state, 'water') * deltaSec);
-  state.nutrients = Math.max(0, state.nutrients - getResourceDrain(state, 'nutrients') * deltaSec);
+  state.water = Math.max(0, state.water - getBaseResourceDrain(state, 'water') * deltaSec);
+  state.nutrients = Math.max(
+    0,
+    state.nutrients - getBaseResourceDrain(state, 'nutrients') * deltaSec,
+  );
 
   const fixation = getNutrientFixationBonus(state.skillAllocations) * deltaSec;
   if (fixation > 0) {
@@ -281,8 +314,20 @@ export function tickIdle(state: GameState, deltaSec: number): void {
   tickGenerators(state, deltaSec);
   tickLysate(state, deltaSec);
 
-  const perSec = getEffectiveBiomassPerSec(state);
-  const gained = perSec * deltaSec;
+  // Passive Biomass, plus converters — the latter capped by the Water/Nutrients available.
+  let gained = getPassiveBiomassPerSec(state) * deltaSec;
+  const converterRate = getBiomassConverterOutput(state);
+  if (converterRate > 0) {
+    const waterNeed = getBiomassConverterConsumption(state, 'water') * deltaSec;
+    const nutrientNeed = getBiomassConverterConsumption(state, 'nutrients') * deltaSec;
+    let run = 1;
+    if (waterNeed > 0) run = Math.min(run, state.water / waterNeed);
+    if (nutrientNeed > 0) run = Math.min(run, state.nutrients / nutrientNeed);
+    run = Math.max(0, Math.min(1, run));
+    state.water = Math.max(0, state.water - waterNeed * run);
+    state.nutrients = Math.max(0, state.nutrients - nutrientNeed * run);
+    gained += converterRate * run * deltaSec;
+  }
 
   addBiomass(state, gained);
   state.totalBiomassEarned += gained;

@@ -105,6 +105,8 @@ export interface GameState {
   generators: Record<string, number>;
   lysateRaw: number;
   lysateBanked: number;
+  /** Lifetime Lysate earned in combat; drives the "combat unlocks automation" gate. */
+  lysateEarned: number;
   /** Host ids fully grown over (assimilation reached its target). */
   grownOverHosts: string[];
   expeditions: Expedition[];
@@ -188,6 +190,7 @@ export function createInitialState(): GameState {
     generators: {},
     lysateRaw: 0,
     lysateBanked: 0,
+    lysateEarned: 0,
     grownOverHosts: [],
     expeditions: [],
     maxExpeditionSlots: 1,

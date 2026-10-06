@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type CapResource, type GrowthPhase } from '@mycosurge/game-engine';
+  import { isGeneratorUnlocked, type CapResource, type GrowthPhase } from '@mycosurge/game-engine';
   import {
     GENERATORS,
     getGeneratorCost,
@@ -28,6 +28,8 @@
   let isMobile = $derived(variant === 'mobile');
 
   let activeGenerators = $derived(GENERATORS.filter((g) => (gs.generators[g.id] ?? 0) > 0).length);
+  // Some generators only unlock after the first victory (they cost Lysate).
+  let visibleGenerators = $derived(GENERATORS.filter((g) => isGeneratorUnlocked(gs, g)));
 
   let capRows = $derived([
     {
@@ -134,10 +136,12 @@
           <span class="text-data-mono gen-count">{activeGenerators} active</span>
         </div>
         <div class="gen-list">
-          {#each GENERATORS as gen}
+          {#each visibleGenerators as gen}
             {@const level = gs.generators[gen.id] ?? 0}
             {@const cost = getGeneratorCost(gen.baseCost, level, gen.costScale)}
-            {@const canAfford = gameStore.biomass >= cost}
+            {@const costResource = gen.costResource ?? 'biomass'}
+            {@const canAfford =
+              costResource === 'lysate' ? gs.lysateBanked >= cost : gameStore.biomass >= cost}
             {@const unit = resourceLabel(gen.resource)}
             <div class="gen-card">
               <span class="gen-icon" data-tone={gen.resource} aria-hidden="true">{unit}</span>
@@ -153,6 +157,13 @@
                       >→ +{gen.baseRate * (level + 1)}</span
                     >{/if}
                 </div>
+                {#if gen.consumes}
+                  <div class="text-data-mono gen-consume">
+                    −{(gen.consumes.water ?? 0) * level}
+                    <ResourceSymbol id="water" /> · −{(gen.consumes.nutrients ?? 0) * level}
+                    <ResourceSymbol id="nutrients" /> /s
+                  </div>
+                {/if}
               </div>
               {#if level < gen.maxLevel}
                 <div class="gen-action">
@@ -161,9 +172,9 @@
                     disabled={!canAfford}
                     onclick={() => gameStore.purchaseGenerator(gen.id)}
                   >
-                    {cost} <span class="gen-unit">{resourceLabel('biomass')}</span>
+                    {cost} <span class="gen-unit">{resourceLabel(costResource)}</span>
                   </button>
-                  {#if !canAfford && affordTime(cost)}
+                  {#if !canAfford && costResource === 'biomass' && affordTime(cost)}
                     <span class="gen-eta text-data-mono">{affordTime(cost)}</span>
                   {/if}
                 </div>
@@ -364,6 +375,16 @@
 
   .gen-icon[data-tone='nutrients'] {
     color: var(--nutrient);
+  }
+
+  .gen-icon[data-tone='biomass'] {
+    color: var(--warning);
+  }
+
+  .gen-consume {
+    color: var(--on-surface-variant);
+    font-size: 10px;
+    margin-top: 1px;
   }
 
   .gen-meta {

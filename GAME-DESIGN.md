@@ -47,6 +47,10 @@ generator's `costScale`).
 
 - **Osmotic Pump** — `+1 Water / sec` per level.
 - **Enzymatic Exudates** — `+1 Nutrients / sec` per level.
+- **Biosynthesis** — a _converter_, and the odd one out: unlocked once the network has
+  earned **Lysate** (i.e. won a fight) and priced in **Lysate**. Each level makes `+0.1
+Biomass / sec` while draining `0.5 Water + 0.5 Nutrients / sec`, capped by what's
+  available — so combat funds automated Biomass.
 
 The two tutorial generators become permanent at the end of onboarding.
 

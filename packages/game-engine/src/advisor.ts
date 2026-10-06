@@ -23,6 +23,7 @@ import type {
 import type { GameState } from './state';
 import type { CapResource } from './math';
 import { getCapExpandCost, getEffectiveMaxBiomass, isStarving } from './math';
+import { isGeneratorUnlocked } from './generators';
 import { getNextReachTier, getReachCost } from './reach';
 import { generateHostPlacements } from './network';
 import { getGrowCost, getMaxReach, getSectorDepths, sectorIndexForAngle } from './sectors';
@@ -33,6 +34,7 @@ import { getGrowCost, getMaxReach, getSectorDepths, sectorIndexForAngle } from '
 export function getCheapestGeneratorCost(state: GameState): number | null {
   let cheapest: number | null = null;
   for (const gen of GENERATORS) {
+    if (!isGeneratorUnlocked(state, gen)) continue;
     const level = state.generators[gen.id] ?? 0;
     if (level >= gen.maxLevel) continue;
     const cost = getGeneratorCost(gen.baseCost, level, gen.costScale);

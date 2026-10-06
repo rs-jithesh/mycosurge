@@ -36,6 +36,8 @@ export {
   tickIdle,
   tickAlertDecay,
   getEffectiveBiomassPerSec,
+  getBiomassConverterOutput,
+  getBiomassConverterConsumption,
   getEffectiveMaxBiomass,
   addBiomass,
   isStarving,
@@ -85,7 +87,7 @@ export {
   removeCollectedExpeditions,
   getActiveExpeditions,
 } from './expeditions';
-export { tickGenerators, purchaseGenerator } from './generators';
+export { tickGenerators, purchaseGenerator, isGeneratorUnlocked } from './generators';
 export {
   canManualAbsorb,
   manualAbsorb,
