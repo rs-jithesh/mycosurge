@@ -51,6 +51,16 @@
   let bandWidth = $derived(Math.max(1e-6, geometry.maxMm));
   let k = $derived(RADIUS / bandWidth);
 
+  /**
+   * Ease the drawn growth so the first few steps read as real progress instead of a
+   * barely-visible sliver: a fraction f of the band draws at ~sqrt(f) of the radius.
+   * Applied to both the territory and the hyphae so they stay in step.
+   */
+  function visualMm(depthMm: number): number {
+    const f = Math.max(0, Math.min(1, depthMm / bandWidth));
+    return bandWidth * Math.sqrt(f);
+  }
+
   function wedgePath(index: number, radiusMm: number): string {
     const step = TAU / SECTORS;
     const a0 = index * step;
@@ -71,7 +81,7 @@
 
   let solid = $derived(
     geometry.segments.filter(
-      (s) => s.endMm <= (depths[sectorIndexForAngle(Math.atan2(s.y2, s.x2))] ?? 0) + 1e-6,
+      (s) => s.endMm <= visualMm(depths[sectorIndexForAngle(Math.atan2(s.y2, s.x2))] ?? 0) + 1e-6,
     ),
   );
 
@@ -96,7 +106,7 @@
 >
   <g transform={`translate(${CX} ${CY})`}>
     {#each depths as radius, i (i)}
-      <path class="territory" d={wedgePath(i, Math.max(0, radius) * k)} />
+      <path class="territory" d={wedgePath(i, Math.max(0, visualMm(radius)) * k)} />
     {/each}
 
     {#each solid as s (s.id)}
