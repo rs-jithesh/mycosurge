@@ -186,32 +186,27 @@ the trade is legible: **more complexity means lower raw efficiency but greater c
 
 ## Onboarding
 
-The first session is a five-step hook that ends in a threat handoff, gated by `gamePhase`
-(`awakening → manager → explorer → tactician → active`). It follows a strict
-one-new-idea-at-a-time order and starts **Water-only** — Biomass is deliberately absent
-from the hook and arrives with the full game:
+The first session is **goal first**. The player opens on the **sector board** — the same
+expansion view as the full game — with a store of Water and Nutrients and a signal at the
+edge of reach. They spend the store growing toward it and run dry a few steps short; only
+then does the economy appear, as the answer to a problem they just felt. Motivation before
+mechanics, gated by `gamePhase` (`awakening → tactician → active`):
 
-1. **Draw water** — the only resource at the start; Absorb gathers Water.
-2. **Grow a hypha** — spend Water to extend the network. The first growth reveals
-   **Nutrients**.
-3. **Gather Nutrients** — Absorb now gathers Water and Nutrients together, and growth
-   costs both.
-4. **Automate** — install the Osmotic Pump (+Water/s) for Water, then the Enzymatic
-   Exudates (+Nutrients/s) for Water + Nutrients. Growth past the first hypha waits until
-   both are installed, so automation is learned before the push.
-5. **Threat** — a faint signal is sensed at the network's edge from 3 mm. Grow to 5 mm and
-   it resolves into the tutorial nematode. Scan it on the Radar and fight it; victory
-   completes the tutorial and unlocks the full game.
+1. **Reach** — the board shows six sectors and a pulsing signal. Growing a sector costs
+   Water + Nutrients; the opening store covers only a couple of grows, nowhere near the
+   signal.
+2. **Run dry** — with the signal still out of reach, the objective becomes the economy:
+   gather with **Absorb**, or install an **Osmotic Pump** (+Water/s).
+3. **Build** — the **Enzymatic Exudates** (+Nutrients/s) automates the other pool. A couple
+   of full refills finish the reach.
+4. **Threat** — growing the signal's sector all the way resolves it into the tutorial
+   nematode. Scan and fight it; victory completes the tutorial and unlocks the full game.
 
-All hook costs live in `packages/game-engine/src/tutorial.ts` (Water, then Water +
-Nutrients); the real Biomass cost curves only begin once the full game is active. The
-engine exposes the beat order as a pure hook track (`packages/game-engine/src/hook.ts`:
-`getNextHookObjective`, `getHookProgress`, `isSignalSensed`).
-
-The onboarding is juiced for first contact: an SVG **colony bloom** grows on screen (light
-pulses along the hyphae, a burst on purchases), resource readouts roll up, live production
-rates are shown, and a **next-goal chip** keeps the delta to the next objective a few
-seconds away. Locked actions are shown dimmed with a reason, then flash when they unlock.
+The board is drawn from the **same seeded geometry as the full-game map**
+(`generateNetwork`, sector wedges, `sectorIndexForAngle`), so the tutorial and the map read
+as one system. All tuning lives in `packages/game-engine/src/tutorial.ts` (`TUTORIAL_*`),
+and the objective copy is the pure selector in `hook.ts` (`getNextHookObjective`). The real
+Biomass cost curves only begin once the full game is active.
 
 Finishing the tutorial unlocks the **core chain** — Core and Radar — alongside a one-time
 "systems unlocked" overlay, and the first return reports what the network produced while

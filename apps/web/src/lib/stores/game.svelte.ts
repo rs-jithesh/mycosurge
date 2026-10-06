@@ -21,7 +21,12 @@ import {
   absorbResources as engineAbsorb,
   synthesizeBiomass as engineSynthesize,
   purchaseTutorialUpgrade as enginePurchaseUpgrade,
-  extendHyphae as engineExtend,
+  growTutorialSector as engineGrowTutorialSector,
+  grantTutorialStart,
+  canGrowTutorial,
+  signalSectorFor,
+  getTutorialSectorDepths,
+  isTutorialSignalReached,
   completeTutorial,
   tutorialTick,
   resetAbsorbCount,
@@ -140,8 +145,6 @@ function createGameStore() {
   let allSystemsUnlocked = $state(false);
   let lastAdvisorPhase: GrowthPhase | null = null;
   let lastAdvisorLogAt = 0;
-  /** QA prototype mode (`?loop`): a throwaway state that never touches the save. */
-  let prototypeMode = false;
 
   function persistReveals() {
     try {
@@ -245,8 +248,17 @@ function createGameStore() {
             offlineReport = report;
           }
         }
-        // Assigned from the first frame so the tutorial's bloom and the map share one seed.
+        // Assigned from the first frame so the tutorial's board and the map share one seed.
         assignNetworkSeed(merged);
+        // A save from before the goal-first opening starts it fresh with the stock.
+        if (
+          merged.gamePhase !== 'active' &&
+          merged.tutorialSectors.length === 0 &&
+          !merged.tutorialUpgrades.osmoticPump &&
+          !merged.tutorialUpgrades.enzymaticExudates
+        ) {
+          grantTutorialStart(merged);
+        }
         return merged;
       }
     } catch {
@@ -254,12 +266,11 @@ function createGameStore() {
     }
     const fresh = createInitialState();
     assignNetworkSeed(fresh);
+    grantTutorialStart(fresh);
     return fresh;
   }
 
   function saveState() {
-    // The prototype (`?loop`) is throwaway — never overwrite the player's real save.
-    if (prototypeMode) return;
     state.lastSavedAt = Date.now();
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(state));
@@ -645,6 +656,7 @@ function createGameStore() {
     localStorage.removeItem(REVEAL_KEY);
     state = createInitialState();
     assignNetworkSeed(state);
+    grantTutorialStart(state);
     offlineReport = null;
     revealState = { announced: [], seen: [] };
     allSystemsUnlocked = false;
@@ -680,16 +692,13 @@ function createGameStore() {
     saveState();
   }
 
-  function extendHyphae() {
-    const wasAwakening = state.gamePhase === 'awakening';
-    const result = engineExtend(state);
+  function growTutorialSector(sector: number) {
+    const wasReached = isTutorialSignalReached(state);
+    const result = engineGrowTutorialSector(state, sector);
     if (result.success) {
       logStore.info(result.message);
-      if (wasAwakening && state.gamePhase === 'manager') {
-        logStore.success('The substrate yields Nutrients — Absorb now gathers both.');
-      }
-      if (state.mycelialNetwork >= 5) {
-        logStore.warn('Something is grazing on your outer hyphae. Head to the Radar.');
+      if (!wasReached && isTutorialSignalReached(state)) {
+        logStore.warn('The signal resolves — something is out there. Engage it.');
       }
     }
     saveState();
@@ -706,25 +715,6 @@ function createGameStore() {
     persistReveals();
     saveState();
     logStore.info('The intro is skipped; the network wakes fully grown.');
-  }
-
-  /**
-   * QA prototype (`?loop`): boot straight into a combat-capable state with a tiny network,
-   * so the sector-expand → signal → hunt loop can be felt without the tutorial economy.
-   * Never saved, so a normal reload returns to the real game.
-   */
-  function startLoopPrototype() {
-    const fresh = createInitialState();
-    assignNetworkSeed(fresh);
-    fresh.gamePhase = 'active';
-    fresh.mycelialNetwork = REACH_START;
-    fresh.combatStats.hp = fresh.combatStats.maxHp;
-    state = fresh;
-    offlineReport = null;
-    allSystemsUnlocked = true;
-    revealState = { announced: [...ALL_SYSTEM_IDS], seen: [...ALL_SYSTEM_IDS] };
-    prototypeMode = true;
-    logStore.info('Prototype — grow toward the signal and engage.');
   }
 
   return {
@@ -908,12 +898,23 @@ function createGameStore() {
     resetGame,
     startTick,
     stopTick,
+    get tutorialSectorDepths() {
+      return getTutorialSectorDepths(state);
+    },
+    get tutorialSignalSector() {
+      return signalSectorFor(state);
+    },
+    get tutorialSignalReached() {
+      return isTutorialSignalReached(state);
+    },
+    get canGrowTutorial() {
+      return canGrowTutorial(state);
+    },
     absorbResources,
     synthesizeBiomass,
     purchaseTutorialUpgrade,
-    extendHyphae,
+    growTutorialSector,
     skipIntro,
-    startLoopPrototype,
   };
 }
 

@@ -2,12 +2,12 @@
 
 Status: **superseded** — see _Superseded_ note below the doc header.
 
-> **Superseded by the tutorial revamp (branch `tutorial-revamp`):** the hook now starts
-> **Water-only**, reveals **Nutrients** via the first growth, and defers **Biomass** to the
-> full game. Hook costs live in `packages/game-engine/src/tutorial.ts` as `TUTORIAL_*`
-> (Water, then Water + Nutrients), and the beats are `absorb-water → first-growth →
-gather-nutrients → first-generator → second-generator → reach`. The Biomass-centric
-> phases and H-numbers below are historical.
+> **Superseded by the goal-first rework (branch `tutorial-revamp`):** the tutorial now opens
+> on the shared **sector board** with a starting store of Water + Nutrients and a distant
+> signal. The player spends the store, runs dry, and only then meets the economy (Absorb +
+> two generators); reaching the signal resolves into the hunt. See `tutorial.ts`
+> (`TUTORIAL_*`), `hook.ts` (`getNextHookObjective`), and `GAME-DESIGN.md` §Onboarding. The
+> Biomass-centric phases and H-numbers below are historical.
 
 ## Context
 

@@ -119,6 +119,12 @@ export interface GameState {
   manualCooldown: number;
   mycelialNetwork: number;
   /**
+   * First-session sector growth, in steps per sector (length `REACH_SECTORS`). Empty until
+   * the player grows a direction. Purely the tutorial's board; the full game uses
+   * `reachSectors`.
+   */
+  tutorialSectors: number[];
+  /**
    * Per-wedge growth beyond the base circle, newest design. Empty = a uniform
    * circle at `mycelialNetwork` (legacy/tutorial); otherwise each entry is the
    * extra mm grown in that sector (see `sectors.ts`).
@@ -192,6 +198,7 @@ export function createInitialState(): GameState {
     nutrientsCap: MAX_NUTRIENT_BASE,
     manualCooldown: 0,
     mycelialNetwork: 0,
+    tutorialSectors: [],
     reachSectors: [],
     networkSeed: 0,
     cordBranchId: null,

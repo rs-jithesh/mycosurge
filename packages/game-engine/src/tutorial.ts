@@ -12,50 +12,64 @@ const WATER_MESSAGE = 'You draw water from the substrate.';
 const BOTH_MESSAGE = 'Water and minerals seep into the hyphae.';
 
 /**
- * First-session tuning. **Water is the only resource at the start.** Nutrients are revealed
- * by the first growth, and the whole hook is paid in Water (then Water + Nutrients). Biomass
- * is deliberately absent — it arrives with the full game.
- *
- * Every value lives here so the opening can be tuned in one place and simulated by
- * `first-session.sim.test.ts`.
+ * First-session tuning — **goal first**. The player wakes with a store of Water and
+ * Nutrients and a far signal, spends the store reaching for it, runs dry, and only then
+ * meets the economy that lets them finish. Every value lives here so the opening can be
+ * tuned in one place (and checked by `first-session.sim.test.ts`).
  */
-export const TUTORIAL_RESERVE_CAP = 24;
-/** What one Absorb grants, Water always and Nutrients once they are unlocked. */
-export const TUTORIAL_ABSORB_WATER = 1;
-export const TUTORIAL_ABSORB_NUTRIENTS = 1;
-/** Cost of one hypha (growth). Nutrients are only charged once unlocked. */
-export const TUTORIAL_GROW_WATER_COST = 10;
-export const TUTORIAL_GROW_NUTRIENT_COST = 8;
-/** Water price of the first generator — Osmotic Pump (+1 Water/s). */
-export const TUTORIAL_GENERATOR_WATER_COST = 14;
-/** Water + Nutrients price of the second generator — Enzymatic Exudates (+1 Nutrients/s). */
-export const TUTORIAL_GENERATOR2_WATER_COST = 22;
-export const TUTORIAL_GENERATOR2_NUTRIENT_COST = 22;
-/**
- * Reach (mm) at which the sensed signal resolves into the tutorial threat. Pinned to the
- * full game's `REACH_START` (5 mm, the first Stage-1 band) so the handoff starts exactly
- * where the tutorial ended — do not raise this without moving the scale ladder too.
- */
-export const TUTORIAL_REACH_TARGET = 5;
-
+export const TUTORIAL_SECTORS = 6;
+/** Grows needed in the signal's sector to resolve it — set so the store needs ~2 refills. */
+export const TUTORIAL_SIGNAL_STEPS = 12;
+/** Starting store, enough for a couple of grows and no more. */
+export const TUTORIAL_START_WATER = 20;
+export const TUTORIAL_START_NUTRIENTS = 20;
+export const TUTORIAL_RESERVE_CAP = 50;
+/** What one Absorb grants. Both resources are available from the start. */
+export const TUTORIAL_ABSORB_WATER = 10;
+export const TUTORIAL_ABSORB_NUTRIENTS = 10;
+/** Cost of one sector grow. */
+export const TUTORIAL_SECTOR_WATER_COST = 10;
+export const TUTORIAL_SECTOR_NUTRIENT_COST = 8;
+/** Water price of the first generator — Osmotic Pump (+Water/s). */
+export const TUTORIAL_GENERATOR_WATER_COST = 20;
+/** Water + Nutrients price of the second generator — Enzymatic Exudates (+Nutrients/s). */
+export const TUTORIAL_GENERATOR2_WATER_COST = 25;
+export const TUTORIAL_GENERATOR2_NUTRIENT_COST = 25;
+/** Passive income per installed generator (per second). */
+export const TUTORIAL_GENERATOR_RATE = 3;
 /** Full-game Biomass synthesis costs (kept, but not part of the first-session hook). */
 export const TUTORIAL_SYNTH_WATER_COST = 10;
 export const TUTORIAL_SYNTH_NUTRIENT_COST = 10;
 
-/** Nutrients stay hidden until the first hypha grows. */
-export function nutrientsUnlocked(state: GameState): boolean {
-  return state.gamePhase !== 'awakening';
+/** Which sector holds the signal — deterministic from the map seed. */
+export function signalSectorFor(state: GameState): number {
+  return Math.abs(Math.floor(state.networkSeed)) % TUTORIAL_SECTORS;
+}
+
+/** Growth (steps) per sector, always length {@link TUTORIAL_SECTORS}. */
+export function getTutorialSectorDepths(state: GameState): number[] {
+  return Array.from({ length: TUTORIAL_SECTORS }, (_, i) => state.tutorialSectors[i] ?? 0);
+}
+
+/** True once the signal's sector has been grown all the way. */
+export function isTutorialSignalReached(state: GameState): boolean {
+  return (state.tutorialSectors[signalSectorFor(state)] ?? 0) >= TUTORIAL_SIGNAL_STEPS;
+}
+
+/** True while the player can afford one sector grow. */
+export function canGrowTutorial(state: GameState): boolean {
+  return (
+    state.water >= TUTORIAL_SECTOR_WATER_COST && state.nutrients >= TUTORIAL_SECTOR_NUTRIENT_COST
+  );
 }
 
 /**
- * Effective Water/Nutrients capacity. During the water/grow steps it is
- * {@link TUTORIAL_RESERVE_CAP}; from the first generator onward the real pool cap applies.
- * Never reduces a value already above it.
+ * Effective Water/Nutrients capacity. The tutorial runs a small pool
+ * ({@link TUTORIAL_RESERVE_CAP}); the real caps apply once the full game is active.
  */
 export function getTutorialReserveCap(state: GameState, resource: 'water' | 'nutrients'): number {
   const base = resource === 'water' ? state.waterCap : state.nutrientsCap;
-  const early = state.gamePhase === 'awakening' || state.gamePhase === 'manager';
-  return early ? Math.min(base, TUTORIAL_RESERVE_CAP) : base;
+  return state.gamePhase === 'active' ? base : Math.min(base, TUTORIAL_RESERVE_CAP);
 }
 
 function fillPool(current: number, cap: number, amount: number): number {
@@ -69,70 +83,72 @@ export function resetAbsorbCount(): void {
   _absorbCount = 0;
 }
 
+/** Grant the opening store. Called once when a fresh tutorial begins. */
+export function grantTutorialStart(state: GameState): void {
+  state.water = Math.min(state.waterCap, TUTORIAL_START_WATER);
+  state.nutrients = Math.min(state.nutrientsCap, TUTORIAL_START_NUTRIENTS);
+  state.tutorialSectors = [];
+}
+
 export function absorbResources(state: GameState): string {
   state.water = fillPool(state.water, getTutorialReserveCap(state, 'water'), TUTORIAL_ABSORB_WATER);
-  if (nutrientsUnlocked(state)) {
-    state.nutrients = fillPool(
-      state.nutrients,
-      getTutorialReserveCap(state, 'nutrients'),
-      TUTORIAL_ABSORB_NUTRIENTS,
-    );
-  }
+  state.nutrients = fillPool(
+    state.nutrients,
+    getTutorialReserveCap(state, 'nutrients'),
+    TUTORIAL_ABSORB_NUTRIENTS,
+  );
 
   let message: string;
   if (_absorbCount < AWAKENING_MESSAGES.length) {
     message = AWAKENING_MESSAGES[_absorbCount];
   } else {
-    message = nutrientsUnlocked(state) ? BOTH_MESSAGE : WATER_MESSAGE;
+    message = state.gamePhase === 'awakening' ? WATER_MESSAGE : BOTH_MESSAGE;
   }
   _absorbCount++;
   return message;
 }
 
 /**
- * Grow one hypha. Paid in Water (and Nutrients once they are unlocked). The first growth
- * reveals Nutrients; reaching {@link TUTORIAL_REACH_TARGET} after the first generator hands
- * off to the tutorial threat.
+ * Grow one sector by a step. Spends Water + Nutrients. Growing the signal's sector to
+ * {@link TUTORIAL_SIGNAL_STEPS} resolves it and hands off to the tutorial threat.
  */
-export function extendHyphae(state: GameState): { success: boolean; message: string } {
-  const waterCost = TUTORIAL_GROW_WATER_COST;
-  const nutrientCost = nutrientsUnlocked(state) ? TUTORIAL_GROW_NUTRIENT_COST : 0;
-  if (state.water < waterCost || state.nutrients < nutrientCost) {
+export function growTutorialSector(
+  state: GameState,
+  sector: number,
+): { success: boolean; message: string } {
+  if (sector < 0 || sector >= TUTORIAL_SECTORS) {
+    return { success: false, message: 'That is not a direction.' };
+  }
+  const depths = getTutorialSectorDepths(state);
+  if (depths[sector] >= TUTORIAL_SIGNAL_STEPS) {
+    return { success: false, message: 'That direction is as far as it reaches.' };
+  }
+  if (!canGrowTutorial(state)) {
     return {
       success: false,
-      message:
-        nutrientCost > 0
-          ? `You need ${waterCost} Water and ${nutrientCost} Nutrients.`
-          : `You need ${waterCost} Water.`,
+      message: `You need ${TUTORIAL_SECTOR_WATER_COST} Water and ${TUTORIAL_SECTOR_NUTRIENT_COST} Nutrients.`,
     };
   }
-  // After the first hypha, automation comes before further growth — one idea at a time.
+  state.water -= TUTORIAL_SECTOR_WATER_COST;
+  state.nutrients -= TUTORIAL_SECTOR_NUTRIENT_COST;
+  depths[sector] += 1;
+  state.tutorialSectors = depths;
+
   if (
-    state.mycelialNetwork >= 1 &&
-    !(state.tutorialUpgrades.osmoticPump && state.tutorialUpgrades.enzymaticExudates)
+    sector === signalSectorFor(state) &&
+    depths[sector] >= TUTORIAL_SIGNAL_STEPS &&
+    state.gamePhase === 'awakening'
   ) {
-    return { success: false, message: 'Install both generators before growing further.' };
-  }
-
-  state.water -= waterCost;
-  state.nutrients -= nutrientCost;
-  state.mycelialNetwork += 1;
-
-  // The first growth opens Nutrients — the second resource of the session.
-  if (state.gamePhase === 'awakening') {
-    state.gamePhase = 'manager';
-  }
-
-  const message =
-    state.mycelialNetwork === 1
-      ? 'Your first hypha threads into the dark substrate.'
-      : `Network extended — ${state.mycelialNetwork}mm of hyphae.`;
-
-  if (state.mycelialNetwork >= TUTORIAL_REACH_TARGET && state.gamePhase === 'explorer') {
     state.gamePhase = 'tactician';
   }
 
-  return { success: true, message };
+  return {
+    success: true,
+    message:
+      depths.reduce((a, b) => a + b, 0) === 1
+        ? 'A hypha reaches into the dark.'
+        : 'The hypha presses on.',
+  };
 }
 
 /**
@@ -152,15 +168,13 @@ export function synthesizeBiomass(state: GameState): { success: boolean; message
   return { success: true, message: 'Biomass formed — your cell has structural mass now.' };
 }
 
+/** Install one of the two tutorial generators. The economy reveal; no phase gate. */
 export function purchaseTutorialUpgrade(
   state: GameState,
   upgrade: 'osmoticPump' | 'enzymaticExudates',
 ): { success: boolean; message: string } {
   if (state.tutorialUpgrades[upgrade]) {
     return { success: false, message: 'That generator is already installed.' };
-  }
-  if (!nutrientsUnlocked(state)) {
-    return { success: false, message: 'Establish your first growth first.' };
   }
 
   const cost =
@@ -182,13 +196,9 @@ export function purchaseTutorialUpgrade(
   state.nutrients -= cost.nutrients;
   state.tutorialUpgrades[upgrade] = true;
 
-  if (state.gamePhase === 'manager') {
-    state.gamePhase = state.mycelialNetwork >= TUTORIAL_REACH_TARGET ? 'tactician' : 'explorer';
-  }
-
   const messages: Record<string, string> = {
-    osmoticPump: 'Osmotic Pump installed — +1 Water per second.',
-    enzymaticExudates: 'Enzymatic Exudates installed — +1 Nutrients per second.',
+    osmoticPump: 'Osmotic Pump installed — +3 Water per second.',
+    enzymaticExudates: 'Enzymatic Exudates installed — +3 Nutrients per second.',
   };
   return { success: true, message: messages[upgrade] };
 }
@@ -216,8 +226,6 @@ export function applyTutorialDefeat(state: GameState): string[] {
 }
 
 export function tutorialTick(state: GameState, deltaSec: number): void {
-  if (state.gamePhase === 'awakening') return;
-
   if (state.gamePhase !== 'active') {
     const shockMul = getTutorialShockMultiplier(state);
 
@@ -225,14 +233,14 @@ export function tutorialTick(state: GameState, deltaSec: number): void {
       state.water = fillPool(
         state.water,
         getTutorialReserveCap(state, 'water'),
-        1 * deltaSec * shockMul,
+        TUTORIAL_GENERATOR_RATE * deltaSec * shockMul,
       );
     }
     if (state.tutorialUpgrades.enzymaticExudates) {
       state.nutrients = fillPool(
         state.nutrients,
         getTutorialReserveCap(state, 'nutrients'),
-        1 * deltaSec * shockMul,
+        TUTORIAL_GENERATOR_RATE * deltaSec * shockMul,
       );
     }
   }
