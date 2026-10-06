@@ -104,100 +104,108 @@
     <div class="shock text-label-caps">⚠ {ONBOARDING_COPY.shock(Math.ceil(shock))}</div>
   {/if}
 
-  <div class="res-grid">
-    <ProgressBar
-      tone="cyan"
-      label={resourceLabel('water', 'first')}
-      labelCaps={false}
-      value={s.water}
-      max={waterMax}
-      animate
-      format={(n) => `${Math.floor(n)}/${Math.floor(waterMax)}`}
-    />
-    <ProgressBar
-      tone="violet"
-      label={resourceLabel('nutrients', 'first')}
-      labelCaps={false}
-      value={s.nutrients}
-      max={nutrientMax}
-      animate
-      format={(n) => `${Math.floor(n)}/${Math.floor(nutrientMax)}`}
-    />
-  </div>
-
-  {#if isHandoff}
-    <HuntSection mode="tutorial" />
-  {:else}
-    <section class="panel board-panel">
-      <SectorBoard
-        depths={depthsMm}
-        seed={gameStore.networkSeed}
-        stageIndex={1}
-        {signalSector}
-        signalMm={BAND_MM}
-        growStepMm={STEP_MM}
-        interactive={!signalReached && canGrow}
-        onGrow={growSector}
-        label="Your network"
-      />
-    </section>
-
-    {#if signalReached}
-      <div class="engage-row">
-        <span class="engage-note">The signal resolves — something is out there.</span>
+  <div class="tut-grid">
+    <div class="col-left">
+      <div class="res-grid">
+        <ProgressBar
+          tone="cyan"
+          label={resourceLabel('water', 'first')}
+          labelCaps={false}
+          value={s.water}
+          max={waterMax}
+          animate
+          format={(n) => `${Math.floor(n)}/${Math.floor(waterMax)}`}
+        />
+        <ProgressBar
+          tone="violet"
+          label={resourceLabel('nutrients', 'first')}
+          labelCaps={false}
+          value={s.nutrients}
+          max={nutrientMax}
+          animate
+          format={(n) => `${Math.floor(n)}/${Math.floor(nutrientMax)}`}
+        />
       </div>
-    {/if}
 
-    {#if economyRevealed && !signalReached}
-      <section class="panel economy-panel">
-        <div class="panel-body economy">
-          <div class="group">
-            <span class="group-label text-label-caps">Keep growing — gather</span>
-            <button class="action-btn" class:current={objective.id === 'gather'} onclick={absorb}>
-              <span class="action-verb">Absorb</span>
-              <span class="action-sub">{ONBOARDING_COPY.absorb.effect}</span>
-            </button>
-          </div>
-
-          <div class="group">
-            <span class="group-label text-label-caps">Automate</span>
-            {#if s.water >= TUTORIAL_GENERATOR_WATER_COST || hasPump || hasExudates}
-              {#each TUTORIAL_GENERATORS as gen (gen.id)}
-                {@const owned = gen.id === 'osmoticPump' ? hasPump : hasExudates}
-                <div class="gen-row" class:current={objective.id === 'build' && !owned}>
-                  <span class="gen-glyph"><ResourceIcon name={gen.icon} size={34} round /></span>
-                  <span class="gen-info">
-                    <span class="gen-name">{gen.recommended ? '★ ' : ''}{gen.name}</span>
-                    <span class="gen-rate text-data-mono">{gen.effect}</span>
-                  </span>
-                  {#if owned}
-                    <span class="gen-owned text-label-caps">Installed</span>
-                  {:else}
-                    <button
-                      class="install-btn"
-                      disabled={!canAffordGenerator(gen.id)}
-                      onclick={() => buy(gen.id)}
-                    >
-                      {generatorCostText(gen.id)}
-                    </button>
-                  {/if}
-                </div>
-              {/each}
-            {:else}
-              <div class="action-btn locked">
-                <span class="action-verb">Install a generator</span>
-                <span class="action-sub">{LOCK_REASONS.generators}</span>
-              </div>
-            {/if}
-          </div>
-        </div>
+      <section class="panel board-panel">
+        <SectorBoard
+          depths={depthsMm}
+          seed={gameStore.networkSeed}
+          stageIndex={1}
+          {signalSector}
+          signalMm={BAND_MM}
+          growStepMm={STEP_MM}
+          interactive={!signalReached && canGrow}
+          onGrow={growSector}
+          label="Your network"
+        />
       </section>
-    {/if}
-
-    <div class="area-activity">
-      <ActivityLog embedded />
     </div>
-  {/if}
+
+    <div class="col-right">
+      {#if isHandoff}
+        <HuntSection mode="tutorial" />
+      {:else if economyRevealed && !signalReached}
+        <section class="panel economy-panel">
+          <div class="panel-body economy">
+            <div class="group">
+              <span class="group-label text-label-caps">Keep growing — gather</span>
+              <button class="action-btn" class:current={objective.id === 'gather'} onclick={absorb}>
+                <span class="action-verb">Absorb</span>
+                <span class="action-sub">{ONBOARDING_COPY.absorb.effect}</span>
+              </button>
+            </div>
+
+            <div class="group">
+              <span class="group-label text-label-caps">Automate</span>
+              {#if s.water >= TUTORIAL_GENERATOR_WATER_COST || hasPump || hasExudates}
+                {#each TUTORIAL_GENERATORS as gen (gen.id)}
+                  {@const owned = gen.id === 'osmoticPump' ? hasPump : hasExudates}
+                  <div class="gen-row" class:current={objective.id === 'build' && !owned}>
+                    <span class="gen-glyph"><ResourceIcon name={gen.icon} size={34} round /></span>
+                    <span class="gen-info">
+                      <span class="gen-name">{gen.recommended ? '★ ' : ''}{gen.name}</span>
+                      <span class="gen-rate text-data-mono">{gen.effect}</span>
+                    </span>
+                    {#if owned}
+                      <span class="gen-owned text-label-caps">Installed</span>
+                    {:else}
+                      <button
+                        class="install-btn"
+                        disabled={!canAffordGenerator(gen.id)}
+                        onclick={() => buy(gen.id)}
+                      >
+                        {generatorCostText(gen.id)}
+                      </button>
+                    {/if}
+                  </div>
+                {/each}
+              {:else}
+                <div class="action-btn locked">
+                  <span class="action-verb">Install a generator</span>
+                  <span class="action-sub">{LOCK_REASONS.generators}</span>
+                </div>
+              {/if}
+            </div>
+          </div>
+        </section>
+      {:else}
+        <section class="panel hint-panel">
+          <div class="panel-body hint-body">
+            <span class="hint-title">Grow toward the signal</span>
+            <p class="hint-text">
+              Tap a wedge to push a hypha that way. The pulsing blip is the signal — reach it and
+              something answers.
+            </p>
+          </div>
+        </section>
+      {/if}
+
+      <div class="area-activity">
+        <ActivityLog embedded />
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -208,6 +216,20 @@
     max-width: 560px;
     margin: 0 auto;
     padding: var(--space-gutter) 0 var(--space-margin);
+  }
+
+  .tut-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .col-left,
+  .col-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
   }
 
   .tut-head {
@@ -430,18 +452,40 @@
     box-shadow: none;
   }
 
-  .engage-row {
-    display: flex;
-    justify-content: center;
-    padding: 8px var(--space-panel-padding);
-    border: 1px solid var(--warning);
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--warning) 12%, transparent);
-    color: var(--warning);
-    text-align: center;
+  .hint-panel {
+    border-style: dashed;
   }
 
-  .engage-note {
+  .hint-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+  }
+
+  .hint-title {
     font-weight: 600;
+    color: var(--primary);
+  }
+
+  .hint-text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--on-surface-variant);
+  }
+
+  /* Desktop: two columns — the board leads, the controls sit beside it. */
+  @media (min-width: 768px) and (orientation: landscape) {
+    .tutorial-frame {
+      max-width: 1040px;
+    }
+
+    .tut-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
   }
 </style>
