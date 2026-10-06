@@ -120,17 +120,19 @@
   <div class="tut-grid">
     <!-- Left: the instructions, then the controls that fade in when they're needed. -->
     <div class="col-intro">
-      {#key objective.title}
-        <div class="fade-wrap" transition:fade={{ duration: 450 }}>
-          <ObjectiveBanner
-            tag={objective.tag}
-            title={objective.title}
-            description={objective.description}
-            hint={objective.hint}
-            tone={objective.tone}
-          />
-        </div>
-      {/key}
+      <div class="intro-stage">
+        {#key objective.title}
+          <div class="intro-layer" transition:fade={{ duration: 450 }}>
+            <ObjectiveBanner
+              tag={objective.tag}
+              title={objective.title}
+              description={objective.description}
+              hint={objective.hint}
+              tone={objective.tone}
+            />
+          </div>
+        {/key}
+      </div>
     </div>
 
     <div class="col-controls">
@@ -287,9 +289,15 @@
     min-width: 0;
   }
 
-  /* Reserve room so the banner cross-fade never jumps the layout. */
-  .col-intro {
-    min-height: 108px;
+  /* The banner layers overlay so they cross-fade in place — no layout jump. */
+  .intro-stage {
+    position: relative;
+    min-height: 150px;
+  }
+
+  .intro-layer {
+    position: absolute;
+    inset: 0;
   }
 
   .panel {
