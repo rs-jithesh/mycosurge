@@ -47,12 +47,24 @@
   let waterMax = $derived(getTutorialReserveCap(s, 'water'));
   let nutrientMax = $derived(getTutorialReserveCap(s, 'nutrients'));
 
+  // Growth past the first hypha waits until both generators are installed.
+  let growBlocked = $derived(
+    s.mycelialNetwork >= 1 &&
+      !(s.tutorialUpgrades.osmoticPump && s.tutorialUpgrades.enzymaticExudates),
+  );
   let canGrow = $derived(
-    s.water >= TUTORIAL_GROW_WATER_COST &&
+    !growBlocked &&
+      s.water >= TUTORIAL_GROW_WATER_COST &&
       (!nutrientsShown || s.nutrients >= TUTORIAL_GROW_NUTRIENT_COST),
   );
   let growCostText = $derived(
-    nutrientsShown ? ONBOARDING_COPY.grow.effectBoth : ONBOARDING_COPY.grow.effectWater,
+    growBlocked
+      ? LOCK_REASONS.automate
+      : canGrow
+        ? nutrientsShown
+          ? ONBOARDING_COPY.grow.effectBoth
+          : ONBOARDING_COPY.grow.effectWater
+        : LOCK_REASONS.grow,
   );
 
   let hasPump = $derived(s.tutorialUpgrades.osmoticPump);
@@ -280,7 +292,7 @@
                 onclick={grow}
               >
                 <span class="action-verb">Grow Hyphae</span>
-                <span class="action-sub">{canGrow ? growCostText : LOCK_REASONS.grow}</span>
+                <span class="action-sub">{growCostText}</span>
               </button>
             </div>
 

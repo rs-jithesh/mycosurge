@@ -66,6 +66,19 @@ describe('extendHyphae', () => {
     const state = createInitialState();
     expect(extendHyphae(state).success).toBe(false);
   });
+
+  it('gates further growth until both generators are installed', () => {
+    const state = createInitialState();
+    state.gamePhase = 'manager';
+    state.mycelialNetwork = 1;
+    state.water = 50;
+    state.nutrients = 50;
+    expect(extendHyphae(state).success).toBe(false);
+
+    state.tutorialUpgrades.osmoticPump = true;
+    state.tutorialUpgrades.enzymaticExudates = true;
+    expect(extendHyphae(state).success).toBe(true);
+  });
 });
 
 describe('purchaseTutorialUpgrade', () => {

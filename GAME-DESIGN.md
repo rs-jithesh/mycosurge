@@ -197,7 +197,8 @@ from the hook and arrives with the full game:
 3. **Gather Nutrients** — Absorb now gathers Water and Nutrients together, and growth
    costs both.
 4. **Automate** — install the Osmotic Pump (+Water/s) for Water, then the Enzymatic
-   Exudates (+Nutrients/s) for Water + Nutrients.
+   Exudates (+Nutrients/s) for Water + Nutrients. Growth past the first hypha waits until
+   both are installed, so automation is learned before the push.
 5. **Threat** — a faint signal is sensed at the network's edge from 3 mm. Grow to 5 mm and
    it resolves into the tutorial nematode. Scan it on the Radar and fight it; victory
    completes the tutorial and unlocks the full game.

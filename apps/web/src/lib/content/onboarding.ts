@@ -135,6 +135,7 @@ export const TUTORIAL_GENERATORS: TutorialGeneratorContent[] = [
 export const LOCK_REASONS = {
   grow: `Gather ${TUTORIAL_GROW_WATER_COST} ${resourceLabel('water', 'first')}`,
   generators: `Gather ${TUTORIAL_GENERATOR_WATER_COST} ${resourceLabel('water', 'first')}`,
+  automate: 'Install both generators first',
 };
 
 export const ONBOARDING_COPY = {

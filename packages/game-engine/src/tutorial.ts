@@ -19,19 +19,23 @@ const BOTH_MESSAGE = 'Water and minerals seep into the hyphae.';
  * Every value lives here so the opening can be tuned in one place and simulated by
  * `first-session.sim.test.ts`.
  */
-export const TUTORIAL_RESERVE_CAP = 12;
+export const TUTORIAL_RESERVE_CAP = 24;
 /** What one Absorb grants, Water always and Nutrients once they are unlocked. */
-export const TUTORIAL_ABSORB_WATER = 2;
-export const TUTORIAL_ABSORB_NUTRIENTS = 2;
+export const TUTORIAL_ABSORB_WATER = 1;
+export const TUTORIAL_ABSORB_NUTRIENTS = 1;
 /** Cost of one hypha (growth). Nutrients are only charged once unlocked. */
-export const TUTORIAL_GROW_WATER_COST = 3;
-export const TUTORIAL_GROW_NUTRIENT_COST = 2;
+export const TUTORIAL_GROW_WATER_COST = 10;
+export const TUTORIAL_GROW_NUTRIENT_COST = 8;
 /** Water price of the first generator — Osmotic Pump (+1 Water/s). */
-export const TUTORIAL_GENERATOR_WATER_COST = 6;
+export const TUTORIAL_GENERATOR_WATER_COST = 14;
 /** Water + Nutrients price of the second generator — Enzymatic Exudates (+1 Nutrients/s). */
-export const TUTORIAL_GENERATOR2_WATER_COST = 6;
-export const TUTORIAL_GENERATOR2_NUTRIENT_COST = 6;
-/** Reach (mm) at which the sensed signal resolves into the tutorial threat. */
+export const TUTORIAL_GENERATOR2_WATER_COST = 22;
+export const TUTORIAL_GENERATOR2_NUTRIENT_COST = 22;
+/**
+ * Reach (mm) at which the sensed signal resolves into the tutorial threat. Pinned to the
+ * full game's `REACH_START` (5 mm, the first Stage-1 band) so the handoff starts exactly
+ * where the tutorial ended — do not raise this without moving the scale ladder too.
+ */
 export const TUTORIAL_REACH_TARGET = 5;
 
 /** Full-game Biomass synthesis costs (kept, but not part of the first-session hook). */
@@ -102,6 +106,14 @@ export function extendHyphae(state: GameState): { success: boolean; message: str
           : `You need ${waterCost} Water.`,
     };
   }
+  // After the first hypha, automation comes before further growth — one idea at a time.
+  if (
+    state.mycelialNetwork >= 1 &&
+    !(state.tutorialUpgrades.osmoticPump && state.tutorialUpgrades.enzymaticExudates)
+  ) {
+    return { success: false, message: 'Install both generators before growing further.' };
+  }
+
   state.water -= waterCost;
   state.nutrients -= nutrientCost;
   state.mycelialNetwork += 1;
