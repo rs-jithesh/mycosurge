@@ -220,7 +220,7 @@
         title="Activity"
         onclick={() => uiStore.openPanel('console')}
       >
-        <span aria-hidden="true">▤</span>
+        <span class="console-glyph" aria-hidden="true">&gt;_</span>
       </button>
 
       <div class="overflow-wrap">
@@ -504,9 +504,16 @@
     border-radius: var(--radius-sm);
     background: var(--surface-container);
     color: var(--on-surface);
-    font-size: 15px;
-    line-height: 1;
     cursor: pointer;
+  }
+
+  .console-glyph {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    translate: 0 -1px;
   }
 
   .console-btn:hover {
