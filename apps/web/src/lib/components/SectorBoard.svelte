@@ -183,11 +183,18 @@
     fill: transparent;
     pointer-events: all;
     cursor: pointer;
+    /* The UA draws a rectangle around an SVG element's bbox on focus/tap. */
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .hit:focus {
+    outline: none;
   }
 
   .hit:focus-visible {
-    fill: color-mix(in srgb, var(--primary) 12%, transparent);
     outline: none;
+    fill: color-mix(in srgb, var(--primary) 14%, transparent);
   }
 
   @media (prefers-reduced-motion: reduce) {
