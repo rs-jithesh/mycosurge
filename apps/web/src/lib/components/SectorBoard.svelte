@@ -87,7 +87,13 @@
   }
 </script>
 
-<svg class="board" viewBox="0 0 340 340" role="group" aria-label={label}>
+<svg
+  class="board"
+  class:dimmed={!interactive}
+  viewBox="0 0 340 340"
+  role="group"
+  aria-label={label}
+>
   <g transform={`translate(${CX} ${CY})`}>
     {#each depths as radius, i (i)}
       <path class="territory" d={wedgePath(i, Math.max(0, radius) * k)} />
@@ -127,17 +133,19 @@
           tabindex="0"
           aria-label={`Grow sector ${i + 1}`}
           onpointerenter={() => {
-            if (finePointer) hovered = i;
+            if (finePointer && interactive) hovered = i;
           }}
           onpointerleave={() => {
             if (hovered === i) hovered = null;
           }}
           onclick={() => {
+            if (!interactive) return;
             selected = i;
             grow(i);
           }}
           onkeydown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
+              if (!interactive) return;
               selected = i;
               grow(i);
             }
@@ -226,6 +234,32 @@
   .hit:focus-visible {
     outline: none;
     fill: color-mix(in srgb, var(--primary) 14%, transparent);
+  }
+
+  /* Nothing to spend: grey the network so the board reads as unavailable. The signal
+     stays in colour — it is still the goal. */
+  .board.dimmed .territory,
+  .board.dimmed .hypha,
+  .board.dimmed .spore,
+  .board.dimmed .spore-core {
+    filter: grayscale(1);
+  }
+
+  .board.dimmed .territory {
+    opacity: 0.05;
+  }
+
+  .board.dimmed .hypha {
+    opacity: 0.4;
+  }
+
+  .board.dimmed .spore,
+  .board.dimmed .spore-core {
+    opacity: 0.5;
+  }
+
+  .board.dimmed .hit {
+    cursor: not-allowed;
   }
 
   @media (prefers-reduced-motion: reduce) {
