@@ -366,8 +366,6 @@
   function strainName(strainId: string): string {
     return getStrain(strainId).name;
   }
-
-  const canExtend = $derived(gs.biomass >= gameStore.evenCost);
 </script>
 
 <div class="map-overlay" role="group" aria-label="Network map">
@@ -390,14 +388,6 @@
       </span>
     </div>
     <div class="map-tools">
-      <button
-        class="cmd-btn extend-btn"
-        disabled={!canExtend}
-        onclick={() => gameStore.growEvenly()}
-      >
-        Grow evenly · {gameStore.evenCost}
-        {resourceLabel('biomass')}
-      </button>
       <button class="cmd-btn secondary bar-btn" onclick={fit} title="Fit network">Fit</button>
       <button
         class="cmd-btn secondary zoom-btn"
@@ -459,9 +449,8 @@
           />
         {/each}
         {#if activeSector !== null}
-          {@const hoverDepth = Math.max(0, drawnDepths[activeSector] ?? 0)}
-          <!-- Highlight only: the advisor's suggestion already draws the outline. -->
-          <path d={wedgePath(activeSector, hoverDepth)} fill="var(--primary)" opacity="0.14" />
+          <!-- Highlight the whole sector: its current depth is often ~0 at a band's start. -->
+          <path d={wedgePath(activeSector, bandWidth)} fill="var(--primary)" opacity="0.15" />
         {/if}
         {#each drawnDepths as radius, i (i)}
           <line
@@ -754,11 +743,6 @@
     min-width: 34px;
   }
 
-  .extend-btn {
-    padding: 5px 12px;
-    font-size: 12px;
-  }
-
   .map-stage {
     flex: 1;
     min-height: 0;
@@ -940,10 +924,6 @@
     .map-tools {
       flex: 1 1 100%;
       justify-content: flex-start;
-    }
-
-    .extend-btn {
-      flex: 1;
     }
   }
 </style>
