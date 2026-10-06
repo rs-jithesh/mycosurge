@@ -107,6 +107,8 @@ export interface GameState {
   lysateBanked: number;
   /** Lifetime Lysate earned in combat; drives the "combat unlocks automation" gate. */
   lysateEarned: number;
+  /** Cap expansions bought per pool — drives the cost and the growing cap increment. */
+  capExpansions: { water: number; nutrients: number; biomass: number };
   /** Host ids fully grown over (assimilation reached its target). */
   grownOverHosts: string[];
   expeditions: Expedition[];
@@ -191,6 +193,7 @@ export function createInitialState(): GameState {
     lysateRaw: 0,
     lysateBanked: 0,
     lysateEarned: 0,
+    capExpansions: { water: 0, nutrients: 0, biomass: 0 },
     grownOverHosts: [],
     expeditions: [],
     maxExpeditionSlots: 1,

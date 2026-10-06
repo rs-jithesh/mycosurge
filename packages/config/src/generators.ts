@@ -63,9 +63,16 @@ export function getGeneratorCost(baseCost: number, currentLevel: number, costSca
 
 // Cheap, gently rising cap upgrades: the first several cost a few Lysate each.
 export const LYSATE_CAP_EXPAND_COST_BASE = 3;
-export const LYSATE_CAP_EXPAND_AMOUNT = 10;
 export const LYSATE_CAP_COST_SCALE = 1.3;
+/** The first expansion adds this much cap; each one after adds ~10% more. */
+export const LYSATE_CAP_EXPAND_BASE = 50;
+export const LYSATE_CAP_EXPAND_SCALE = 1.1;
 
 export function getLysateCapExpandCost(expansionCount: number): number {
   return Math.floor(LYSATE_CAP_EXPAND_COST_BASE * Math.pow(LYSATE_CAP_COST_SCALE, expansionCount));
+}
+
+/** Cap added by the next expansion, given how many have already been bought. */
+export function getLysateCapExpandAmount(expansionCount: number): number {
+  return Math.round(LYSATE_CAP_EXPAND_BASE * Math.pow(LYSATE_CAP_EXPAND_SCALE, expansionCount));
 }

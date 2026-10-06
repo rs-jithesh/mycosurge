@@ -36,8 +36,10 @@ export {
   GENERATORS,
   getGeneratorCost,
   getLysateCapExpandCost,
+  getLysateCapExpandAmount,
   LYSATE_CAP_EXPAND_COST_BASE,
-  LYSATE_CAP_EXPAND_AMOUNT,
+  LYSATE_CAP_EXPAND_BASE,
+  LYSATE_CAP_EXPAND_SCALE,
   LYSATE_CAP_COST_SCALE,
 } from './generators';
 export type { GeneratorDef } from './generators';

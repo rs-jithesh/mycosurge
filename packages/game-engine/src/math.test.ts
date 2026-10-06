@@ -123,8 +123,8 @@ describe('getEffectiveMaxBiomass', () => {
     const state = createInitialState();
     state.lysateBanked = 100;
     expect(expandBiomassCap(state)).toBe(true);
-    expect(state.maxBiomass).toBe(110);
-    expect(getEffectiveMaxBiomass(state)).toBe(110);
+    expect(state.maxBiomass).toBe(150);
+    expect(getEffectiveMaxBiomass(state)).toBe(150);
   });
 
   it('combines Lysate expansions with the expansion skill', () => {
@@ -132,7 +132,7 @@ describe('getEffectiveMaxBiomass', () => {
     state.lysateBanked = 100;
     expandBiomassCap(state);
     state.skillAllocations['mycelial_expansion'] = 1;
-    expect(getEffectiveMaxBiomass(state)).toBeCloseTo(192.5);
+    expect(getEffectiveMaxBiomass(state)).toBeCloseTo(262.5);
   });
 
   it('grows with network reach beyond the starting depth', () => {
@@ -320,11 +320,11 @@ describe('expandCap', () => {
     state.lysateBanked = 100;
     expect(getCapExpandCost(state, 'water')).toBe(3);
     expect(expandCap(state, 'water')).toBe(true);
-    expect(state.waterCap).toBe(110);
+    expect(state.waterCap).toBe(150);
     expect(expandCap(state, 'nutrients')).toBe(true);
-    expect(state.nutrientsCap).toBe(110);
+    expect(state.nutrientsCap).toBe(150);
     expect(expandCap(state, 'biomass')).toBe(true);
-    expect(state.maxBiomass).toBe(110);
+    expect(state.maxBiomass).toBe(150);
   });
 });
 

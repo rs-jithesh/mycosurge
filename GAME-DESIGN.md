@@ -96,7 +96,8 @@ reward. Both gate independently:
 
 Combat drops **Raw Lysate**. Each tick, raw Lysate stabilises into banked Lysate by
 spending Water and Nutrients; if the network can't pay, raw Lysate decays. Banked Lysate
-buys `+10` to the Water, Nutrients, or Biomass cap, at a rising cost per expansion.
+buys cheap cap upgrades: the first expansion adds **+50**, each one after ~10% more, at a
+gently rising cost.
 
 ### Mutations (skill tree)
 

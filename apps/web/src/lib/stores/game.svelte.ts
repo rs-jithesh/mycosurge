@@ -104,6 +104,7 @@ import {
   REACH_START,
   ADVISOR_TUNING,
   EXPEDITIONS_ENABLED,
+  getLysateCapExpandAmount,
 } from '@mycosurge/config';
 import { SYSTEM_META } from '$lib/content/systems';
 import { logStore } from './log.svelte';
@@ -250,6 +251,15 @@ function createGameStore() {
           (merged.lysateBanked > 0 || merged.lysateRaw > 0 || merged.cataloguedHosts.length > 0)
         ) {
           merged.lysateEarned = Math.max(1, merged.lysateBanked + merged.lysateRaw);
+        }
+
+        // Migration: older saves only grew caps by a flat +10, with no stored count.
+        if (!parsed.capExpansions) {
+          merged.capExpansions = {
+            water: Math.max(0, Math.round((merged.waterCap - initial.waterCap) / 10)),
+            nutrients: Math.max(0, Math.round((merged.nutrientsCap - initial.nutrientsCap) / 10)),
+            biomass: Math.max(0, Math.round((merged.maxBiomass - initial.maxBiomass) / 10)),
+          };
         }
 
         const elapsed = merged.lastSavedAt > 0 ? (Date.now() - merged.lastSavedAt) / 1000 : 0;
@@ -862,6 +872,12 @@ function createGameStore() {
     },
     capExpandCost(resource: CapResource) {
       return getCapExpandCost(state, resource);
+    },
+    get capExpansions() {
+      return state.capExpansions;
+    },
+    capExpandAmount(resource: CapResource) {
+      return getLysateCapExpandAmount(state.capExpansions[resource]);
     },
     get genomePointsSpent() {
       return getSpentGenomePoints(state);

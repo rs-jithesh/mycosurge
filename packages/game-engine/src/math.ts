@@ -3,9 +3,6 @@ import {
   ALERT_DECAY_RATE,
   ALERT_EFFECT_CAP,
   DEPLETION_RATE_PER_ASSIM,
-  MAX_BIOMASS_BASE,
-  MAX_WATER_BASE,
-  MAX_NUTRIENT_BASE,
   WATER_DEPLETION_RATE,
   NUTRIENT_DEPLETION_RATE,
   WATER_YIELD_THRESHOLD,
@@ -16,13 +13,13 @@ import {
   LYSATE_MAX_STABILIZE_RATE,
   LYSATE_STABILIZE_WATER_COST,
   LYSATE_STABILIZE_NUTRIENT_COST,
-  LYSATE_CAP_EXPAND_AMOUNT,
   TRAUMA_BASE_DURATION,
   UPKEEP_PER_REACH,
   BIOMASS_CAP_PER_REACH,
   REACH_START,
   GENERATORS,
   getLysateCapExpandCost,
+  getLysateCapExpandAmount,
 } from '@mycosurge/config';
 import type { GameState } from './state';
 import { tickGenerators } from './generators';
@@ -169,15 +166,15 @@ export function getCombatYieldMultiplier(state: GameState): number {
 }
 
 export function getWaterExpandCount(state: GameState): number {
-  return Math.max(0, (state.waterCap - MAX_WATER_BASE) / LYSATE_CAP_EXPAND_AMOUNT);
+  return state.capExpansions.water;
 }
 
 export function getNutrientExpandCount(state: GameState): number {
-  return Math.max(0, (state.nutrientsCap - MAX_NUTRIENT_BASE) / LYSATE_CAP_EXPAND_AMOUNT);
+  return state.capExpansions.nutrients;
 }
 
 export function getBiomassExpandCount(state: GameState): number {
-  return Math.max(0, (state.maxBiomass - MAX_BIOMASS_BASE) / LYSATE_CAP_EXPAND_AMOUNT);
+  return state.capExpansions.biomass;
 }
 
 export type PoolResource = 'water' | 'nutrients';
@@ -223,29 +220,32 @@ export function getNetResourceRate(state: GameState, resource: PoolResource): nu
 }
 
 export function expandWaterCap(state: GameState): boolean {
-  const count = getWaterExpandCount(state);
+  const count = state.capExpansions.water;
   const cost = getLysateCapExpandCost(count);
   if (state.lysateBanked < cost) return false;
   state.lysateBanked -= cost;
-  state.waterCap += LYSATE_CAP_EXPAND_AMOUNT;
+  state.waterCap += getLysateCapExpandAmount(count);
+  state.capExpansions.water = count + 1;
   return true;
 }
 
 export function expandNutrientCap(state: GameState): boolean {
-  const count = getNutrientExpandCount(state);
+  const count = state.capExpansions.nutrients;
   const cost = getLysateCapExpandCost(count);
   if (state.lysateBanked < cost) return false;
   state.lysateBanked -= cost;
-  state.nutrientsCap += LYSATE_CAP_EXPAND_AMOUNT;
+  state.nutrientsCap += getLysateCapExpandAmount(count);
+  state.capExpansions.nutrients = count + 1;
   return true;
 }
 
 export function expandBiomassCap(state: GameState): boolean {
-  const count = getBiomassExpandCount(state);
+  const count = state.capExpansions.biomass;
   const cost = getLysateCapExpandCost(count);
   if (state.lysateBanked < cost) return false;
   state.lysateBanked -= cost;
-  state.maxBiomass += LYSATE_CAP_EXPAND_AMOUNT;
+  state.maxBiomass += getLysateCapExpandAmount(count);
+  state.capExpansions.biomass = count + 1;
   return true;
 }
 

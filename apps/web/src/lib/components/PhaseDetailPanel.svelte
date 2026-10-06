@@ -1,11 +1,6 @@
 <script lang="ts">
   import { isGeneratorUnlocked, type CapResource, type GrowthPhase } from '@mycosurge/game-engine';
-  import {
-    GENERATORS,
-    getGeneratorCost,
-    LYSATE_CAP_EXPAND_AMOUNT,
-    resourceLabel,
-  } from '@mycosurge/config';
+  import { GENERATORS, getGeneratorCost, resourceLabel } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { numberPrecision } from '$lib/format';
@@ -103,6 +98,7 @@
         <div class="cap-rows">
           {#each capRows as row}
             {@const cost = capCost(row.resource)}
+            {@const amount = gameStore.capExpandAmount(row.resource)}
             <div class="cap-row">
               <div class="cap-info">
                 <span class="cap-name" data-tone={row.tone}
@@ -110,7 +106,7 @@
                 >
                 <span class="text-data-mono cap-val">
                   {Math.floor(row.cap)}
-                  <span class="cap-next">→ {Math.floor(row.cap) + LYSATE_CAP_EXPAND_AMOUNT}</span>
+                  <span class="cap-next">→ {Math.floor(row.cap) + amount}</span>
                 </span>
               </div>
               <button
@@ -118,7 +114,7 @@
                 disabled={!canExpand(row.resource)}
                 onclick={() => gameStore.expandCap(row.resource)}
               >
-                +{LYSATE_CAP_EXPAND_AMOUNT} cap · {cost}
+                +{amount} cap · {cost}
                 {resourceLabel('lysate')}
               </button>
             </div>
