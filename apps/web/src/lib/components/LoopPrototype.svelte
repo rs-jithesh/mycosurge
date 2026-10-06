@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { resourceLabel } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import SectorBoard from './SectorBoard.svelte';
+  import ProgressBar from './ProgressBar.svelte';
 
   /**
    * Throwaway QA prototype (`?loop`) of the goal-first opening:
@@ -46,7 +48,6 @@
   let depthsMm = $derived(depthSteps.map((s) => s * STEP_MM));
   let signalMm = STEPS * STEP_MM;
   let signalReached = $derived(depthSteps[signalSector] >= STEPS);
-  let stepsAway = $derived(Math.max(0, STEPS - depthSteps[signalSector]));
   let canGrow = $derived(water >= GROW_WATER && nutrients >= GROW_NUTRIENTS);
   let stuck = $derived(!signalReached && !canGrow);
 
@@ -130,13 +131,35 @@
     </p>
   </div>
 
-  <div class="hud">
-    <span class="res" data-tone="water"
-      >Water <b class="text-data-mono">{Math.floor(water)}</b></span
-    >
-    <span class="res" data-tone="nutrients"
-      >Nutrients <b class="text-data-mono">{Math.floor(nutrients)}</b></span
-    >
+  <div class="res-grid">
+    <div class="res-cell">
+      <ProgressBar
+        tone="cyan"
+        label={resourceLabel('water', 'first')}
+        labelCaps={false}
+        value={water}
+        max={CAP}
+        animate
+        format={(n) => `${Math.floor(n)}/${CAP}`}
+      />
+      {#if pump}
+        <span class="rate text-data-mono">+{PRODUCTION}/s</span>
+      {/if}
+    </div>
+    <div class="res-cell">
+      <ProgressBar
+        tone="violet"
+        label={resourceLabel('nutrients', 'first')}
+        labelCaps={false}
+        value={nutrients}
+        max={CAP}
+        animate
+        format={(n) => `${Math.floor(n)}/${CAP}`}
+      />
+      {#if exudates}
+        <span class="rate text-data-mono">+{PRODUCTION}/s</span>
+      {/if}
+    </div>
   </div>
 
   <SectorBoard
@@ -160,15 +183,10 @@
     {:else if signalReached}
       <span class="status won">Signal reached.</span>
       <button class="cmd-btn engage" onclick={engage}>Engage the host</button>
+    {:else if !economyRevealed}
+      <span class="status hint">Tap the wedges to grow toward the blip.</span>
     {:else}
-      <span class="status text-data-mono"
-        >{stepsAway} step{stepsAway === 1 ? '' : 's'} to the signal</span
-      >
-      {#if !economyRevealed}
-        <span class="status hint">Tap the wedges to grow toward the blip.</span>
-      {:else}
-        <span class="status hint">Out of resources to grow. Gather, then build.</span>
-      {/if}
+      <span class="status hint">Out of resources to grow. Gather, then build.</span>
     {/if}
   </div>
 
@@ -236,33 +254,25 @@
     color: var(--on-surface-variant);
   }
 
-  .hud {
+  .res-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+  }
+
+  .res-cell {
     display: flex;
-    gap: 16px;
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    background: var(--surface-container);
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
   }
 
-  .res {
-    font-size: 12px;
-    color: var(--on-surface-variant);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .res b {
-    color: var(--on-surface);
-  }
-
-  .res[data-tone='water'] b {
-    color: var(--secondary);
-  }
-
-  .res[data-tone='nutrients'] b {
-    color: var(--nutrient);
+  .rate {
+    color: var(--primary);
+    font-size: 11px;
+    line-height: 1;
+    text-align: right;
   }
 
   .foot {
