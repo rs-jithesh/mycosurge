@@ -449,8 +449,15 @@
           />
         {/each}
         {#if activeSector !== null}
-          <!-- Highlight the whole sector: its current depth is often ~0 at a band's start. -->
-          <path d={wedgePath(activeSector, bandWidth)} fill="var(--primary)" opacity="0.15" />
+          <!-- Highlight the whole sector: its current depth is often ~0 at a band's start.
+               Grey when Biomass can't cover the grow. -->
+          <path
+            d={wedgePath(activeSector, bandWidth)}
+            fill={gs.biomass >= gameStore.reachCost
+              ? 'var(--primary)'
+              : 'var(--on-surface-variant)'}
+            opacity="0.15"
+          />
         {/if}
         {#each drawnDepths as radius, i (i)}
           <line
