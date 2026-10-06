@@ -3,7 +3,6 @@
   import ResourcePanel from '$lib/components/ResourcePanel.svelte';
   import PhaseDetailPanel from '$lib/components/PhaseDetailPanel.svelte';
   import NetworkMap from '$lib/components/map/NetworkMap.svelte';
-  import ActivityLog from '$lib/components/ActivityLog.svelte';
   import ModeSelector from './ModeSelector.svelte';
   import StatusWarnings from './StatusWarnings.svelte';
 
@@ -39,10 +38,6 @@
       <PhaseDetailPanel {phase} />
     </section>
   </div>
-
-  <div class="core-log">
-    <ActivityLog embedded />
-  </div>
 </div>
 
 <style>
@@ -51,12 +46,6 @@
     flex-direction: column;
     gap: 12px;
     min-height: calc(100dvh - 90px);
-  }
-
-  .core-log {
-    flex-shrink: 0;
-    max-height: 150px;
-    overflow: hidden;
   }
 
   .core-grid {

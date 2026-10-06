@@ -6,6 +6,7 @@
     subtitle,
     onClose,
     placement = 'side',
+    width,
     children,
   }: {
     title: string;
@@ -13,6 +14,8 @@
     onClose: () => void;
     /** `bottom` slides the sheet up from the bottom (full-screen panels on mobile). */
     placement?: 'side' | 'bottom';
+    /** Fixed drawer width (e.g. `min(380px, 92vw)`); keeps it a drawer on mobile too. */
+    width?: string;
     children: Snippet;
   } = $props();
 
@@ -33,6 +36,7 @@
   <div
     class="shell"
     class:slide-up={placement === 'bottom'}
+    style={width ? `width: ${width}` : ''}
     role="dialog"
     tabindex="-1"
     aria-modal="true"
@@ -82,6 +86,16 @@
     background: var(--background);
     border-left: 1px solid var(--border);
     box-shadow: var(--shadow-md);
+    animation: drawer-in var(--duration-normal) var(--ease-out-soft);
+  }
+
+  @keyframes drawer-in {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
   }
 
   .bar {
@@ -171,6 +185,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .shell,
     .shell.slide-up,
     .scrim.slide-up {
       animation: none;

@@ -7,7 +7,7 @@
   import { logStore } from '$lib/stores/log.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { devStore } from '$lib/stores/dev.svelte';
-  import ActivityLog from '$lib/components/ActivityLog.svelte';
+  import ConsolePanel from '$lib/components/ConsolePanel.svelte';
   import EvolutionPanel from '$lib/components/panels/EvolutionPanel.svelte';
   import ExpeditionsPanel from '$lib/components/panels/ExpeditionsPanel.svelte';
   import ResourceStrip from '$lib/components/ResourceStrip.svelte';
@@ -214,6 +214,15 @@
     <div class="top-bar-actions">
       <span class="top-bar-status text-label-caps">● Online</span>
 
+      <button
+        class="console-btn"
+        aria-label="Activity console"
+        title="Activity"
+        onclick={() => uiStore.openPanel('console')}
+      >
+        <span aria-hidden="true">▤</span>
+      </button>
+
       <div class="overflow-wrap">
         <button
           class="overflow-btn"
@@ -319,9 +328,6 @@
         {/if}
       </div>
     {/if}
-    {#if isFullGame}
-      <ActivityLog collapsible />
-    {/if}
   </div>
 </div>
 
@@ -339,6 +345,8 @@
   <BestiaryPanel onClose={() => uiStore.closeTop()} />
 {:else if uiStore.activePanel === 'resources'}
   <ResourcesPanel onClose={() => uiStore.closeTop()} />
+{:else if uiStore.activePanel === 'console'}
+  <ConsolePanel onClose={() => uiStore.closeTop()} />
 {/if}
 
 <!-- Combat is layered on top of the single Core view (Hunt) -->
@@ -482,6 +490,26 @@
   }
 
   .overflow-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .console-btn {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-container);
+    color: var(--on-surface);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .console-btn:hover {
     border-color: var(--primary);
     color: var(--primary);
   }

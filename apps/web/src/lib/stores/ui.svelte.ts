@@ -1,4 +1,4 @@
-export type PanelId = 'evolution' | 'expeditions' | 'bestiary' | 'resources';
+export type PanelId = 'evolution' | 'expeditions' | 'bestiary' | 'resources' | 'console';
 
 /**
  * Overlay state for the full-screen systems. The game is a single view now, so
