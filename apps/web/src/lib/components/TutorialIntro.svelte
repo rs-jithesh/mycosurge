@@ -16,7 +16,6 @@
   import ProgressBar from './ProgressBar.svelte';
   import SectorBoard from './SectorBoard.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
-  import ActivityLog from './ActivityLog.svelte';
   import { TUTORIAL_GENERATORS, LOCK_REASONS, ONBOARDING_COPY } from '$lib/content/onboarding';
 
   const TUTORIAL_HOST_ID = 'soil_nematode';
@@ -48,6 +47,9 @@
   $effect(() => {
     if (!canGrow || hasPump || hasExudates) economyRevealed = true;
   });
+
+  // Whether the right column has anything to show; if not, the board takes the width.
+  let hasSidePanel = $derived(isHandoff || (economyRevealed && !signalReached));
 
   function canAffordGenerator(id: 'osmoticPump' | 'enzymaticExudates'): boolean {
     return id === 'osmoticPump'
@@ -110,7 +112,7 @@
     <div class="shock text-label-caps">⚠ {ONBOARDING_COPY.shock(Math.ceil(shock))}</div>
   {/if}
 
-  <div class="tut-grid">
+  <div class="tut-grid" class:single={!hasSidePanel}>
     <div class="col-left">
       <div class="res-grid">
         <ProgressBar
@@ -204,10 +206,6 @@
           </div>
         </section>
       {/if}
-
-      <div class="area-activity">
-        <ActivityLog embedded />
-      </div>
     </div>
   </div>
 </div>
@@ -492,6 +490,17 @@
       grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
       gap: 16px;
       align-items: start;
+    }
+
+    /* No side panel (yet): let the board take the width, capped so it stays sane. */
+    .tut-grid.single {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .tut-grid.single .col-left {
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
     }
   }
 </style>
