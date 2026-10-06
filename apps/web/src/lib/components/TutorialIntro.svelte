@@ -429,6 +429,21 @@
       var(--shadow-sm);
   }
 
+  /* Unavailable (e.g. Absorb on cooldown): strictly greyed out. */
+  .action-btn:disabled {
+    background: var(--surface-container);
+    border-color: var(--border);
+    color: var(--on-surface-variant);
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .action-btn:disabled .action-sub {
+    color: var(--on-surface-variant);
+    opacity: 1;
+  }
+
   .action-btn.locked {
     background: transparent;
     border-style: dashed;
