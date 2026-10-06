@@ -91,6 +91,23 @@
     return { x: Math.cos(a) * signalMm, y: Math.sin(a) * signalMm };
   });
 
+  let signalDepth = $derived(signalSector === null ? 0 : (depths[signalSector] ?? 0));
+  let signalReached = $derived(signalSector !== null && signalDepth >= bandWidth - 1e-6);
+
+  // A dedicated hypha reaching toward the signal, so the tip meets it on arrival.
+  let reach = $derived.by(() => {
+    if (signalSector === null) return null;
+    const a = sectorCentreAngle(signalSector);
+    const r = visualMm(signalDepth) * k;
+    const perp = a + Math.PI / 2;
+    const bow = r * 0.14;
+    const cxp = Math.cos(a) * (r * 0.5) + Math.cos(perp) * bow;
+    const cyp = Math.sin(a) * (r * 0.5) + Math.sin(perp) * bow;
+    const ex = Math.cos(a) * r;
+    const ey = Math.sin(a) * r;
+    return `M 0 0 Q ${cxp.toFixed(1)} ${cyp.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`;
+  });
+
   function grow(sector: number) {
     if (!interactive) return;
     onGrow?.(sector);
@@ -125,7 +142,14 @@
     {/if}
 
     {#if signal}
-      <g class="signal" transform={`translate(${signal.x * k} ${signal.y * k})`}>
+      {#if reach}
+        <path class="reach" class:reached={signalReached} d={reach} />
+      {/if}
+      <g
+        class="signal"
+        class:reached={signalReached}
+        transform={`translate(${signal.x * k} ${signal.y * k})`}
+      >
         <circle class="signal-ring" r="9" />
         <circle class="signal-dot" r="3" />
       </g>
@@ -202,6 +226,19 @@
     fill: var(--primary);
   }
 
+  /* The hypha reaching for the signal; solid once it arrives. */
+  .reach {
+    fill: none;
+    stroke: var(--primary);
+    stroke-width: 3;
+    stroke-linecap: round;
+    opacity: 0.85;
+  }
+
+  .reach.reached {
+    stroke: var(--secondary);
+  }
+
   .signal-ring {
     fill: none;
     stroke: var(--secondary);
@@ -214,6 +251,12 @@
 
   .signal-dot {
     fill: var(--secondary);
+  }
+
+  .signal.reached .signal-ring {
+    stroke-dasharray: none;
+    animation: none;
+    opacity: 1;
   }
 
   @keyframes signal-pulse {
