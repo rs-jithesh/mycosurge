@@ -82,7 +82,7 @@
 <svg class="board" viewBox="0 0 340 340" role="group" aria-label={label}>
   <g transform={`translate(${CX} ${CY})`}>
     {#each depths as radius, i (i)}
-      <path class="territory" d={wedgePath(i, Math.max(0, radius))} />
+      <path class="territory" d={wedgePath(i, Math.max(0, radius) * k)} />
     {/each}
 
     {#each solid as s (s.id)}
@@ -110,7 +110,7 @@
       {#each depths as _, i (i)}
         <path
           class="hit"
-          d={wedgePath(i, bandWidth)}
+          d={wedgePath(i, bandWidth * k)}
           role="button"
           tabindex="0"
           aria-label={`Grow sector ${i + 1}`}
@@ -181,6 +181,7 @@
 
   .hit {
     fill: transparent;
+    pointer-events: all;
     cursor: pointer;
   }
 
