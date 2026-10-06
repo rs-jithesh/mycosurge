@@ -460,15 +460,8 @@
         {/each}
         {#if activeSector !== null}
           {@const hoverDepth = Math.max(0, drawnDepths[activeSector] ?? 0)}
-          <path d={wedgePath(activeSector, hoverDepth)} fill="var(--primary)" opacity="0.1" />
-          <path
-            d={wedgePath(activeSector, hoverDepth + growStepMm)}
-            fill="none"
-            stroke={gs.biomass >= gameStore.reachCost ? 'var(--primary)' : 'var(--warning)'}
-            stroke-width={1.6 * inv}
-            stroke-dasharray={`${4 * inv} ${3 * inv}`}
-            opacity="0.6"
-          />
+          <!-- Highlight only: the advisor's suggestion already draws the outline. -->
+          <path d={wedgePath(activeSector, hoverDepth)} fill="var(--primary)" opacity="0.14" />
         {/if}
         {#each drawnDepths as radius, i (i)}
           <line
