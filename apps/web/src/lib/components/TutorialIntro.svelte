@@ -121,6 +121,17 @@
     <!-- Left: the instructions, then the controls that fade in when they're needed. -->
     <div class="col-intro">
       <div class="intro-stage">
+        <!-- An invisible copy sizes the stage from the real banner, so the fading
+             layers overlay it without clipping on narrow screens. -->
+        <div class="intro-sizer" aria-hidden="true">
+          <ObjectiveBanner
+            tag={objective.tag}
+            title={objective.title}
+            description={objective.description}
+            hint={objective.hint}
+            tone={objective.tone}
+          />
+        </div>
         {#key objective.title}
           <div class="intro-layer" transition:fade={{ duration: 450 }}>
             <ObjectiveBanner
@@ -292,7 +303,11 @@
   /* The banner layers overlay so they cross-fade in place — no layout jump. */
   .intro-stage {
     position: relative;
-    min-height: 150px;
+  }
+
+  .intro-sizer {
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .intro-layer {
