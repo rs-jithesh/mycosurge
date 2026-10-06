@@ -46,7 +46,7 @@
     <span class="action-verb">Absorb</span>
     <span class="action-sub">
       {canAbsorb
-        ? `+2 ${resourceLabel('water')} · +2 ${resourceLabel('nutrients')}`
+        ? `+${gameStore.manualAbsorbAmount} ${resourceLabel('water')} · +${gameStore.manualAbsorbAmount} ${resourceLabel('nutrients')}`
         : `Ready in ${Math.ceil(manualCooldown)}s`}
     </span>
   </button>

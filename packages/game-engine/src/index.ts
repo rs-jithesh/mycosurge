@@ -95,6 +95,12 @@ export {
   canManualSynthesize,
   getSynthesisYield,
   manualSynthesize,
+  getManualAbsorbAmount,
+  getManualYieldBonus,
+  getManualUpgradeLevel,
+  getManualUpgradeCost,
+  canPurchaseManualUpgrade,
+  purchaseManualUpgrade,
 } from './manual';
 export type { SynthesisResult } from './manual';
 export {
@@ -102,6 +108,9 @@ export {
   getUnlockedHosts,
   getFarmPool,
   getRadarSlots,
+  getRadarSlotTier,
+  canUpgradeRadarSlots,
+  upgradeRadarSlots,
   rollContact,
   pingSubstrate,
   scanContact,

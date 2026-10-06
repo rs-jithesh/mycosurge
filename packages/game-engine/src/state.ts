@@ -109,6 +109,8 @@ export interface GameState {
   lysateEarned: number;
   /** Cap expansions bought per pool — drives the cost and the growing cap increment. */
   capExpansions: { water: number; nutrients: number; biomass: number };
+  /** How many radar slot upgrades have been bought (0 → `RADAR_SLOT_TIERS.length`). */
+  radarSlotLevel: number;
   /** Host ids fully grown over (assimilation reached its target). */
   grownOverHosts: string[];
   expeditions: Expedition[];
@@ -194,6 +196,7 @@ export function createInitialState(): GameState {
     lysateBanked: 0,
     lysateEarned: 0,
     capExpansions: { water: 0, nutrients: 0, biomass: 0 },
+    radarSlotLevel: 0,
     grownOverHosts: [],
     expeditions: [],
     maxExpeditionSlots: 1,

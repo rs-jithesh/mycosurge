@@ -6,6 +6,10 @@ import {
   canManualSynthesize,
   getSynthesisYield,
   manualSynthesize,
+  getManualAbsorbAmount,
+  getManualUpgradeLevel,
+  canPurchaseManualUpgrade,
+  purchaseManualUpgrade,
 } from './manual';
 import { createInitialState } from './state';
 
@@ -124,5 +128,43 @@ describe('manualSynthesize', () => {
     expect(canManualSynthesize(state)).toBe(false);
     expect(manualSynthesize(state)).toEqual({ success: false, yield: 0 });
     expect(state.biomass).toBe(0);
+  });
+});
+
+describe('manual upgrades', () => {
+  it('deepens Absorb with Absorption Depth', () => {
+    const state = createInitialState();
+    state.upgradeLevels['absorption_depth'] = 3;
+    expect(getManualAbsorbAmount(state)).toBe(5);
+
+    state.water = 0;
+    state.nutrients = 0;
+    state.manualCooldown = 0;
+    manualAbsorb(state);
+    expect(state.water).toBe(5);
+    expect(state.nutrients).toBe(5);
+  });
+
+  it('adds to the synthesis yield with Assimilation Yield', () => {
+    const state = createInitialState();
+    state.upgradeLevels['assimilation_yield'] = 2;
+    // Healthy but not brimming, so the brimming bonus doesn't stack on top.
+    state.water = state.waterCap * 0.6;
+    state.nutrients = state.nutrientsCap * 0.6;
+    expect(getSynthesisYield(state)).toBeCloseTo(1 + 2 * 0.25);
+  });
+
+  it('buys a level for Lysate + Biomass', () => {
+    const state = createInitialState();
+    state.lysateBanked = 50;
+    state.biomass = 500;
+    expect(canPurchaseManualUpgrade(state, 'absorption_depth')).toBe(true);
+
+    const lysateBefore = state.lysateBanked;
+    const biomassBefore = state.biomass;
+    expect(purchaseManualUpgrade(state, 'absorption_depth')).toBe(true);
+    expect(getManualUpgradeLevel(state, 'absorption_depth')).toBe(1);
+    expect(state.lysateBanked).toBeLessThan(lysateBefore);
+    expect(state.biomass).toBeLessThan(biomassBefore);
   });
 });

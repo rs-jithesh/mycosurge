@@ -3,6 +3,9 @@ import {
   getUnlockedHosts,
   getFarmPool,
   getRadarSlots,
+  getRadarSlotTier,
+  canUpgradeRadarSlots,
+  upgradeRadarSlots,
   pingSubstrate,
   scanContact,
   engageContact,
@@ -13,6 +16,7 @@ import {
   resetRadarSeq,
   ensureUniqueContactIds,
 } from './radar';
+import { RADAR_SLOT_TIERS } from '@mycosurge/config';
 import { applyVictory, calculateVictoryReward } from './combat';
 import { createInitialState, type GameState, type RadarContact } from './state';
 
@@ -85,11 +89,30 @@ describe('getFarmPool', () => {
 });
 
 describe('getRadarSlots', () => {
-  it('defaults to 2 and grows with the extended_range mutation', () => {
+  it('starts at 5 and grows with the extended_range mutation', () => {
     const state = createInitialState();
-    expect(getRadarSlots(state)).toBe(2);
+    expect(getRadarSlots(state)).toBe(5);
     state.skillAllocations['extended_range'] = 1;
-    expect(getRadarSlots(state)).toBe(3);
+    expect(getRadarSlots(state)).toBe(6);
+  });
+});
+
+describe('radar slot upgrades', () => {
+  it('is reach-gated and costs Lysate + Biomass', () => {
+    const state = createInitialState();
+    state.lysateBanked = 100;
+    state.biomass = 1000;
+    state.mycelialNetwork = 5;
+    expect(getRadarSlotTier(state)).not.toBeNull();
+    expect(canUpgradeRadarSlots(state)).toBe(false); // first tier unlocks at 10 mm
+
+    state.mycelialNetwork = 10;
+    expect(canUpgradeRadarSlots(state)).toBe(true);
+    expect(upgradeRadarSlots(state)).toBe(true);
+    expect(state.radarSlotLevel).toBe(1);
+    expect(getRadarSlots(state)).toBe(6);
+    expect(state.lysateBanked).toBe(100 - RADAR_SLOT_TIERS[0].lysate);
+    expect(state.biomass).toBe(1000 - RADAR_SLOT_TIERS[0].biomass);
   });
 });
 
@@ -126,10 +149,9 @@ describe('pingSubstrate', () => {
     state.mycelialNetwork = 5;
     state.cataloguedHosts = ['bacterial_film'];
     state.water = 100;
-    expect(pingSubstrate(state)).toBe(true);
-    expect(pingSubstrate(state)).toBe(true);
+    for (let i = 0; i < 5; i++) expect(pingSubstrate(state)).toBe(true);
     expect(pingSubstrate(state)).toBe(false);
-    expect(state.contacts).toHaveLength(2);
+    expect(state.contacts).toHaveLength(5);
   });
 });
 

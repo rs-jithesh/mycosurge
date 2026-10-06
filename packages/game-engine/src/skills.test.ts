@@ -98,9 +98,9 @@ describe('mutation prerequisites', () => {
   it('extended_range has no prerequisite and grants a radar slot', () => {
     const state = createInitialState();
     expect(getSkill('extended_range')?.prerequisites).toEqual([]);
-    expect(getRadarSlots(state)).toBe(2);
+    expect(getRadarSlots(state)).toBe(5);
     expect(purchaseSkill(state, 'extended_range')).toBe(true);
-    expect(getRadarSlots(state)).toBe(3);
+    expect(getRadarSlots(state)).toBe(6);
   });
 });
 

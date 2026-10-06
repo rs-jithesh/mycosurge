@@ -58,11 +58,19 @@ import {
   dismissContact as engineDismissContact,
   clearActiveEncounter,
   getRadarSlots,
+  getRadarSlotTier,
+  canUpgradeRadarSlots as engineCanUpgradeRadarSlots,
+  upgradeRadarSlots as engineUpgradeRadarSlots,
   getActiveStrain,
   manualAbsorb as engineManualAbsorb,
   manualSynthesize as engineManualSynthesize,
   getSynthesisYield,
   tickManualCooldown,
+  getManualAbsorbAmount,
+  getManualUpgradeLevel,
+  getManualUpgradeCost as engineManualUpgradeCost,
+  canPurchaseManualUpgrade,
+  purchaseManualUpgrade as enginePurchaseManualUpgrade,
   isStarving as engineIsStarving,
   getRecommendedPhase,
   getEffectiveCombatStats,
@@ -106,6 +114,7 @@ import {
   EXPEDITIONS_ENABLED,
   getLysateCapExpandAmount,
 } from '@mycosurge/config';
+import type { ManualUpgradeId } from '@mycosurge/config';
 import { SYSTEM_META } from '$lib/content/systems';
 import { logStore } from './log.svelte';
 
@@ -495,6 +504,15 @@ function createGameStore() {
     return result;
   }
 
+  function purchaseManualUpgrade(id: ManualUpgradeId): boolean {
+    const result = enginePurchaseManualUpgrade(state, id);
+    if (result) {
+      logStore.success('The field action deepens.');
+      saveState();
+    }
+    return result;
+  }
+
   function manualSynthesize(): boolean {
     const result = engineManualSynthesize(state);
     if (!result.success) {
@@ -843,6 +861,20 @@ function createGameStore() {
     get radarSlots() {
       return getRadarSlots(state);
     },
+    get radarSlotTier() {
+      return getRadarSlotTier(state);
+    },
+    get canUpgradeRadarSlots() {
+      return engineCanUpgradeRadarSlots(state);
+    },
+    upgradeRadarSlots() {
+      const ok = engineUpgradeRadarSlots(state);
+      if (ok) {
+        logStore.success('The radar array widens — one more signal fits.');
+        saveState();
+      }
+      return ok;
+    },
     get activeStrain() {
       return getActiveStrain(state);
     },
@@ -870,6 +902,19 @@ function createGameStore() {
     synthesisYield() {
       return getSynthesisYield(state);
     },
+    get manualAbsorbAmount() {
+      return getManualAbsorbAmount(state);
+    },
+    manualUpgradeLevel(id: ManualUpgradeId) {
+      return getManualUpgradeLevel(state, id);
+    },
+    manualUpgradeCost(id: ManualUpgradeId) {
+      return engineManualUpgradeCost(state, id);
+    },
+    canUpgradeManual(id: ManualUpgradeId) {
+      return canPurchaseManualUpgrade(state, id);
+    },
+    purchaseManualUpgrade,
     capExpandCost(resource: CapResource) {
       return getCapExpandCost(state, resource);
     },

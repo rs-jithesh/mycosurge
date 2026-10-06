@@ -9,6 +9,7 @@
   import ResourceSymbol from './ResourceSymbol.svelte';
   import HuntSection from '$lib/components/hunt/HuntSection.svelte';
   import PhaseAction from './core/PhaseAction.svelte';
+  import ManualUpgradeRow from './ManualUpgradeRow.svelte';
 
   let {
     phase,
@@ -90,6 +91,11 @@
         cycle.
       </p>
 
+      <div class="manual-section">
+        <span class="text-label-caps manual-label">Field action</span>
+        <ManualUpgradeRow id="absorption_depth" />
+      </div>
+
       <div class="cap-section">
         <div class="cap-head">
           <span class="text-label-caps">Capacity</span>
@@ -126,6 +132,11 @@
       {#if !isMobile}
         <PhaseAction phase="grow" />
       {/if}
+
+      <div class="manual-section">
+        <span class="text-label-caps manual-label">Field action</span>
+        <ManualUpgradeRow id="assimilation_yield" />
+      </div>
 
       <div class="gen-section">
         <div class="gen-head">
@@ -441,6 +452,17 @@
 
   .gen-max {
     color: var(--secondary);
+  }
+
+  /* ── Field-action upgrades ── */
+  .manual-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .manual-label {
+    color: var(--on-surface-variant);
   }
 
   /* ── Gather: capacity upgrades ── */

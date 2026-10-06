@@ -3,6 +3,7 @@ import {
   STRAINS,
   BASE_CONTACT_SLOTS,
   MAX_CONTACT_SLOTS,
+  RADAR_SLOT_TIERS,
   SONAR_INTERVAL,
   SONAR_JITTER,
   CONTACT_LINGER,
@@ -11,7 +12,7 @@ import {
   getStrain,
   NORMAL_STRAIN_ID,
 } from '@mycosurge/config';
-import type { HostDef, StrainDef } from '@mycosurge/config';
+import type { HostDef, StrainDef, RadarSlotTier } from '@mycosurge/config';
 import type { GameState, RadarContact } from './state';
 
 export const TUTORIAL_HOST_ID = 'soil_nematode';
@@ -91,8 +92,34 @@ export function getFarmPool(state: GameState): HostDef[] {
 
 /** How many contacts the radar can hold at once. */
 export function getRadarSlots(state: GameState): number {
-  const bonus = state.skillAllocations['extended_range'] ?? 0;
-  return Math.min(MAX_CONTACT_SLOTS, BASE_CONTACT_SLOTS + bonus);
+  const mutation = state.skillAllocations['extended_range'] ?? 0;
+  return Math.min(MAX_CONTACT_SLOTS, BASE_CONTACT_SLOTS + state.radarSlotLevel + mutation);
+}
+
+/** The next signal-slot upgrade (with its reach gate), or null when fully upgraded. */
+export function getRadarSlotTier(state: GameState): RadarSlotTier | null {
+  return RADAR_SLOT_TIERS[state.radarSlotLevel] ?? null;
+}
+
+/** True when reach and reserves allow buying the next extra signal slot. */
+export function canUpgradeRadarSlots(state: GameState): boolean {
+  const tier = getRadarSlotTier(state);
+  if (!tier) return false;
+  return (
+    state.mycelialNetwork >= tier.reachMm &&
+    state.lysateBanked >= tier.lysate &&
+    state.biomass >= tier.biomass
+  );
+}
+
+/** Buy one extra signal slot for Lysate + Biomass. */
+export function upgradeRadarSlots(state: GameState): boolean {
+  if (!canUpgradeRadarSlots(state)) return false;
+  const tier = getRadarSlotTier(state)!;
+  state.lysateBanked -= tier.lysate;
+  state.biomass -= tier.biomass;
+  state.radarSlotLevel += 1;
+  return true;
 }
 
 export function rollContact(state: GameState): RadarContact | null {

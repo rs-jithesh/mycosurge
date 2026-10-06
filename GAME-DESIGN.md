@@ -72,6 +72,10 @@ The Core keeps two manual actions so active play has a floor:
   strained (below 40% either resource), and **0** near starvation (below 5%). The
   resources are consumed either way, so overdrawing wastes them.
 
+Both field actions can be upgraded for **Lysate + Biomass** so active play keeps pace:
+**Absorption Depth** deepens Absorb (`+1 Water/Nutrients` per level), **Assimilation Yield**
+forms more Biomass per synthesis (`+0.25` per level).
+
 ### Starvation
 
 If either reserve falls below **5%**, the network is **starving**: passive Biomass
@@ -157,8 +161,9 @@ met. Traits are being wired into combat incrementally.
 ### Radar (sonar)
 
 The Radar is a scanning instrument, not a host menu. **Blips** drift in over time (roughly
-every 20s) while you are idle, up to your contact-slot limit (2, or 3 with the **Extended
-Range** mutation). Spend 5 Water to **scan** a blip and reveal the host, or **ping
+every 20s) while you are idle, up to your **contact-slot limit** — 5 to start, plus more via
+**reach-gated upgrades bought with Lysate and Biomass** (the **Extended Range** mutation adds
+one more). Spend 5 Water to **scan** a blip and reveal the host, or **ping
 the substrate** (5 Water) to force a new blip onto a free slot. Revealed contacts show
 level, strain, reward, and how far that host is from being fully grown over. Contacts drift
 away after two minutes if left alone.

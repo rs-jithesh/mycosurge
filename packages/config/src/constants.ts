@@ -73,8 +73,30 @@ export const SONAR_JITTER = 0.3;
 export const SONAR_INITIAL_DELAY = 5;
 export const CONTACT_LINGER = 120;
 export const SCAN_WATER_COST = 5;
-export const BASE_CONTACT_SLOTS = 2;
-export const MAX_CONTACT_SLOTS = 3;
+/** Radar contacts you can hold at once, before any upgrades. */
+export const BASE_CONTACT_SLOTS = 5;
+/** Hard ceiling, including the Extended Range mutation. */
+export const MAX_CONTACT_SLOTS = 12;
+
+export interface RadarSlotTier {
+  /** Absolute reach (mm) required to unlock this upgrade. */
+  reachMm: number;
+  /** Cost to buy it. */
+  lysate: number;
+  biomass: number;
+}
+
+/**
+ * Extra signal slots, bought with Lysate + Biomass. Each entry adds one slot and only
+ * unlocks once the network's reach passes its `reachMm` — so the radar grows with the map.
+ */
+export const RADAR_SLOT_TIERS: RadarSlotTier[] = [
+  { reachMm: 10, lysate: 15, biomass: 120 },
+  { reachMm: 50, lysate: 40, biomass: 500 },
+  { reachMm: 200, lysate: 100, biomass: 1500 },
+  { reachMm: 600, lysate: 250, biomass: 4000 },
+  { reachMm: 1000, lysate: 600, biomass: 10000 },
+];
 
 // ── Assimilation ──
 export const HOST_ASSIMILATION_TARGET = 100;

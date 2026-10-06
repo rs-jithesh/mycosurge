@@ -268,6 +268,27 @@
       </div>
     {/if}
 
+    {#if gameStore.radarSlotTier}
+      {@const tier = gameStore.radarSlotTier}
+      <div class="slot-upgrade">
+        <span class="text-data-mono slot-count"
+          >{contacts.length}/{gameStore.radarSlots} signals</span
+        >
+        <button
+          class="cmd-btn secondary slot-btn"
+          disabled={!gameStore.canUpgradeRadarSlots}
+          onclick={() => gameStore.upgradeRadarSlots()}
+        >
+          +1 signal · {tier.lysate}
+          {resourceLabel('lysate')} + {tier.biomass}
+          {resourceLabel('biomass')}
+        </button>
+        {#if gs.mycelialNetwork < tier.reachMm}
+          <span class="slot-gate text-label-caps">Reach {tier.reachMm}mm to unlock</span>
+        {/if}
+      </div>
+    {/if}
+
     {#if !hideAction}
       <div class="hunt-actions">
         <button class="cmd-btn ping-btn" bind:this={pingBtn} disabled={!canPing} onclick={ping}>
@@ -688,6 +709,30 @@
   .engage-btn:hover:not(:disabled) {
     background: var(--primary-fixed-dim);
     border-color: var(--primary-fixed-dim);
+  }
+
+  .slot-upgrade {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .slot-count {
+    color: var(--secondary);
+    font-size: 12px;
+  }
+
+  .slot-btn {
+    font-size: 12px;
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+
+  .slot-gate {
+    color: var(--warning);
+    font-size: 10px;
   }
 
   .hunt-actions {

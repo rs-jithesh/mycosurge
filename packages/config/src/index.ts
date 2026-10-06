@@ -46,6 +46,9 @@ export type { GeneratorDef } from './generators';
 
 export * from './constants';
 
+export { MANUAL_UPGRADES, getManualUpgrade, getManualUpgradeCost } from './manual';
+export type { ManualUpgradeDef, ManualUpgradeId } from './manual';
+
 export { EXPANSION_MAP } from './expansion-map';
 export type { ExpansionMapTuning } from './expansion-map';
 
