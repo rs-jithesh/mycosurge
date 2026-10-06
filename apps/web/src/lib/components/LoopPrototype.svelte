@@ -16,20 +16,21 @@
    */
 
   const SECTORS = 6;
-  const STEPS = 8;
+  // Signal at the far edge of the band, so the reach needs a couple of full pool refills.
+  const STEPS = 12;
   const BAND_MM = 5;
   const STEP_MM = BAND_MM / STEPS;
 
-  const START_WATER = 40;
-  const START_NUTRIENTS = 40;
-  const CAP = 60;
-  const GROW_WATER = 8;
-  const GROW_NUTRIENTS = 6;
-  const ABSORB = 4;
+  const START_WATER = 20;
+  const START_NUTRIENTS = 20;
+  const CAP = 50;
+  const GROW_WATER = 10;
+  const GROW_NUTRIENTS = 8;
+  const ABSORB = 10;
   const PUMP_COST = 20;
   const EXUDATES_WATER = 25;
   const EXUDATES_NUTRIENTS = 25;
-  const PRODUCTION = 2;
+  const PRODUCTION = 3;
   const HOST_ID = 'soil_nematode';
 
   let water = $state(START_WATER);
