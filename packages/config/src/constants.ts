@@ -106,8 +106,8 @@ export const GLOBAL_STRAIN_PER_WIN = 2;
 
 // ── Manual actions (full game) ──
 export const MANUAL_ABSORB_AMOUNT = 2;
-/** No cooldown: Absorb can be tapped freely. (The tutorial's gather has its own cadence.) */
-export const MANUAL_ABSORB_COOLDOWN = 0;
+/** Matches the tutorial's gather cadence (see `TUTORIAL_ABSORB_COOLDOWN`). */
+export const MANUAL_ABSORB_COOLDOWN = 1.2;
 export const MANUAL_SYNTH_WATER_COST = 10;
 export const MANUAL_SYNTH_NUTRIENT_COST = 10;
 /** Both reserves at or above this fraction make a synthesis "brimming". */
