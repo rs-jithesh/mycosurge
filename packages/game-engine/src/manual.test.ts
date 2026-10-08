@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   canManualAbsorb,
   manualAbsorb,
-  tickManualCooldown,
   canManualSynthesize,
   getSynthesisYield,
   manualSynthesize,
@@ -14,20 +13,20 @@ import {
 import { createInitialState } from './state';
 
 describe('manualAbsorb', () => {
-  it('adds water and nutrients and starts the cooldown', () => {
+  it('adds water and nutrients', () => {
     const state = createInitialState();
     expect(manualAbsorb(state)).toBe(true);
     expect(state.water).toBe(2);
     expect(state.nutrients).toBe(2);
-    expect(state.manualCooldown).toBe(5);
-    expect(canManualAbsorb(state)).toBe(false);
+    expect(canManualAbsorb(state)).toBe(true);
   });
 
-  it('cannot be used again while on cooldown', () => {
+  it('can be tapped repeatedly — no cooldown', () => {
     const state = createInitialState();
     manualAbsorb(state);
-    expect(manualAbsorb(state)).toBe(false);
-    expect(state.water).toBe(2);
+    expect(manualAbsorb(state)).toBe(true);
+    expect(state.water).toBe(4);
+    expect(state.nutrients).toBe(4);
   });
 
   it('clamps to the resource caps', () => {
@@ -37,14 +36,6 @@ describe('manualAbsorb', () => {
     manualAbsorb(state);
     expect(state.water).toBe(state.waterCap);
     expect(state.nutrients).toBe(state.nutrientsCap);
-  });
-
-  it('becomes available again after the cooldown ticks down', () => {
-    const state = createInitialState();
-    manualAbsorb(state);
-    tickManualCooldown(state, 5);
-    expect(state.manualCooldown).toBe(0);
-    expect(canManualAbsorb(state)).toBe(true);
   });
 });
 
