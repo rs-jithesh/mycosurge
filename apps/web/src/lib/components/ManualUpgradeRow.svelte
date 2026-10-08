@@ -41,10 +41,12 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    border: 1px solid var(--outline-variant);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
     border-radius: var(--radius-md);
     background: var(--surface-container-high);
     padding: 10px 12px;
+    box-shadow: var(--shadow-sm);
   }
 
   .upg-meta {

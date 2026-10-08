@@ -110,7 +110,11 @@
   .action-btn {
     flex-direction: column;
     gap: 2px;
-    padding: 12px;
+    padding: 13px 12px;
+    /* Primary field action: filled with a soft bloom so it never reads as a flat control. */
+    box-shadow:
+      0 0 0 1px rgba(112, 253, 195, 0.2),
+      0 8px 22px -14px var(--primary);
   }
 
   .action-verb {

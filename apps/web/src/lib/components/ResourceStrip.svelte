@@ -3,41 +3,42 @@
   import { uiStore } from '$lib/stores/ui.svelte';
 
   /**
-   * Sticky one-line resource readout for mobile. Always visible under the header so
-   * the economy stays glanceable from every phase; tap it to open the full Resources
-   * drawer. A resource at its cap lights up amber.
+   * Sticky resource readout for mobile. Always visible under the header so the economy
+   * stays glanceable from every phase; tap it to open the full Resources drawer. A pool at
+   * its cap lights its meter up.
    */
 
   let gs = $derived(gameStore.state);
 
-  type Tone = 'water' | 'nutrients' | 'biomass' | 'lysate';
+  type Tone = 'water' | 'nutrients' | 'biomass';
 
   interface Chip {
     id: Tone;
     glyph: string;
+    name: string;
     value: number;
+    max: number;
+    pct: number;
     full: boolean;
   }
 
-  function isFull(value: number, max: number): boolean {
-    return max > 0 && value >= max - 1e-6;
+  function meter(id: Tone, glyph: string, name: string, value: number, max: number): Chip {
+    const full = max > 0 && value >= max - 1e-6;
+    return {
+      id,
+      glyph,
+      name,
+      value: Math.floor(value),
+      max,
+      pct: max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0,
+      full,
+    };
   }
 
   let chips = $derived<Chip[]>([
-    { id: 'water', glyph: 'ψ', value: Math.floor(gs.water), full: isFull(gs.water, gs.waterCap) },
-    {
-      id: 'nutrients',
-      glyph: 'ν',
-      value: Math.floor(gs.nutrients),
-      full: isFull(gs.nutrients, gs.nutrientsCap),
-    },
-    {
-      id: 'biomass',
-      glyph: 'β',
-      value: Math.floor(gameStore.biomass),
-      full: isFull(gameStore.biomass, gameStore.maxBiomass),
-    },
-    { id: 'lysate', glyph: 'λ', value: Math.floor(gs.lysateBanked), full: false },
+    meter('water', 'ψ', 'Water', gs.water, gs.waterCap),
+    meter('nutrients', 'ν', 'Nutri.', gs.nutrients, gs.nutrientsCap),
+    meter('biomass', 'β', 'Biomass', gameStore.biomass, gameStore.maxBiomass),
   ]);
 </script>
 
@@ -48,26 +49,38 @@
   title="Resources"
 >
   {#each chips as chip (chip.id)}
-    <span class="chip" class:full={chip.full} data-tone={chip.id}>
-      <span class="g" aria-hidden="true">{chip.glyph}</span>
-      <span class="v">{chip.value}</span>
+    <span class="mini">
+      <span class="mini-top">
+        <span class="mini-name" data-tone={chip.id}>
+          <span class="sym" aria-hidden="true">{chip.glyph}</span>{chip.name}
+        </span>
+        <span class="mini-val">{chip.value}</span>
+      </span>
+      <span class="mini-track">
+        <span
+          class="mini-fill"
+          data-tone={chip.id}
+          class:full={chip.full}
+          style="width: {chip.pct}%"
+        ></span>
+      </span>
     </span>
   {/each}
 </button>
 
 <style>
   .res-strip {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
     width: 100%;
     flex: none;
-    padding: 7px 12px;
+    padding: 10px 14px;
     border: 0;
     border-bottom: 1px solid var(--border);
-    background: color-mix(in srgb, var(--surface-container-low) 94%, transparent);
+    background: var(--surface-container-low);
     cursor: pointer;
+    text-align: left;
   }
 
   .res-strip:hover {
@@ -79,68 +92,108 @@
     outline-offset: -2px;
   }
 
-  .chip {
-    --tone: var(--primary);
-    display: inline-flex;
-    align-items: baseline;
+  .mini {
+    display: flex;
+    flex-direction: column;
     gap: 5px;
-    padding: 3px 9px;
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--border);
-    background: var(--surface-container);
-    white-space: nowrap;
+    min-width: 0;
   }
 
-  .chip .g {
-    font-size: 12px;
+  .mini-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .mini-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
     font-weight: 600;
-    color: var(--tone);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .chip .v {
+  .mini-name[data-tone='water'] {
+    color: var(--secondary);
+  }
+  .mini-name[data-tone='nutrients'] {
+    color: var(--nutrient);
+  }
+  .mini-name[data-tone='biomass'] {
+    color: var(--warning);
+  }
+
+  .sym {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
+  }
+
+  .mini-val {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
     color: var(--on-surface);
   }
 
-  .chip[data-tone='water'] {
-    --tone: var(--secondary);
-  }
-  .chip[data-tone='nutrients'] {
-    --tone: var(--nutrient);
-  }
-  .chip[data-tone='biomass'] {
-    --tone: var(--primary);
-  }
-  .chip[data-tone='lysate'] {
-    --tone: var(--warning);
+  .mini-track {
+    height: 7px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--border);
+    overflow: hidden;
   }
 
-  /* Full: the resource's own colour as an outline with a soft breathing glow. */
-  .chip.full {
-    border-color: var(--tone);
-    animation: chip-full 1.8s ease-in-out infinite;
+  .mini-fill {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-pill);
+    background: var(--primary);
+    transition: width var(--duration-normal) var(--ease-out-soft);
   }
 
-  .chip.full .g,
-  .chip.full .v {
-    color: var(--tone);
+  .mini-fill[data-tone='water'] {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--secondary) 55%, #0c3237),
+      var(--secondary)
+    );
+  }
+  .mini-fill[data-tone='nutrients'] {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--nutrient) 55%, #241a45),
+      var(--nutrient)
+    );
+  }
+  .mini-fill[data-tone='biomass'] {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--warning) 55%, #3a2c05),
+      var(--warning)
+    );
   }
 
-  @keyframes chip-full {
+  .mini-fill.full {
+    animation: mini-full 1.8s ease-in-out infinite;
+  }
+
+  @keyframes mini-full {
     0%,
     100% {
-      box-shadow: 0 0 7px -1px color-mix(in srgb, var(--tone) 60%, transparent);
+      opacity: 1;
     }
     50% {
-      box-shadow: 0 0 14px 1px color-mix(in srgb, var(--tone) 85%, transparent);
+      opacity: 0.7;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .chip.full {
+    .mini-fill.full {
       animation: none;
-      box-shadow: 0 0 10px -1px color-mix(in srgb, var(--tone) 70%, transparent);
     }
   }
 </style>

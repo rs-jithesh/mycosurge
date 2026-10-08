@@ -106,10 +106,10 @@
     {#each meters as m (m.resource)}
       <div class="res-row" data-tone={m.tone} class:is-critical={m.critical}>
         <div class="res-top">
-          <span class="res-name"
-            ><ResourceSymbol id={m.resource} info />
-            {#if m.full}<span class="full-tag text-label-caps">Full</span>{/if}</span
-          >
+          <span class="res-name">
+            <span class="res-sym"><ResourceSymbol id={m.resource} /></span>
+            {#if m.full}<span class="full-tag text-label-caps">Full</span>{/if}
+          </span>
           <span class="text-data-mono res-val">
             {#if m.resource === 'biomass'}
               <b><CountUp value={m.value} format={(n) => n.toFixed(n < 10 ? 1 : 0)} /></b>
@@ -144,7 +144,7 @@
 
     <div class="res-row reach-row" data-tone="mint">
       <div class="res-top">
-        <span class="res-name"><ResourceSymbol id="reach" info /></span>
+        <span class="res-name"><span class="res-sym"><ResourceSymbol id="reach" /></span></span>
         <span class="text-data-mono res-val">
           <b>{reachLabel.value}</b>
           <span class="cap">{reachLabel.unit}</span>
@@ -270,9 +270,38 @@
   .res-name {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
     font-weight: 600;
+    color: var(--on-surface);
+  }
+
+  /* Circular accent badge carrying the resource identity (label stays neutral). */
+  .res-sym {
+    width: 24px;
+    height: 24px;
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface-container-high);
     color: var(--tone);
+  }
+
+  .res-row[data-tone='cyan'] .res-sym {
+    border-color: color-mix(in srgb, var(--secondary) 45%, var(--border));
+  }
+
+  .res-row[data-tone='violet'] .res-sym {
+    border-color: color-mix(in srgb, var(--nutrient) 45%, var(--border));
+  }
+
+  .res-row[data-tone='amber'] .res-sym {
+    border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
+  }
+
+  .res-row[data-tone='mint'] .res-sym {
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
   }
 
   .res-row.is-critical .res-name {

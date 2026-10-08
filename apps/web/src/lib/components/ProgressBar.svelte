@@ -96,7 +96,9 @@
     position: relative;
     height: 10px;
     border-radius: var(--radius-pill);
-    background: var(--surface-container-high);
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
     overflow: hidden;
   }
 
@@ -104,7 +106,11 @@
     display: block;
     height: 100%;
     border-radius: var(--radius-pill);
-    background: var(--primary);
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--primary) 55%, #0d3a29),
+      var(--primary)
+    );
     transition: width var(--duration-normal) var(--ease-out-soft);
   }
 
@@ -120,18 +126,30 @@
   }
 
   .fill[data-tone='amber'] {
-    background: var(--warning);
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--warning) 55%, #3a2c05),
+      var(--warning)
+    );
   }
 
   .fill[data-tone='coral'] {
-    background: var(--alert);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--alert) 55%, #3a1a17), var(--alert));
   }
 
   .fill[data-tone='cyan'] {
-    background: var(--secondary);
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--secondary) 55%, #0c3237),
+      var(--secondary)
+    );
   }
 
   .fill[data-tone='violet'] {
-    background: var(--nutrient);
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--nutrient) 55%, #241a45),
+      var(--nutrient)
+    );
   }
 </style>

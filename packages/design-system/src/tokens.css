@@ -56,6 +56,7 @@
   --color-on-nutrient: #28194d;
 
   --color-border: #3c4a42;
+  --color-border-strong: #4c5b52;
   --color-outline: #86948b;
   --color-outline-variant: #3c4a42;
 
@@ -148,6 +149,7 @@
   --on-nutrient: var(--color-on-nutrient);
 
   --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
   --outline: var(--color-outline);
   --outline-variant: var(--color-outline-variant);
 

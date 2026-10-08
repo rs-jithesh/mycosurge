@@ -686,6 +686,12 @@
       </g>
     </svg>
 
+    <div class="map-legend" aria-hidden="true">
+      <span class="legend-row"><span class="legend-key key-hypha"></span>Hyphae</span>
+      <span class="legend-row"><span class="legend-key key-signal"></span>Signal</span>
+      <span class="legend-row"><span class="legend-key key-host"></span>Host</span>
+    </div>
+
     {#if ceremonyLabel}
       <div class="stage-ceremony" aria-live="polite">
         <span class="stage-ceremony-kicker text-label-caps">Scale shift</span>
@@ -763,11 +769,54 @@
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
-    background: radial-gradient(
-      circle at center,
-      transparent 45%,
-      var(--surface-container-low) 100%
-    );
+    background:
+      radial-gradient(circle at 50% 46%, #16241f 0%, transparent 55%),
+      radial-gradient(circle at center, transparent 45%, var(--surface-container-low) 100%);
+  }
+
+  .map-legend {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 9px 12px;
+    background: color-mix(in srgb, var(--surface-container) 94%, transparent);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    pointer-events: none;
+  }
+
+  .legend-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--on-surface-variant);
+  }
+
+  .legend-key {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    flex: none;
+  }
+
+  .key-hypha {
+    background: var(--primary);
+  }
+
+  .key-signal {
+    background: var(--secondary);
+    box-shadow: 0 0 8px var(--secondary);
+  }
+
+  .key-host {
+    background: var(--alert);
+    box-shadow: 0 0 8px var(--alert);
   }
 
   .host {
