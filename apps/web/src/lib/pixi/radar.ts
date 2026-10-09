@@ -26,6 +26,17 @@ import {
   DIFFICULTY_NODE_COUNT,
   PATTERN_INTERVALS,
   MONO_FONT,
+  CHARGE_FULL_TIME,
+  CHARGE_MIN_TO_DASH,
+  DASH_DURATION,
+  DASH_SPEED,
+  MELEE_BASE_DAMAGE,
+  MELEE_CHARGE_DAMAGE,
+  MELEE_INVULN,
+  CHARGE_COOLDOWN,
+  HOST_DECAY_TIME,
+  HOST_SHARD_COUNT,
+  HOST_SHARD_LIFE,
 } from './constants';
 
 interface ProjectileData {
@@ -49,11 +60,27 @@ interface NodeData extends Agent {
   patternName: string;
   patternTimer: number;
   alive: boolean;
+  /** True while a destroyed node is visibly shattering (no longer targeted or solid). */
+  dying: boolean;
+  deathTimer: number;
   angle: number;
   flashTimer: number;
   poisonDps: number;
   poisonTimer: number;
   ai: AiProfile;
+}
+
+interface ShardData {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rot: number;
+  vr: number;
+  size: number;
+  life: number;
+  maxLife: number;
+  alive: boolean;
 }
 
 interface PlayerData {
@@ -68,6 +95,16 @@ interface PlayerData {
   invincibleTimer: number;
   flashTimer: number;
   facingAngle: number;
+  /** Charge meter, 0–1 (tutorial melee only). */
+  charge: number;
+  /** True while the charge input is held and charging is allowed. */
+  charging: boolean;
+  /** Remaining lunge time; > 0 while dashing. */
+  dashTimer: number;
+  dashAngle: number;
+  dashPower: number;
+  /** Pause before the next charge can begin. */
+  chargeCooldown: number;
 }
 
 const POOL_SIZE = 300;
@@ -141,6 +178,10 @@ export interface RadarStats {
   shieldHits: number;
   hostHp: number;
   hostMaxHp: number;
+  /** Charge meter, 0–1 (0 outside melee mode). */
+  charge: number;
+  /** True while the charge input is held. */
+  charging: boolean;
 }
 
 export interface RadarCallbacks {
@@ -153,6 +194,8 @@ export interface RadarCallbacks {
 
 export interface RadarInstance {
   destroy: () => void;
+  /** Tutorial melee: start/stop holding the charge (release triggers the slam). */
+  setCharging: (active: boolean) => void;
 }
 
 const HOST_STYLE = new TextStyle({
@@ -186,10 +229,13 @@ export function createRadar(
   },
   callbacks: RadarCallbacks,
   modifiers: { hpMult?: number; speedMult?: number; moveSpeedMult?: number } = {},
+  options: { melee?: boolean } = {},
 ): RadarInstance {
   const hpMult = modifiers.hpMult ?? 1;
   const speedMult = modifiers.speedMult ?? 1;
   const moveSpeedMult = modifiers.moveSpeedMult ?? 1;
+  // Tutorial melee: no auto-fire — the player charges and slams instead.
+  const melee = options.melee ?? false;
   const host = HOSTS.find((h) => h.id === hostId)!;
   const difficultyMult = 1 + (host.difficulty - 1) * 0.2;
   const nodeCount =
@@ -201,6 +247,9 @@ export function createRadar(
   const app = new Application();
   let destroyed = false;
   let ready = false;
+  // Set once the host is dead so the dissolve animation can play before the result.
+  let victoryPending = false;
+  let victoryDelay = 0;
   // If Pixi never comes up (no WebGL, blocked context, etc.) we must not hang the
   // fight: report failure so the modal can offer a way out.
   const watchdog = setTimeout(() => {
@@ -211,6 +260,7 @@ export function createRadar(
 
   const gridGraphics = new Graphics();
   const nodeContainer = new Container();
+  const shardContainer = new Container();
   const projectileContainer = new Container();
   const playerGfx = new Graphics();
 
@@ -224,6 +274,7 @@ export function createRadar(
     stage.addChild(glow);
   }
   stage.addChild(nodeContainer);
+  stage.addChild(shardContainer);
   stage.addChild(playerGfx);
   stage.addChild(projectileContainer);
 
@@ -243,21 +294,44 @@ export function createRadar(
 
   const keys: Set<string> = new Set();
   let touchActive = false;
+  // The drag finger, tracked by identifier so a second finger — e.g. one holding the
+  // Charge button — never hijacks the joystick. Only touches that begin on the canvas are
+  // adopted; the button's touches never reach these handlers.
+  let touchId: number | null = null;
   let touchAnchorX = 0,
     touchAnchorY = 0;
   let touchDx = 0,
     touchDy = 0;
 
+  function findTouch(list: TouchList, id: number): Touch | null {
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].identifier === id) return list[i];
+    }
+    return null;
+  }
+
   function onKeyDown(e: KeyboardEvent) {
     keys.add(e.code);
+    if (melee && e.code === 'Space') {
+      e.preventDefault();
+      setCharging(true);
+    }
   }
   function onKeyUp(e: KeyboardEvent) {
     keys.delete(e.code);
+    if (melee && e.code === 'Space') {
+      e.preventDefault();
+      setCharging(false);
+    }
   }
 
   function onTouchStart(e: TouchEvent) {
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
-    const t = e.touches[0];
+    // Adopt the first touch that lands on the canvas; ignore any others.
+    if (touchId !== null) return;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    touchId = t.identifier;
     touchAnchorX = t.clientX - rect.left;
     touchAnchorY = t.clientY - rect.top;
     touchDx = 0;
@@ -266,16 +340,21 @@ export function createRadar(
   }
 
   function onTouchMove(e: TouchEvent) {
+    if (touchId === null) return;
+    const t = findTouch(e.touches, touchId);
+    if (!t) return;
     e.preventDefault();
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const scale = rect.width > 0 ? size / rect.width : 1;
-    const t = e.touches[0];
     touchDx = (t.clientX - rect.left - touchAnchorX) * scale;
     touchDy = (t.clientY - rect.top - touchAnchorY) * scale;
   }
 
-  function onTouchEnd() {
+  function onTouchEnd(e: TouchEvent) {
+    // Only release the joystick when the finger that owns it lifts.
+    if (touchId === null || !findTouch(e.changedTouches, touchId)) return;
     touchActive = false;
+    touchId = null;
     touchDx = 0;
     touchDy = 0;
   }
@@ -320,6 +399,12 @@ export function createRadar(
     invincibleTimer: 0,
     flashTimer: 0,
     facingAngle: -Math.PI / 2,
+    charge: 0,
+    charging: false,
+    dashTimer: 0,
+    dashAngle: -Math.PI / 2,
+    dashPower: 0,
+    chargeCooldown: 0,
   };
 
   function hostTotals() {
@@ -341,12 +426,16 @@ export function createRadar(
       shieldHits: player.shieldHits,
       hostHp: Math.max(0, totals.hp),
       hostMaxHp: totals.maxHp,
+      charge: player.charge,
+      charging: player.charging,
     };
     if (
       last &&
       last.hp === next.hp &&
       last.shieldHits === next.shieldHits &&
-      last.hostHp === next.hostHp
+      last.hostHp === next.hostHp &&
+      last.charge === next.charge &&
+      last.charging === next.charging
     ) {
       return;
     }
@@ -374,6 +463,8 @@ export function createRadar(
       patternName: host.attackPatterns[patternIdx],
       patternTimer: randomBetween(0, 2),
       alive: true,
+      dying: false,
+      deathTimer: 0,
       angle: 0,
       flashTimer: 0,
       poisonDps: 0,
@@ -403,6 +494,69 @@ export function createRadar(
     g.fill({ color: CORAL_COLOR, alpha: 0.16 });
     g.roundRect(-HOST_SIZE / 2, -HOST_SIZE / 2, HOST_SIZE, HOST_SIZE, 10);
     g.stroke({ color: strokeColor, width: 2 });
+  }
+
+  // ── Host death: shatter + dissolve (played before the victory result) ──
+  const SHARD_POOL = Math.max(24, nodeCount * HOST_SHARD_COUNT * 2);
+  const shards: ShardData[] = [];
+  const shardGfx: Graphics[] = [];
+  for (let i = 0; i < SHARD_POOL; i++) {
+    shards.push({
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      rot: 0,
+      vr: 0,
+      size: 0,
+      life: 0,
+      maxLife: 1,
+      alive: false,
+    });
+    const g = new Graphics();
+    g.visible = false;
+    shardContainer.addChild(g);
+    shardGfx.push(g);
+  }
+
+  function spawnShards(node: NodeData) {
+    let spawned = 0;
+    for (let i = 0; i < shards.length && spawned < HOST_SHARD_COUNT; i++) {
+      const s = shards[i];
+      if (s.alive) continue;
+      const a = Math.random() * Math.PI * 2;
+      const speed = 40 + Math.random() * 120;
+      s.x = node.x;
+      s.y = node.y;
+      s.vx = Math.cos(a) * speed;
+      s.vy = Math.sin(a) * speed;
+      s.rot = Math.random() * Math.PI;
+      s.vr = (Math.random() - 0.5) * 8;
+      s.size = 4 + Math.random() * 6;
+      s.maxLife = HOST_SHARD_LIFE * (0.6 + Math.random() * 0.4);
+      s.life = s.maxLife;
+      s.alive = true;
+      spawned++;
+    }
+  }
+
+  /** Draw a dissolving node: it swells and fades as its outline breaks up. */
+  function drawDyingHost(g: Graphics, t: number) {
+    const w = HOST_SIZE * (1 + t * 0.7);
+    g.clear();
+    g.roundRect(-w / 2, -w / 2, w, w, 10);
+    g.fill({ color: CORAL_COLOR, alpha: 0.16 * (1 - t) });
+    g.roundRect(-w / 2, -w / 2, w, w, 10);
+    g.stroke({ color: CORAL_COLOR, width: 2, alpha: 1 - t });
+  }
+
+  /** Mark a node destroyed and hand its corpse to the dissolve animation. */
+  function killNode(node: NodeData) {
+    if (!node.alive) return;
+    node.alive = false;
+    node.dying = true;
+    node.deathTimer = HOST_DECAY_TIME;
+    spawnShards(node);
   }
 
   function isOffScreen(x: number, y: number): boolean {
@@ -620,6 +774,7 @@ export function createRadar(
   const threatScratch: ProjectileThreat[] = [];
 
   function takeDamage() {
+    if (victoryPending) return;
     if (player.invincibleTimer > 0) return;
     if (combatStats.evadeChance > 0 && Math.random() < combatStats.evadeChance) return;
     if (player.shieldHits > 0) {
@@ -631,6 +786,30 @@ export function createRadar(
     player.invincibleTimer = dodgeWindow;
     player.flashTimer = HIT_FLASH_DURATION;
     if (player.hp <= 0 && combatStats.emergencyEvac) player.hp = 1;
+  }
+
+  /** Release a held charge into a lunge (if it's worth dashing). */
+  function releaseCharge() {
+    if (player.dashTimer > 0 || player.chargeCooldown > 0 || player.charge < CHARGE_MIN_TO_DASH) {
+      player.charge = 0;
+      return;
+    }
+    player.dashPower = player.charge;
+    player.dashAngle = player.facingAngle;
+    player.dashTimer = DASH_DURATION;
+    player.charge = 0;
+  }
+
+  /** Tutorial melee input: hold to charge, release to slam. */
+  function setCharging(active: boolean) {
+    if (!melee || destroyed) return;
+    if (active) {
+      if (player.dashTimer > 0 || player.chargeCooldown > 0) return;
+      player.charging = true;
+    } else if (player.charging) {
+      player.charging = false;
+      releaseCharge();
+    }
   }
 
   function tick() {
@@ -645,9 +824,22 @@ export function createRadar(
 
     const aliveNodes = nodes.filter((n) => n.alive);
     if (aliveNodes.length === 0) {
-      callbacks.onVictory();
-      destroyed = true;
-      return;
+      if (!victoryPending) {
+        // The fight is won, but let the last host shatter before the result lands.
+        victoryPending = true;
+        victoryDelay = HOST_DECAY_TIME;
+        // Sweep away in-flight shots and protect the player during the send-off.
+        for (const p of pool) {
+          if (p.alive && !p.friendly) p.alive = false;
+        }
+      } else {
+        victoryDelay -= dt;
+        if (victoryDelay <= 0) {
+          callbacks.onVictory();
+          destroyed = true;
+          return;
+        }
+      }
     }
 
     player.flashTimer = Math.max(0, player.flashTimer - dt);
@@ -674,7 +866,13 @@ export function createRadar(
     const prevPlayerX = player.x;
     const prevPlayerY = player.y;
 
-    if (dx !== 0 || dy !== 0) {
+    const dashing = melee && player.dashTimer > 0;
+    if (dashing) {
+      player.x += Math.cos(player.dashAngle) * DASH_SPEED * dt;
+      player.y += Math.sin(player.dashAngle) * DASH_SPEED * dt;
+      player.facingAngle = player.dashAngle;
+      player.dashTimer = Math.max(0, player.dashTimer - dt);
+    } else if (dx !== 0 || dy !== 0) {
       const len = Math.sqrt(dx * dx + dy * dy);
       const speed = PLAYER_SPEED * (combatStats.moveSpeedMult || 1);
       player.x += (dx / len) * speed * dt;
@@ -690,10 +888,44 @@ export function createRadar(
       player.vy = (player.y - prevPlayerY) / dt;
     }
 
-    player.fireTimer -= dt;
-    if (player.fireTimer <= 0) {
-      player.fireTimer = 1 / (SPORE_FIRE_RATE * combatStats.fireRate);
-      spawnSpore();
+    if (melee) {
+      if (player.chargeCooldown > 0) {
+        player.chargeCooldown = Math.max(0, player.chargeCooldown - dt);
+      }
+      if (player.charging && player.chargeCooldown <= 0) {
+        player.charge = Math.min(1, player.charge + dt / CHARGE_FULL_TIME);
+      }
+
+      if (dashing) {
+        for (const node of nodes) {
+          if (!node.alive) continue;
+          if (circleCollision(player.x, player.y, playerRadius, node.x, node.y, node.radius)) {
+            node.hp -= MELEE_BASE_DAMAGE + MELEE_CHARGE_DAMAGE * player.dashPower;
+            node.flashTimer = HIT_FLASH_DURATION;
+            if (node.hp <= 0) killNode(node);
+            player.dashTimer = 0;
+            player.invincibleTimer = MELEE_INVULN;
+            // Bounce clear of the node so the slam reads as a recoil, not a pass-through.
+            const nx = player.x - node.x;
+            const ny = player.y - node.y;
+            const len = Math.sqrt(nx * nx + ny * ny) || 1;
+            const push = node.radius + playerRadius + 4;
+            player.x = Math.max(10, Math.min(size - 10, node.x + (nx / len) * push));
+            player.y = Math.max(10, Math.min(size - 10, node.y + (ny / len) * push));
+            break;
+          }
+        }
+      }
+
+      if (dashing && player.dashTimer <= 0) {
+        player.chargeCooldown = CHARGE_COOLDOWN;
+      }
+    } else if (!victoryPending) {
+      player.fireTimer -= dt;
+      if (player.fireTimer <= 0) {
+        player.fireTimer = 1 / (SPORE_FIRE_RATE * combatStats.fireRate);
+        spawnSpore();
+      }
     }
 
     neighborScratch.length = 0;
@@ -758,12 +990,12 @@ export function createRadar(
                 if (ddx * ddx + ddy * ddy < 60 * 60) {
                   other.hp -= p.damage * 0.5;
                   other.flashTimer = HIT_FLASH_DURATION;
-                  if (other.hp <= 0) other.alive = false;
+                  if (other.hp <= 0) killNode(other);
                 }
               }
             }
             if (node.hp <= 0) {
-              node.alive = false;
+              killNode(node);
             }
             if (!p.piercing) {
               p.alive = false;
@@ -784,19 +1016,34 @@ export function createRadar(
 
     for (let i = 0; i < nodes.length; i++) {
       const n = nodes[i];
-      if (!n.alive) {
-        nodeGraphics[i].body.visible = false;
-        nodeGraphics[i].label.visible = false;
-        continue;
-      }
-      drawHost(nodeGraphics[i].body, n.flashTimer > 0 ? 0xffffff : CORAL_COLOR);
-      nodeGraphics[i].body.position.set(n.x, n.y);
-      nodeGraphics[i].label.position.set(n.x, n.y);
-      n.flashTimer = Math.max(0, n.flashTimer - dt);
-      if (n.poisonTimer > 0) {
-        n.hp -= n.poisonDps * dt;
-        n.poisonTimer = Math.max(0, n.poisonTimer - dt);
-        if (n.hp <= 0) n.alive = false;
+      const gfx = nodeGraphics[i];
+      if (n.alive) {
+        drawHost(gfx.body, n.flashTimer > 0 ? 0xffffff : CORAL_COLOR);
+        gfx.body.position.set(n.x, n.y);
+        gfx.label.position.set(n.x, n.y);
+        n.flashTimer = Math.max(0, n.flashTimer - dt);
+        if (n.poisonTimer > 0) {
+          n.hp -= n.poisonDps * dt;
+          n.poisonTimer = Math.max(0, n.poisonTimer - dt);
+          if (n.hp <= 0) killNode(n);
+        }
+      } else if (n.dying) {
+        // The corpse swells and fades while its shards fly apart.
+        n.deathTimer = Math.max(0, n.deathTimer - dt);
+        const t = 1 - n.deathTimer / HOST_DECAY_TIME;
+        drawDyingHost(gfx.body, t);
+        gfx.body.position.set(n.x, n.y);
+        gfx.body.rotation = t * 0.6;
+        gfx.label.position.set(n.x, n.y);
+        gfx.label.alpha = Math.max(0, 1 - t * 1.4);
+        if (n.deathTimer <= 0) {
+          n.dying = false;
+          gfx.body.visible = false;
+          gfx.label.visible = false;
+        }
+      } else {
+        gfx.body.visible = false;
+        gfx.label.visible = false;
       }
     }
 
@@ -816,6 +1063,32 @@ export function createRadar(
       g.visible = true;
     }
 
+    for (let i = 0; i < shards.length; i++) {
+      const s = shards[i];
+      const g = shardGfx[i];
+      if (!s.alive) {
+        g.visible = false;
+        continue;
+      }
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vx *= 1 - 1.5 * dt;
+      s.vy *= 1 - 1.5 * dt;
+      s.rot += s.vr * dt;
+      s.life -= dt;
+      if (s.life <= 0) {
+        s.alive = false;
+        g.visible = false;
+        continue;
+      }
+      g.clear();
+      g.roundRect(-s.size / 2, -s.size / 2, s.size, s.size, 1.5);
+      g.fill({ color: CORAL_COLOR, alpha: Math.max(0, s.life / s.maxLife) });
+      g.position.set(s.x, s.y);
+      g.rotation = s.rot;
+      g.visible = true;
+    }
+
     emitStats();
   }
 
@@ -826,6 +1099,12 @@ export function createRadar(
     playerGfx.fill({ color, alpha: 0.18 });
     playerGfx.circle(0, 0, PLAYER_RADIUS);
     playerGfx.fill({ color, alpha: 1 });
+    if (melee && player.charging) {
+      // A ring that swells (and brightens) as the charge fills — the slam's tell.
+      const ringR = PLAYER_RADIUS + 8 + player.charge * 14;
+      playerGfx.circle(0, 0, ringR);
+      playerGfx.stroke({ color: MINT_COLOR, width: 2, alpha: 0.55 + player.charge * 0.45 });
+    }
     playerGfx.alpha =
       player.invincibleTimer > 0 && Math.floor(player.invincibleTimer * 12) % 2 === 0 ? 0.4 : 1;
   }
@@ -849,7 +1128,9 @@ export function createRadar(
       app.canvas.setAttribute('role', 'application');
       app.canvas.setAttribute(
         'aria-label',
-        'Combat arena. Use WASD or arrow keys to move; spores fire automatically.',
+        melee
+          ? 'Combat arena. Move with WASD or arrow keys. Hold Space to charge, release to slam into the host.'
+          : 'Combat arena. Use WASD or arrow keys to move; spores fire automatically.',
       );
       app.canvas.style.display = 'block';
       app.canvas.style.width = '100%';
@@ -871,6 +1152,7 @@ export function createRadar(
   })();
 
   return {
+    setCharging,
     destroy: () => {
       destroyed = true;
       clearTimeout(watchdog);

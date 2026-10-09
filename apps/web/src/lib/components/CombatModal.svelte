@@ -32,6 +32,10 @@
   let hostMaxHp = $state(1);
   let hostPct = $derived(hostMaxHp > 0 ? Math.max(0, (hostHp / hostMaxHp) * 100) : 0);
   let hpPct = $derived(maxHp > 0 ? Math.max(0, (hp / maxHp) * 100) : 0);
+  // Tutorial melee: charge meter (0–1) and whether the charge input is held.
+  let charge = $state(0);
+  let charging = $state(false);
+  let chargePct = $derived(Math.round(charge * 100));
   let dialogEl = $state<HTMLDivElement>();
   let arenaError = $state(false);
   let coarsePointer = $state(
@@ -121,6 +125,8 @@
           shieldHits = stats.shieldHits;
           hostHp = stats.hostHp;
           hostMaxHp = stats.hostMaxHp;
+          charge = stats.charge;
+          charging = stats.charging;
           gameStore.updateCombatHp(stats.hp);
         },
         onError: () => {
@@ -132,6 +138,7 @@
         speedMult: strain.speedMult,
         moveSpeedMult: strain.speedMult,
       },
+      { melee: wasTutorial },
     );
   }
 
@@ -157,6 +164,17 @@
     } else {
       onClose();
     }
+  }
+
+  // Tutorial melee touch controls: press-and-hold to charge, release to slam.
+  function startCharge(e: PointerEvent) {
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    radarInstance?.setCharging(true);
+  }
+
+  function endCharge() {
+    radarInstance?.setCharging(false);
   }
 </script>
 
@@ -285,12 +303,21 @@
             <h2 class="objective-title">Drive off {host?.name ?? hostId}</h2>
           </div>
           <p class="objective-sub">
-            {#if coarsePointer}
-              Drag anywhere on the arena to steer.
+            {#if wasTutorial}
+              {#if coarsePointer}
+                Drag to steer. Hold the Charge button, then release it to slam into the host.
+              {:else}
+                Move with WASD or the arrow keys. Hold Space to charge, release to slam into the
+                host.
+              {/if}
             {:else}
-              Move with WASD or the arrow keys.
+              {#if coarsePointer}
+                Drag anywhere on the arena to steer.
+              {:else}
+                Move with WASD or the arrow keys.
+              {/if}
+              Spores fire on their own — focus on dodging.
             {/if}
-            Spores fire on their own — focus on dodging.
           </p>
           {#if strain.id !== 'normal'}
             <p class="strain-line text-label-caps">Strain: {strain.name} — {strain.description}</p>
@@ -322,14 +349,22 @@
                 <path d="M11.4 12.6 L18 6" />
                 <path d="M14 6 L18 6 L18 10" />
               </svg>
-              <span>Drag to move · spores fire on their own</span>
+              <span
+                >{wasTutorial
+                  ? 'Drag to move · hold Charge to slam'
+                  : 'Drag to move · spores fire on their own'}</span
+              >
             {:else}
               <span class="keycaps" aria-hidden="true">
                 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
                 <span class="hint-or">or</span>
                 <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
               </span>
-              <span>Move · spores fire on their own</span>
+              <span
+                >{wasTutorial
+                  ? 'Move · hold Space to charge'
+                  : 'Move · spores fire on their own'}</span
+              >
             {/if}
           </div>
         </div>
@@ -339,6 +374,30 @@
           <div class="track"><span class="fill-mint" style="width: {hpPct}%"></span></div>
           <span>{Math.max(0, Math.ceil(hp))} / {maxHp}</span>
         </div>
+
+        {#if wasTutorial}
+          <div class="charge-panel">
+            <div class="charge-meter">
+              <span class="charge-label text-label-caps" class:full={chargePct >= 100}>
+                {charging ? 'Charging…' : chargePct >= 100 ? 'Fully charged — release!' : 'Charge'}
+              </span>
+              <div class="charge-track">
+                <span class="charge-fill" class:full={chargePct >= 100} style="width: {chargePct}%"
+                ></span>
+              </div>
+            </div>
+            {#if coarsePointer}
+              <button
+                class="cmd-btn charge-btn"
+                onpointerdown={startCharge}
+                onpointerup={endCharge}
+                onpointercancel={endCharge}
+              >
+                Hold to charge — release to slam
+              </button>
+            {/if}
+          </div>
+        {/if}
 
         <div class="combat-footer">
           {#if shieldHits > 0}
@@ -548,6 +607,60 @@
 
   .fill-mint {
     background: var(--primary);
+  }
+
+  .charge-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .charge-meter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--on-surface-variant);
+  }
+
+  .charge-label {
+    flex: none;
+    min-width: 96px;
+  }
+
+  .charge-label.full {
+    color: var(--primary);
+  }
+
+  .charge-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+
+  .charge-fill {
+    display: block;
+    height: 100%;
+    background: var(--secondary);
+    border-radius: var(--radius-pill);
+    transition: width 80ms linear;
+  }
+
+  .charge-fill.full {
+    background: var(--primary);
+  }
+
+  .charge-btn {
+    width: 100%;
+    padding: 14px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .control-hint {

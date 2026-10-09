@@ -11,7 +11,9 @@ moves; spores fire automatically.**
    first nematode.
 2. **Engage** opens the combat overlay on top of the Core view: the arena plus HUD.
 3. **Resolve** — clearing every host node is a victory (rewards); running out of HP or
-   retreating is a defeat (trauma). The overlay then shows the result.
+   retreating is a defeat (trauma). On victory the last host **shatters and dissolves** for
+   `HOST_DECAY_TIME` (1s) — with in-flight shots swept away — before the result overlay
+   appears, so the win has a moment to land.
 
 ## Arena
 
@@ -30,6 +32,24 @@ A fixed 500×500 logical canvas, scaled to fit its container (`aspect-ratio: 1`)
 - **Touch** — drag anywhere in the arena to move (the drag vector sets direction).
 - Spores auto-fire toward the player's facing direction.
 
+## Tutorial fight — charge slam
+
+The first encounter (`soil_nematode`) is a **melee tutorial**: spore auto-fire is disabled and
+the player must attack the host directly.
+
+- **Charge** — hold the charge input (**Space** on keyboard, or the on-screen **Charge** button
+  on touch) to fill a meter (fills in `CHARGE_FULL_TIME`, 0.8s). Release to lunge in the
+  direction the core faces.
+- **Slam** — a connecting lunge deals `MELEE_BASE_DAMAGE + MELEE_CHARGE_DAMAGE × charge`
+  (2–6), knocks the core clear of the node, and grants a short invulnerability window
+  (`MELEE_INVULN`, 0.7s). A release below `CHARGE_MIN_TO_DASH` (15%) is a cancel, and after a
+  lunge ends there's a `CHARGE_COOLDOWN` (0.45s) pause before the next charge.
+- The node still fires its `slow_spiral` pattern, so the loop is dodge → charge → slam.
+
+Tuning lives in `apps/web/src/lib/pixi/constants.ts` (`CHARGE_*`, `DASH_*`, `MELEE_*`); the
+mode is enabled by passing `{ melee: true }` to `createRadar` (the modal passes it when
+`gamePhase === 'tactician'`).
+
 ## HUD
 
 - **Objective banner** above the arena names the target: "Drive off {host}".
@@ -40,12 +60,12 @@ A fixed 500×500 logical canvas, scaled to fit its container (`aspect-ratio: 1`)
 
 ## Entities
 
-| Entity      | Visual                            | Behaviour                                                                  |
-| ----------- | --------------------------------- | -------------------------------------------------------------------------- |
-| Player core | Mint circle + glow                | Moves on input; flashes coral when hit; blinks while invulnerable.         |
-| Host node   | Coral rounded square + name glyph | Has HP; steers around the arena; fires pattern projectiles; flashes white. |
-| Spore       | Mint pill                         | Auto-fired; damages host nodes; can pierce.                                |
-| Pellet      | Coral dot                         | Host projectile; damages the player.                                       |
+| Entity      | Visual                            | Behaviour                                                                                                       |
+| ----------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Player core | Mint circle + glow                | Moves on input; flashes coral when hit; blinks while invulnerable.                                              |
+| Host node   | Coral rounded square + name glyph | Has HP; steers around the arena; fires pattern projectiles; flashes white. Shatters into shards when destroyed. |
+| Spore       | Mint pill                         | Auto-fired; damages host nodes; can pierce.                                                                     |
+| Pellet      | Coral dot                         | Host projectile; damages the player.                                                                            |
 
 Node count and HP scale with host difficulty (`DIFFICULTY_NODE_COUNT`, per-difficulty HP
 multiplier). The arena is a win only when **all** nodes are destroyed.

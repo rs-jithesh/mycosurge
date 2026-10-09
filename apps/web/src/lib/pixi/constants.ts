@@ -37,3 +37,30 @@ export const PATTERN_INTERVALS: Record<string, number> = {
 };
 
 export const MONO_FONT = "'JetBrains Mono', monospace";
+
+// ── Tutorial melee (charge slam) ──
+// The tutorial fight trades the spore auto-fire for a charge attack: hold to fill the
+// meter, release to dash, and slam into the host node. Full charge is the hardest hit.
+/** Seconds of holding to fill the charge meter from empty to full. */
+export const CHARGE_FULL_TIME = 0.8;
+/** A release below this charge is a cancel, not a dash (guards against stray taps). */
+export const CHARGE_MIN_TO_DASH = 0.15;
+/** How long the lunge lasts. */
+export const DASH_DURATION = 0.2;
+/** Lunge speed (px/s) — well above PLAYER_SPEED so a slam reads as a burst. */
+export const DASH_SPEED = 900;
+/** Slam damage at zero charge and the extra at full charge (so 2–6 on the tutorial node). */
+export const MELEE_BASE_DAMAGE = 2;
+export const MELEE_CHARGE_DAMAGE = 4;
+/** Invulnerability window granted after a connecting slam. */
+export const MELEE_INVULN = 0.7;
+/** Pause after a dash ends before the next charge can begin. */
+export const CHARGE_COOLDOWN = 0.45;
+
+// ── Victory send-off ──
+/** Seconds the host visibly breaks apart before the victory result is shown. */
+export const HOST_DECAY_TIME = 1.0;
+/** Shards a dying host node bursts into. */
+export const HOST_SHARD_COUNT = 10;
+/** Shard lifetime (seconds); they fade out over this. */
+export const HOST_SHARD_LIFE = 0.9;
