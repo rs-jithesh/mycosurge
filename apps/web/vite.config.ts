@@ -7,4 +7,9 @@ export default defineConfig({
   test: {
     include: ['src/**/*.{test,spec}.{js,ts}'],
   },
+  server: {
+    host: true,
+    port: 5173,
+    allowedHosts: ['mycosurge-dev.wentocore.dev'],
+  },
 });
