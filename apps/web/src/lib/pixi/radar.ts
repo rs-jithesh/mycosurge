@@ -1121,6 +1121,16 @@ export function createRadar(
     playerGfx.fill({ color, alpha: 0.18 });
     playerGfx.circle(0, 0, PLAYER_RADIUS);
     playerGfx.fill({ color, alpha: 1 });
+    if (melee) {
+      // A chevron on the rim marks the front, so the charge's aim reads at a glance.
+      // (Normal fights get the same cue from the auto-fired spores.)
+      playerGfx.rotation = player.facingAngle;
+      playerGfx.moveTo(PLAYER_RADIUS + 8, 0);
+      playerGfx.lineTo(PLAYER_RADIUS - 1, -5.5);
+      playerGfx.lineTo(PLAYER_RADIUS - 1, 5.5);
+      playerGfx.closePath();
+      playerGfx.fill({ color, alpha: 1 });
+    }
     if (melee && player.charging) {
       // A ring that swells (and brightens) as the charge fills — the slam's tell.
       const ringR = PLAYER_RADIUS + 8 + player.charge * 14;

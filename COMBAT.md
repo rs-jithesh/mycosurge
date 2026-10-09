@@ -61,12 +61,12 @@ mode is enabled by passing `{ melee: true }` to `createRadar` (the modal passes 
 
 ## Entities
 
-| Entity      | Visual                            | Behaviour                                                                                                       |
-| ----------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Player core | Mint circle + glow                | Moves on input; flashes coral when hit; blinks while invulnerable.                                              |
-| Host node   | Coral rounded square + name glyph | Has HP; steers around the arena; fires pattern projectiles; flashes white. Shatters into shards when destroyed. |
-| Spore       | Mint pill                         | Auto-fired; damages host nodes; can pierce.                                                                     |
-| Pellet      | Coral dot                         | Host projectile; damages the player.                                                                            |
+| Entity      | Visual                            | Behaviour                                                                                                                                 |
+| ----------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Player core | Mint circle + glow                | Moves on input; flashes coral when hit; blinks while invulnerable. In the tutorial melee a rim chevron marks the facing/charge direction. |
+| Host node   | Coral rounded square + name glyph | Has HP; steers around the arena; fires pattern projectiles; flashes white. Shatters into shards when destroyed.                           |
+| Spore       | Mint pill                         | Auto-fired; damages host nodes; can pierce.                                                                                               |
+| Pellet      | Coral dot                         | Host projectile; damages the player.                                                                                                      |
 
 Node count and HP scale with host difficulty (`DIFFICULTY_NODE_COUNT`, per-difficulty HP
 multiplier). The arena is a win only when **all** nodes are destroyed.
