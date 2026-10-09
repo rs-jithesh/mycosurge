@@ -127,12 +127,8 @@
     {/each}
 
     {#if interactive && signalSector !== null && !signalReached}
-      <!-- Show, don't tell: the goal sector breathes so it reads as the thing to tap, and
-           (before any growth) a stream of dots marches from the core toward the signal. -->
+      <!-- Show, don't tell: the goal sector breathes so it reads as the thing to tap. -->
       <path class="target-wedge" d={wedgePath(signalSector, bandWidth * k)} />
-      {#if signalDepth <= 0 && signal}
-        <line class="grow-guide" x1="0" y1="0" x2={signal.x * k} y2={signal.y * k} />
-      {/if}
     {/if}
 
     {#each solid as s (s.id)}
@@ -226,16 +222,6 @@
     animation: target-breathe 1.8s ease-in-out infinite;
   }
 
-  /* Dots marching from the core toward the signal: "grow this way". */
-  .grow-guide {
-    stroke: var(--secondary);
-    stroke-width: 2;
-    stroke-dasharray: 2 8;
-    stroke-linecap: round;
-    pointer-events: none;
-    animation: guide-flow 1.2s linear infinite;
-  }
-
   @keyframes target-breathe {
     0%,
     100% {
@@ -243,12 +229,6 @@
     }
     50% {
       opacity: 0.2;
-    }
-  }
-
-  @keyframes guide-flow {
-    to {
-      stroke-dashoffset: -10;
     }
   }
 
@@ -362,17 +342,9 @@
       animation: none;
     }
 
-    .target-wedge,
-    .grow-guide {
-      animation: none;
-    }
-
     .target-wedge {
+      animation: none;
       opacity: 0.14;
-    }
-
-    .grow-guide {
-      opacity: 0.5;
     }
   }
 </style>
