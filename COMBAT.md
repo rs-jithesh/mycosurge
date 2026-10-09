@@ -41,9 +41,10 @@ the player must attack the host directly.
   on touch) to fill a meter (fills in `CHARGE_FULL_TIME`, 0.8s). Release to lunge in the
   direction the core faces.
 - **Slam** — a connecting lunge deals `MELEE_BASE_DAMAGE + MELEE_CHARGE_DAMAGE × charge`
-  (2–6), knocks the core clear of the node, and grants a short invulnerability window
-  (`MELEE_INVULN`, 0.7s). A release below `CHARGE_MIN_TO_DASH` (15%) is a cancel, and after a
-  lunge ends there's a `CHARGE_COOLDOWN` (0.45s) pause before the next charge.
+  (2–6), throws the core back off the node (`MELEE_KNOCKBACK_SPEED` /
+  `MELEE_KNOCKBACK_TIME`), and grants a short invulnerability window (`MELEE_INVULN`, 0.7s).
+  A release below `CHARGE_MIN_TO_DASH` (15%) is a cancel, and after a lunge ends there's a
+  `CHARGE_COOLDOWN` (0.45s) pause before the next charge.
 - The node still fires its `slow_spiral` pattern, so the loop is dodge → charge → slam.
 
 Tuning lives in `apps/web/src/lib/pixi/constants.ts` (`CHARGE_*`, `DASH_*`, `MELEE_*`); the

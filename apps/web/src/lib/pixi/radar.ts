@@ -34,6 +34,8 @@ import {
   MELEE_CHARGE_DAMAGE,
   MELEE_INVULN,
   CHARGE_COOLDOWN,
+  MELEE_KNOCKBACK_SPEED,
+  MELEE_KNOCKBACK_TIME,
   HOST_DECAY_TIME,
   HOST_SHARD_COUNT,
   HOST_SHARD_LIFE,
@@ -105,6 +107,10 @@ interface PlayerData {
   dashPower: number;
   /** Pause before the next charge can begin. */
   chargeCooldown: number;
+  /** Slam recoil: imparted velocity away from the host, and how long it lasts. */
+  knockbackVx: number;
+  knockbackVy: number;
+  knockbackTimer: number;
 }
 
 const POOL_SIZE = 300;
@@ -405,6 +411,9 @@ export function createRadar(
     dashAngle: -Math.PI / 2,
     dashPower: 0,
     chargeCooldown: 0,
+    knockbackVx: 0,
+    knockbackVy: 0,
+    knockbackTimer: 0,
   };
 
   function hostTotals() {
@@ -880,6 +889,13 @@ export function createRadar(
       player.facingAngle = Math.atan2(dy, dx);
     }
 
+    // Slam recoil: a short shove away from the host, independent of input.
+    if (player.knockbackTimer > 0) {
+      player.x += player.knockbackVx * dt;
+      player.y += player.knockbackVy * dt;
+      player.knockbackTimer = Math.max(0, player.knockbackTimer - dt);
+    }
+
     player.x = Math.max(10, Math.min(size - 10, player.x));
     player.y = Math.max(10, Math.min(size - 10, player.y));
 
@@ -905,13 +921,19 @@ export function createRadar(
             if (node.hp <= 0) killNode(node);
             player.dashTimer = 0;
             player.invincibleTimer = MELEE_INVULN;
-            // Bounce clear of the node so the slam reads as a recoil, not a pass-through.
+            // Opposite reaction: shove the core clear of the node, then let a short
+            // knockback carry it further so the slam lands with weight.
             const nx = player.x - node.x;
             const ny = player.y - node.y;
-            const len = Math.sqrt(nx * nx + ny * ny) || 1;
+            const len = Math.sqrt(nx * nx + ny * ny);
+            const dirX = len > 0.001 ? nx / len : -Math.cos(player.dashAngle);
+            const dirY = len > 0.001 ? ny / len : -Math.sin(player.dashAngle);
             const push = node.radius + playerRadius + 4;
-            player.x = Math.max(10, Math.min(size - 10, node.x + (nx / len) * push));
-            player.y = Math.max(10, Math.min(size - 10, node.y + (ny / len) * push));
+            player.x = Math.max(10, Math.min(size - 10, node.x + dirX * push));
+            player.y = Math.max(10, Math.min(size - 10, node.y + dirY * push));
+            player.knockbackVx = dirX * MELEE_KNOCKBACK_SPEED;
+            player.knockbackVy = dirY * MELEE_KNOCKBACK_SPEED;
+            player.knockbackTimer = MELEE_KNOCKBACK_TIME;
             break;
           }
         }

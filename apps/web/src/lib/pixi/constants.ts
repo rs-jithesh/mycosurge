@@ -56,6 +56,9 @@ export const MELEE_CHARGE_DAMAGE = 4;
 export const MELEE_INVULN = 0.7;
 /** Pause after a dash ends before the next charge can begin. */
 export const CHARGE_COOLDOWN = 0.45;
+/** Slam recoil: speed the core is thrown back at, and how long the shove lasts. */
+export const MELEE_KNOCKBACK_SPEED = 380;
+export const MELEE_KNOCKBACK_TIME = 0.17;
 
 // ── Victory send-off ──
 /** Seconds the host visibly breaks apart before the victory result is shown. */
