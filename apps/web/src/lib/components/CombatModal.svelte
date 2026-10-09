@@ -840,4 +840,57 @@
   .trauma-msg {
     color: var(--alert);
   }
+
+  /* Mobile: take over the whole screen for a much bigger arena and thumb-sized controls. */
+  @media (max-width: 767px), (orientation: portrait) {
+    .modal-overlay {
+      padding: 0;
+    }
+
+    .modal-frame {
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      max-height: 100vh;
+      max-height: 100dvh;
+      border: none;
+      border-radius: 0;
+    }
+
+    .modal-header {
+      flex: none;
+    }
+
+    .combat-layout {
+      flex: 1;
+      min-height: 0;
+      gap: 10px;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    /* Trim the objective block so the arena gets more of the screen. */
+    .objective {
+      padding: 9px 12px;
+    }
+
+    .objective-title {
+      font-size: 16px;
+      margin: 2px 0;
+    }
+
+    .objective-sub {
+      font-size: 12px;
+    }
+
+    /* Fill the width; never so tall that the HUD chrome (~330px) overflows. */
+    .arena-holder {
+      width: min(100%, max(220px, calc(100dvh - 330px)));
+    }
+
+    .result-view {
+      flex: 1;
+      justify-content: center;
+    }
+  }
 </style>
