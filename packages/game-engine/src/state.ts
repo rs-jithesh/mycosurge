@@ -122,7 +122,6 @@ export interface GameState {
   waterCap: number;
   nutrients: number;
   nutrientsCap: number;
-  manualCooldown: number;
   mycelialNetwork: number;
   /**
    * First-session sector growth, in steps per sector (length `REACH_SECTORS`). Empty until
@@ -207,7 +206,6 @@ export function createInitialState(): GameState {
     waterCap: MAX_WATER_BASE,
     nutrients: 0,
     nutrientsCap: MAX_NUTRIENT_BASE,
-    manualCooldown: 0,
     mycelialNetwork: 0,
     tutorialSectors: [],
     tutorialGeneratorTier: 0,

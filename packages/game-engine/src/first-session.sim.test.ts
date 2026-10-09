@@ -8,8 +8,6 @@ import {
   growTutorialSector,
   isTutorialSignalReached,
   signalSectorFor,
-  tutorialTick,
-  TUTORIAL_ABSORB_COOLDOWN,
   TUTORIAL_RESERVE_CAP,
   TUTORIAL_SIGNAL_STEPS,
 } from './tutorial';
@@ -37,13 +35,14 @@ describe('first-session pace (goal first, generator-driven)', () => {
     const state = fresh();
     const sector = signalSectorFor(state);
     let refills = 0;
+    let taps = 0;
     let guard = 0;
 
     while (!isTutorialSignalReached(state) && guard++ < 5000) {
       if (!canGrowTutorial(state)) {
         while (state.water < TUTORIAL_RESERVE_CAP || state.nutrients < TUTORIAL_RESERVE_CAP) {
-          tutorialTick(state, TUTORIAL_ABSORB_COOLDOWN);
           absorbResources(state);
+          taps++;
         }
         refills++;
       } else {
@@ -53,8 +52,10 @@ describe('first-session pace (goal first, generator-driven)', () => {
 
     expect(isTutorialSignalReached(state)).toBe(true);
     expect(getTutorialSectorDepths(state)[sector]).toBe(TUTORIAL_SIGNAL_STEPS);
-    // Deliberately slow: tapping alone needs several full-pool cycles, which is the
-    // pressure that makes generators (and their upgrades) worth building.
+    // With the cooldown gone, the only pressure left is tap count: hand-gathering the whole
+    // reach should still take a substantial number of taps across several full-pool refills,
+    // which is what keeps the generators (and their upgrades) worth building.
     expect(refills).toBeGreaterThanOrEqual(3);
+    expect(taps).toBeGreaterThanOrEqual(50);
   });
 });

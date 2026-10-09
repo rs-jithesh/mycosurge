@@ -24,10 +24,13 @@ export const TUTORIAL_SIGNAL_STEPS = 20;
 export const TUTORIAL_START_WATER = 24;
 export const TUTORIAL_START_NUTRIENTS = 24;
 export const TUTORIAL_RESERVE_CAP = 60;
-/** What one Absorb grants, and the pause before it can be used again. Generators beat it. */
-export const TUTORIAL_ABSORB_WATER = 6;
-export const TUTORIAL_ABSORB_NUTRIENTS = 6;
-export const TUTORIAL_ABSORB_COOLDOWN = 1.2;
+/**
+ * What one Absorb grants. Neither the tutorial nor the full game has an Absorb cooldown, so
+ * the only friction is the number of taps — a deliberately small grant keeps hand-gathering a
+ * chore that the generators relieve.
+ */
+export const TUTORIAL_ABSORB_WATER = 3;
+export const TUTORIAL_ABSORB_NUTRIENTS = 3;
 /** Cost of one sector grow. */
 export const TUTORIAL_SECTOR_WATER_COST = 12;
 export const TUTORIAL_SECTOR_NUTRIENT_COST = 10;
@@ -136,17 +139,14 @@ export function grantTutorialStart(state: GameState): void {
   state.tutorialSectors = [];
 }
 
-/** Returns the flavour line, or `null` while still on cooldown (so the tap does nothing). */
-export function absorbResources(state: GameState): string | null {
-  if (state.manualCooldown > 0) return null;
-
+/** Grants the opening store on every tap — the tutorial has no Absorb cooldown. */
+export function absorbResources(state: GameState): string {
   state.water = fillPool(state.water, getTutorialReserveCap(state, 'water'), TUTORIAL_ABSORB_WATER);
   state.nutrients = fillPool(
     state.nutrients,
     getTutorialReserveCap(state, 'nutrients'),
     TUTORIAL_ABSORB_NUTRIENTS,
   );
-  state.manualCooldown = TUTORIAL_ABSORB_COOLDOWN;
 
   let message: string;
   if (_absorbCount < AWAKENING_MESSAGES.length) {
@@ -246,9 +246,10 @@ export function purchaseTutorialUpgrade(
   state.nutrients -= cost.nutrients;
   state.tutorialUpgrades[upgrade] = true;
 
+  const rate = tutorialGeneratorRate(state);
   const messages: Record<string, string> = {
-    osmoticPump: 'Osmotic Pump installed — +3 Water per second.',
-    enzymaticExudates: 'Enzymatic Exudates installed — +3 Nutrients per second.',
+    osmoticPump: `Osmotic Pump installed — +${rate} Water per second.`,
+    enzymaticExudates: `Enzymatic Exudates installed — +${rate} Nutrients per second.`,
   };
   return { success: true, message: messages[upgrade] };
 }
@@ -276,10 +277,6 @@ export function applyTutorialDefeat(state: GameState): string[] {
 }
 
 export function tutorialTick(state: GameState, deltaSec: number): void {
-  if (state.manualCooldown > 0) {
-    state.manualCooldown = Math.max(0, state.manualCooldown - deltaSec);
-  }
-
   if (state.gamePhase !== 'active') {
     const shockMul = getTutorialShockMultiplier(state);
     const rate = tutorialGeneratorRate(state);
@@ -317,6 +314,5 @@ export function completeTutorial(state: GameState): void {
   state.gamePhase = 'active';
   // Reach continues into the full game from the tutorial's 5 mm (even when skipped).
   state.mycelialNetwork = Math.max(state.mycelialNetwork, REACH_START);
-  state.manualCooldown = 0;
   _absorbCount = 0;
 }

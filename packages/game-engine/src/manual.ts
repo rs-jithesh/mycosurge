@@ -1,6 +1,5 @@
 import {
   MANUAL_ABSORB_AMOUNT,
-  MANUAL_ABSORB_COOLDOWN,
   MANUAL_SYNTH_WATER_COST,
   MANUAL_SYNTH_NUTRIENT_COST,
   NUTRIENT_YIELD_THRESHOLD,
@@ -68,25 +67,12 @@ export function getManualYieldBonus(state: GameState): number {
   return (def?.yieldPerLevel ?? 0) * getManualUpgradeLevel(state, 'assimilation_yield');
 }
 
-export function canManualAbsorb(state: GameState): boolean {
-  return state.manualCooldown <= 0;
-}
-
-/** Active-play floor: a Water/Nutrient top-up on a cooldown, deepened by upgrades. */
+/** Active-play floor: a Water/Nutrient top-up, deepened by upgrades. No cooldown. */
 export function manualAbsorb(state: GameState): boolean {
-  if (state.manualCooldown > 0) return false;
-
   const amount = getManualAbsorbAmount(state);
   state.water = Math.min(state.waterCap, state.water + amount);
   state.nutrients = Math.min(state.nutrientsCap, state.nutrients + amount);
-  state.manualCooldown = MANUAL_ABSORB_COOLDOWN;
   return true;
-}
-
-export function tickManualCooldown(state: GameState, deltaSec: number): void {
-  if (state.manualCooldown > 0) {
-    state.manualCooldown = Math.max(0, state.manualCooldown - deltaSec);
-  }
 }
 
 export function canManualSynthesize(state: GameState): boolean {

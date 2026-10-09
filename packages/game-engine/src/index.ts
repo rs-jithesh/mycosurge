@@ -89,9 +89,7 @@ export {
 } from './expeditions';
 export { tickGenerators, purchaseGenerator, isGeneratorUnlocked } from './generators';
 export {
-  canManualAbsorb,
   manualAbsorb,
-  tickManualCooldown,
   canManualSynthesize,
   getSynthesisYield,
   manualSynthesize,
@@ -223,7 +221,6 @@ export {
   TUTORIAL_RESERVE_CAP,
   TUTORIAL_ABSORB_WATER,
   TUTORIAL_ABSORB_NUTRIENTS,
-  TUTORIAL_ABSORB_COOLDOWN,
   TUTORIAL_SECTOR_WATER_COST,
   TUTORIAL_SECTOR_NUTRIENT_COST,
   TUTORIAL_GENERATOR_WATER_COST,

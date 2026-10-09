@@ -65,7 +65,6 @@ import {
   manualAbsorb as engineManualAbsorb,
   manualSynthesize as engineManualSynthesize,
   getSynthesisYield,
-  tickManualCooldown,
   getManualAbsorbAmount,
   getManualUpgradeLevel,
   getManualUpgradeCost as engineManualUpgradeCost,
@@ -347,7 +346,6 @@ function createGameStore() {
         assignNetworkSeed(state);
         tickIdle(state, 1);
         tickExpeditions(state, 1);
-        tickManualCooldown(state, 1);
         const spawned = engineTickRadar(state, 1);
         if (spawned) {
           logStore.info('A tremor in the substrate — a signal drifts in. Scan to identify.');
@@ -707,8 +705,7 @@ function createGameStore() {
   // ── Tutorial Methods ──
 
   function absorbResources() {
-    const message = engineAbsorb(state);
-    if (message) logStore.info(message);
+    logStore.info(engineAbsorb(state));
     saveState();
   }
 
@@ -761,6 +758,17 @@ function createGameStore() {
     persistReveals();
     saveState();
     logStore.info('The intro is skipped; the network wakes fully grown.');
+  }
+
+  /**
+   * Dev tool: skip the tutorial grind and drop straight into the first fight. Parks the
+   * tutorial at its threat handoff so the encounter still runs as the tutorial fight
+   * (charge-slam melee, tutorial reward/penalty paths).
+   */
+  function skipToTutorialFight() {
+    if (state.gamePhase === 'active') return;
+    state.gamePhase = 'tactician';
+    saveState();
   }
 
   return {
@@ -1004,6 +1012,7 @@ function createGameStore() {
     upgradeTutorialGenerators,
     growTutorialSector,
     skipIntro,
+    skipToTutorialFight,
   };
 }
 

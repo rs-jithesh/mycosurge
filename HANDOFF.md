@@ -83,7 +83,7 @@ Key fields: `gamePhase`, `water`/`waterCap`, `nutrients`/`nutrientsCap`, `biomas
 longer read), `skillAllocations{}`, `hostAssimilation{}`, `assimilationPercent`, `alertLevel`,
 `isInTrauma`,
 `traumaTimer`, `combatStats{}`, `contacts[]`, `expeditions[]`, `acquiredEchoes[]`,
-`hostsDefeated`, `totalBiomassEarned`, `manualCooldown`, `tutorialUpgrades{}`.
+`hostsDefeated`, `totalBiomassEarned`, `tutorialUpgrades{}`.
 
 `gamePhase`: `awakening → manager → explorer → tactician → active`. The full game (sidebar,
 Evolution, Expeditions, the Growth Cycle) is gated on `gamePhase === 'active'`.
@@ -119,7 +119,7 @@ Gather panel.
 
 ### Field actions (manual)
 
-- **Absorb** — `+2 Water, +2 Nutrients`, 5s cooldown, clamped to caps.
+- **Absorb** — `+2 Water, +2 Nutrients`, no cooldown, clamped to caps.
 - **Synthesize Biomass** — `10 Water + 10 Nutrients → 1 Biomass` at healthy reserves, `0.5`
   when strained (<40% either), `0` near starvation (<5%). Resources are consumed either way.
 
@@ -387,7 +387,7 @@ app's Reset button clears all three).
 `LYSATE_STABILIZE_NUTRIENT_COST 2` · `SONAR_INTERVAL 20` · `SONAR_JITTER 0.3` ·
 `SONAR_INITIAL_DELAY 5` · `CONTACT_LINGER 120` · `SCAN_WATER_COST 5` ·
 `BASE_CONTACT_SLOTS 2` · `MAX_CONTACT_SLOTS 3` · `HOST_ASSIMILATION_TARGET 100` ·
-`MANUAL_ABSORB_AMOUNT 2` · `MANUAL_ABSORB_COOLDOWN 5` · `MANUAL_SYNTH_WATER_COST 10` ·
+`MANUAL_ABSORB_AMOUNT 2` · `MANUAL_SYNTH_WATER_COST 10` ·
 `MANUAL_SYNTH_NUTRIENT_COST 10` · `LYSATE_CAP_EXPAND_COST_BASE 10` ·
 `LYSATE_CAP_EXPAND_AMOUNT 10` · `LYSATE_CAP_COST_SCALE 1.5` · `COMBAT_BIOMASS_BASE 25` ·
 `COMBAT_BIOMASS_PER_DIFFICULTY 15` · `TRAUM_BASE_DURATION 30` · `EXPEDITION_BASE_TIME 300` ·

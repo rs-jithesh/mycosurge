@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fade, fly } from 'svelte/transition';
+  import { fly } from 'svelte/transition';
   import {
     getNextHookObjective,
     getTutorialReserveCap,
@@ -12,7 +12,6 @@
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { devStore } from '$lib/stores/dev.svelte';
-  import ObjectiveBanner from './ObjectiveBanner.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import SectorBoard from './SectorBoard.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
@@ -36,7 +35,6 @@
   let hasPump = $derived(s.tutorialUpgrades.osmoticPump);
   let hasExudates = $derived(s.tutorialUpgrades.enzymaticExudates);
   let shock = $derived(s.tutorialShockTimer);
-  let absorbReady = $derived(s.manualCooldown <= 0);
 
   // The economy is hidden until the player first can't afford to grow — then it is the answer.
   let economyRevealed = $state(false);
@@ -97,6 +95,12 @@
     gameStore.skipIntro();
     uiStore.closeAll();
   }
+
+  /** Dev tool: skip the gather/automate grind and jump straight into the nematode fight. */
+  function skipToFight() {
+    gameStore.skipToTutorialFight();
+    engageHost();
+  }
 </script>
 
 <div class="tutorial-frame">
@@ -106,62 +110,54 @@
       <span class="brand-sub text-label-caps">{ONBOARDING_COPY.brandSub}</span>
     </div>
     {#if devStore.enabled}
-      <button class="skip-btn text-label-caps" onclick={skipIntro}>Skip intro</button>
+      <div class="dev-actions">
+        <button class="skip-btn text-label-caps" onclick={skipToFight}>Skip to fight</button>
+        <button class="skip-btn text-label-caps" onclick={skipIntro}>Skip intro</button>
+      </div>
     {/if}
   </header>
 
-  <div class="res-grid">
-    <ProgressBar
-      tone="cyan"
-      label={resourceLabel('water', 'first')}
-      labelCaps={false}
-      value={s.water}
-      max={waterMax}
-      animate
-      format={(n) => `${Math.floor(n)}/${Math.floor(waterMax)}`}
-    />
-    <ProgressBar
-      tone="violet"
-      label={resourceLabel('nutrients', 'first')}
-      labelCaps={false}
-      value={s.nutrients}
-      max={nutrientMax}
-      animate
-      format={(n) => `${Math.floor(n)}/${Math.floor(nutrientMax)}`}
-    />
-  </div>
-
-  {#if shock > 0}
-    <div class="shock text-label-caps">⚠ {ONBOARDING_COPY.shock(Math.ceil(shock))}</div>
-  {/if}
-
   <div class="tut-grid">
-    <!-- Left: the instructions, then the controls that fade in when they're needed. -->
-    <div class="col-intro">
-      <div class="intro-stage">
-        <!-- An invisible copy sizes the stage from the real banner, so the fading
-             layers overlay it without clipping on narrow screens. -->
-        <div class="intro-sizer" aria-hidden="true">
-          <ObjectiveBanner
-            tag={objective.tag}
-            title={objective.title}
-            description={objective.description}
-            hint={objective.hint}
-            tone={objective.tone}
-          />
-        </div>
-        {#key objective.title}
-          <div class="intro-layer" transition:fade={{ duration: 450 }}>
-            <ObjectiveBanner
-              tag={objective.tag}
-              title={objective.title}
-              description={objective.description}
-              hint={objective.hint}
-              tone={objective.tone}
-            />
-          </div>
-        {/key}
-      </div>
+    <div class="res-grid">
+      <ProgressBar
+        tone="cyan"
+        label={resourceLabel('water', 'first')}
+        labelCaps={false}
+        value={s.water}
+        max={waterMax}
+        animate
+        format={(n) => `${Math.floor(n)}/${Math.floor(waterMax)}`}
+      />
+      <ProgressBar
+        tone="violet"
+        label={resourceLabel('nutrients', 'first')}
+        labelCaps={false}
+        value={s.nutrients}
+        max={nutrientMax}
+        animate
+        format={(n) => `${Math.floor(n)}/${Math.floor(nutrientMax)}`}
+      />
+    </div>
+
+    {#if shock > 0}
+      <div class="shock text-label-caps">⚠ {ONBOARDING_COPY.shock(Math.ceil(shock))}</div>
+    {/if}
+
+    <!-- The map leads on mobile; on desktop it sits on the left. -->
+    <div class="col-map">
+      <section class="panel board-panel">
+        <SectorBoard
+          depths={depthsMm}
+          seed={gameStore.networkSeed}
+          stageIndex={1}
+          {signalSector}
+          signalMm={BAND_MM}
+          growStepMm={STEP_MM}
+          interactive={!signalReached && canGrow}
+          onGrow={growSector}
+          label="Your network"
+        />
+      </section>
     </div>
 
     <div class="col-controls">
@@ -180,18 +176,9 @@
           <div class="panel-body economy">
             <div class="group">
               <span class="group-label text-label-caps">Keep growing — gather</span>
-              <button
-                class="action-btn"
-                class:current={objective.id === 'gather'}
-                disabled={!absorbReady}
-                onclick={absorb}
-              >
+              <button class="action-btn" class:current={objective.id === 'gather'} onclick={absorb}>
                 <span class="action-verb">Absorb</span>
-                <span class="action-sub">
-                  {absorbReady
-                    ? ONBOARDING_COPY.absorb.effect
-                    : `Recovering — ${Math.ceil(s.manualCooldown)}s`}
-                </span>
+                <span class="action-sub">{ONBOARDING_COPY.absorb.effect}</span>
               </button>
             </div>
 
@@ -239,23 +226,6 @@
         </section>
       {/if}
     </div>
-
-    <!-- Right: the map. -->
-    <div class="col-map">
-      <section class="panel board-panel">
-        <SectorBoard
-          depths={depthsMm}
-          seed={gameStore.networkSeed}
-          stageIndex={1}
-          {signalSector}
-          signalMm={BAND_MM}
-          growStepMm={STEP_MM}
-          interactive={!signalReached && canGrow}
-          onGrow={growSector}
-          label="Your network"
-        />
-      </section>
-    </div>
   </div>
 </div>
 
@@ -290,6 +260,11 @@
     color: var(--on-surface-variant);
   }
 
+  .dev-actions {
+    display: flex;
+    gap: 6px;
+  }
+
   .skip-btn {
     font: inherit;
     color: var(--on-surface-variant);
@@ -320,35 +295,19 @@
     text-align: center;
   }
 
-  /* Mobile: one column — instructions, map, controls. */
+  /* Mobile: one column — resources, then the map, then the controls. */
   .tut-grid {
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
 
-  .col-intro,
   .col-controls,
   .col-map {
     display: flex;
     flex-direction: column;
     gap: 12px;
     min-width: 0;
-  }
-
-  /* The banner layers overlay so they cross-fade in place — no layout jump. */
-  .intro-stage {
-    position: relative;
-  }
-
-  .intro-sizer {
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  .intro-layer {
-    position: absolute;
-    inset: 0;
   }
 
   .panel {
@@ -429,7 +388,7 @@
       var(--shadow-sm);
   }
 
-  /* Unavailable (e.g. Absorb on cooldown): strictly greyed out. */
+  /* Unavailable (e.g. an unaffordable generator): strictly greyed out. */
   .action-btn:disabled {
     background: var(--surface-container);
     border-color: var(--border);
@@ -585,7 +544,7 @@
     margin-top: 4px;
   }
 
-  /* Desktop: instructions + controls on the left, the map on the right. */
+  /* Desktop: the map on the left, resources + controls stacked on the right. */
   @media (min-width: 768px) and (orientation: landscape) {
     .tutorial-frame {
       max-width: 1040px;
@@ -593,24 +552,29 @@
 
     .tut-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
       grid-template-areas:
-        'intro map'
-        'controls map';
+        'map resources'
+        'map shock'
+        'map controls';
       gap: 16px;
       align-items: start;
     }
 
-    .col-intro {
-      grid-area: intro;
+    .res-grid {
+      grid-area: resources;
     }
 
-    .col-controls {
-      grid-area: controls;
+    .shock {
+      grid-area: shock;
     }
 
     .col-map {
       grid-area: map;
+    }
+
+    .col-controls {
+      grid-area: controls;
     }
   }
 </style>

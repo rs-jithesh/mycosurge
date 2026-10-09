@@ -11,9 +11,7 @@ import {
   purchaseTutorialUpgrade,
   signalSectorFor,
   tutorialGeneratorRate,
-  tutorialTick,
   upgradeTutorialGenerators,
-  TUTORIAL_ABSORB_COOLDOWN,
   TUTORIAL_ABSORB_NUTRIENTS,
   TUTORIAL_ABSORB_WATER,
   TUTORIAL_GENERATOR2_NUTRIENT_COST,
@@ -48,17 +46,18 @@ describe('grantTutorialStart', () => {
 });
 
 describe('absorbResources', () => {
-  it('grants Water and Nutrients once, then waits out the cooldown', () => {
+  it('grants Water and Nutrients on every tap (no tutorial cooldown)', () => {
     const state = createInitialState();
     state.water = 0;
     state.nutrients = 0;
-    expect(absorbResources(state)).not.toBeNull();
+    expect(absorbResources(state)).toBeTruthy();
     expect(state.water).toBe(TUTORIAL_ABSORB_WATER);
     expect(state.nutrients).toBe(TUTORIAL_ABSORB_NUTRIENTS);
-    expect(absorbResources(state)).toBeNull();
 
-    tutorialTick(state, TUTORIAL_ABSORB_COOLDOWN);
-    expect(absorbResources(state)).not.toBeNull();
+    // The very next tap lands immediately — nothing gates the tutorial Absorb.
+    expect(absorbResources(state)).toBeTruthy();
+    expect(state.water).toBe(TUTORIAL_ABSORB_WATER * 2);
+    expect(state.nutrients).toBe(TUTORIAL_ABSORB_NUTRIENTS * 2);
   });
 
   it('clamps to the tutorial cap', () => {
@@ -66,7 +65,6 @@ describe('absorbResources', () => {
     state.water = 0;
     state.nutrients = 0;
     for (let i = 0; i < 40; i++) {
-      tutorialTick(state, TUTORIAL_ABSORB_COOLDOWN);
       absorbResources(state);
     }
     expect(state.water).toBe(TUTORIAL_RESERVE_CAP);

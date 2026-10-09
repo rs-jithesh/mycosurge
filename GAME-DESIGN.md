@@ -65,8 +65,8 @@ starve. The Core's Gather panel shows the net rate (`produced · upkeep · net`)
 
 The Core keeps two manual actions so active play has a floor:
 
-- **Absorb** — `+2 Water, +2 Nutrients` (clamped to caps) on a short ~1.2s cooldown, matching
-  the tutorial's gather cadence. **Absorption Depth** deepens it.
+- **Absorb** — `+2 Water, +2 Nutrients` (clamped to caps), with no cooldown. The tutorial's
+  Absorb grants `+3 Water / +3 Nutrients`. **Absorption Depth** deepens it.
 - **Synthesize Biomass** — convert `10 Water + 10 Nutrients` into Biomass. The yield
   depends on the reserves left behind: **1 Biomass** at healthy levels, **0.5** when
   strained (below 40% either resource), and **0** near starvation (below 5%). The

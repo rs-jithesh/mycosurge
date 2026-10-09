@@ -15,8 +15,6 @@
 
   let gs = $derived(gameStore.state);
 
-  let manualCooldown = $derived(gs.manualCooldown);
-  let canAbsorb = $derived(manualCooldown <= 0);
   let canSynthesize = $derived(gs.water >= 10 && gs.nutrients >= 10);
   let synthYield = $derived(gameStore.synthesisYield());
 
@@ -37,17 +35,12 @@
 </script>
 
 {#if phase === 'gather'}
-  <button
-    class="cmd-btn action-btn"
-    class:hero
-    disabled={!canAbsorb}
-    onclick={() => gameStore.manualAbsorb()}
-  >
+  <button class="cmd-btn action-btn" class:hero onclick={() => gameStore.manualAbsorb()}>
     <span class="action-verb">Absorb</span>
     <span class="action-sub">
-      {canAbsorb
-        ? `+${gameStore.manualAbsorbAmount} ${resourceLabel('water')} · +${gameStore.manualAbsorbAmount} ${resourceLabel('nutrients')}`
-        : `Ready in ${Math.ceil(manualCooldown)}s`}
+      +{gameStore.manualAbsorbAmount}
+      {resourceLabel('water')} · +{gameStore.manualAbsorbAmount}
+      {resourceLabel('nutrients')}
     </span>
   </button>
 {:else if phase === 'grow'}
