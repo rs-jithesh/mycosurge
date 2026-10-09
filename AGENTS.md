@@ -42,7 +42,7 @@ mycosurge/
 │       └── routes/          # / (Core) only — systems open as overlays, not routes
 ├── packages/
 │   ├── config/              # Constants, hosts, generators, upgrades, skill trees (pure TS)
-│   ├── game-engine/         # Combat, expeditions, math, skills (pure TS, depends on config)
+│   ├── game-engine/         # Combat, math, skills, tutorial (pure TS, depends on config)
 │   └── design-system/       # CSS tokens + @theme block (CSS only, no build step)
 ```
 
@@ -86,7 +86,7 @@ mycosurge/
 ## Testing
 
 - Vitest with glob patterns: `src/**/*.{test,spec}.{js,ts}`.
-- `packages/game-engine` covers math, skills, expeditions, and tutorial logic.
+- `packages/game-engine` covers math, skills, radar, and tutorial logic.
 - `apps/web` covers onboarding content; components are exercised via `svelte-check` and the dev
   server.
 
@@ -96,7 +96,4 @@ mycosurge/
 - `GAME-DESIGN.md` — game design and systems.
 - `COMBAT.md` — arena/bullet-hell specification.
 - `DEV-NOTES.md` — dev/QA notes and known debt.
-- `UI-REVAMP-PLAN.md` — the UI revamp plan and status.
-- `RADAR-ECONOMY-PLAN.md` — sonar/tier-unlock + economy rework (radar contacts, strains).
 - `ASSET-PLAN.md` — 2D asset priority plan + Google AI Studio workflow (`PROMPTS.md`).
-- `GROWTH-CYCLE-LAYOUT-PLAN.md` — scheduled Core layout revamp (growth-cycle wheel).

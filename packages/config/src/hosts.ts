@@ -3,22 +3,6 @@ import { HOST_STAGE_REACH } from './stages';
 export type Mobility = 'static' | 'drift' | 'orbit' | 'chase';
 
 /**
- * Behaviour traits a host can carry. These are the roster's "one new idea per host"
- * vocabulary; a boss combines traits the player has already learned. Only a few are
- * wired into combat today — the rest are recorded here so content can be authored
- * ahead of the engine hooks.
- */
-export type HostTrait =
-  | 'armored'
-  | 'splits'
-  | 'revives'
-  | 'leech'
-  | 'summoner'
-  | 'dasher'
-  | 'shielded'
-  | 'clones';
-
-/**
  * Optional per-host AI overrides. The game engine derives sensible defaults
  * from `difficulty`; a host only needs this block to deviate from them.
  */
@@ -41,7 +25,6 @@ export interface HostDef {
   isBoss?: boolean;
   biomassReward: number;
   attackPatterns: string[];
-  traits?: HostTrait[];
   ai?: HostAiDef;
 }
 
@@ -64,7 +47,6 @@ export const HOSTS: HostDef[] = [
     stage: 1,
     biomassReward: 20,
     attackPatterns: ['scatter'],
-    traits: ['splits'],
   },
   {
     id: 'ciliate',
@@ -74,7 +56,6 @@ export const HOSTS: HostDef[] = [
     stage: 1,
     biomassReward: 30,
     attackPatterns: ['homing'],
-    traits: ['dasher'],
   },
   {
     id: 'vampire_amoeba',
@@ -84,7 +65,6 @@ export const HOSTS: HostDef[] = [
     stage: 1,
     biomassReward: 35,
     attackPatterns: ['wave'],
-    traits: ['leech'],
   },
   {
     id: 'rotifer',
@@ -104,7 +84,6 @@ export const HOSTS: HostDef[] = [
     isBoss: true,
     biomassReward: 80,
     attackPatterns: ['wave', 'summon'],
-    traits: ['summoner'],
   },
   {
     id: 'soil_nematode',
@@ -126,7 +105,6 @@ export const HOSTS: HostDef[] = [
     stage: 2,
     biomassReward: 45,
     attackPatterns: ['burst'],
-    traits: ['armored'],
   },
   {
     id: 'springtail',
@@ -136,7 +114,6 @@ export const HOSTS: HostDef[] = [
     stage: 2,
     biomassReward: 50,
     attackPatterns: ['erratic_swarm'],
-    traits: ['dasher'],
   },
   {
     id: 'tardigrade',
@@ -146,7 +123,6 @@ export const HOSTS: HostDef[] = [
     stage: 2,
     biomassReward: 60,
     attackPatterns: ['slow_spiral', 'burst'],
-    traits: ['revives'],
   },
   {
     id: 'gnat_larva',
@@ -156,7 +132,6 @@ export const HOSTS: HostDef[] = [
     stage: 2,
     biomassReward: 70,
     attackPatterns: ['wave'],
-    traits: ['leech'],
   },
   {
     id: 'aphid',
@@ -166,7 +141,6 @@ export const HOSTS: HostDef[] = [
     stage: 2,
     biomassReward: 75,
     attackPatterns: ['scatter', 'homing'],
-    traits: ['clones'],
   },
   {
     id: 'pseudoscorpion',
@@ -176,7 +150,6 @@ export const HOSTS: HostDef[] = [
     stage: 2,
     biomassReward: 90,
     attackPatterns: ['burst'],
-    traits: ['dasher'],
   },
   {
     id: 'mite_colony',
@@ -187,7 +160,6 @@ export const HOSTS: HostDef[] = [
     isBoss: true,
     biomassReward: 160,
     attackPatterns: ['multi_phase', 'summon'],
-    traits: ['armored', 'summoner'],
   },
 
   // ── Stage 3: Insects (5–20 cm) ──
@@ -199,7 +171,6 @@ export const HOSTS: HostDef[] = [
     stage: 3,
     biomassReward: 100,
     attackPatterns: ['slow_spiral', 'wave'],
-    traits: ['summoner'],
   },
   {
     id: 'termite_soldier',
@@ -209,7 +180,6 @@ export const HOSTS: HostDef[] = [
     stage: 3,
     biomassReward: 120,
     attackPatterns: ['burst'],
-    traits: ['armored'],
   },
   {
     id: 'ant_worker',
@@ -219,7 +189,6 @@ export const HOSTS: HostDef[] = [
     stage: 3,
     biomassReward: 130,
     attackPatterns: ['homing', 'scatter'],
-    traits: ['summoner'],
   },
   {
     id: 'carpenter_ant',
@@ -238,7 +207,6 @@ export const HOSTS: HostDef[] = [
     stage: 3,
     biomassReward: 160,
     attackPatterns: ['burst', 'wave'],
-    traits: ['shielded'],
   },
   {
     id: 'beetle_grub',
@@ -258,7 +226,6 @@ export const HOSTS: HostDef[] = [
     isBoss: true,
     biomassReward: 300,
     attackPatterns: ['multi_phase', 'summon', 'geometric_lasers'],
-    traits: ['summoner', 'armored'],
   },
 
   // ── Stage 4: Larger arthropods (20–60 cm) ──
@@ -270,7 +237,6 @@ export const HOSTS: HostDef[] = [
     stage: 4,
     biomassReward: 200,
     attackPatterns: ['erratic_swarm'],
-    traits: ['dasher'],
   },
   {
     id: 'caterpillar',
@@ -289,7 +255,6 @@ export const HOSTS: HostDef[] = [
     stage: 4,
     biomassReward: 260,
     attackPatterns: ['pattern_combo', 'wave'],
-    traits: ['shielded'],
   },
   {
     id: 'cicada_nymph',
@@ -299,7 +264,6 @@ export const HOSTS: HostDef[] = [
     stage: 4,
     biomassReward: 280,
     attackPatterns: ['multi_phase', 'summon'],
-    traits: ['summoner'],
   },
   {
     id: 'snail',
@@ -309,7 +273,6 @@ export const HOSTS: HostDef[] = [
     stage: 4,
     biomassReward: 300,
     attackPatterns: ['slow_spiral', 'burst'],
-    traits: ['armored'],
   },
   {
     id: 'centipede',
@@ -319,7 +282,6 @@ export const HOSTS: HostDef[] = [
     stage: 4,
     biomassReward: 340,
     attackPatterns: ['erratic_swarm', 'homing'],
-    traits: ['dasher'],
   },
   {
     id: 'tarantula',
@@ -330,7 +292,6 @@ export const HOSTS: HostDef[] = [
     isBoss: true,
     biomassReward: 500,
     attackPatterns: ['pattern_combo', 'geometric_lasers', 'summon'],
-    traits: ['summoner', 'dasher'],
   },
 
   // ── Stage 5: Small vertebrates (60 cm–1 m) ──
@@ -360,7 +321,6 @@ export const HOSTS: HostDef[] = [
     stage: 5,
     biomassReward: 360,
     attackPatterns: ['homing', 'erratic_swarm'],
-    traits: ['dasher'],
   },
   {
     id: 'shrew',
@@ -379,7 +339,6 @@ export const HOSTS: HostDef[] = [
     stage: 5,
     biomassReward: 420,
     attackPatterns: ['wave', 'erratic_swarm'],
-    traits: ['dasher'],
   },
   {
     id: 'snake',
@@ -390,7 +349,6 @@ export const HOSTS: HostDef[] = [
     isBoss: true,
     biomassReward: 650,
     attackPatterns: ['geometric_lasers', 'multi_phase', 'summon'],
-    traits: ['armored'],
   },
 
   // ── Stage 6: Mammals & birds (1–5 m) ──
@@ -402,7 +360,6 @@ export const HOSTS: HostDef[] = [
     stage: 6,
     biomassReward: 440,
     attackPatterns: ['homing', 'erratic_swarm'],
-    traits: ['summoner'],
   },
   {
     id: 'crow',
@@ -412,7 +369,6 @@ export const HOSTS: HostDef[] = [
     stage: 6,
     biomassReward: 460,
     attackPatterns: ['wave', 'scatter'],
-    traits: ['dasher'],
   },
   {
     id: 'fox',
@@ -422,7 +378,6 @@ export const HOSTS: HostDef[] = [
     stage: 6,
     biomassReward: 520,
     attackPatterns: ['pattern_combo'],
-    traits: ['dasher'],
   },
   {
     id: 'wild_boar',
@@ -432,7 +387,6 @@ export const HOSTS: HostDef[] = [
     stage: 6,
     biomassReward: 560,
     attackPatterns: ['enrage_phase', 'burst'],
-    traits: ['dasher'],
   },
   {
     id: 'deer',
@@ -452,7 +406,6 @@ export const HOSTS: HostDef[] = [
     isBoss: true,
     biomassReward: 800,
     attackPatterns: ['multi_phase', 'summon', 'geometric_lasers'],
-    traits: ['summoner', 'dasher'],
   },
 
   // ── Stage 7: Megafauna & structures (5–50 m) ──
@@ -464,7 +417,6 @@ export const HOSTS: HostDef[] = [
     stage: 7,
     biomassReward: 900,
     attackPatterns: ['burst', 'enrage_phase'],
-    traits: ['armored'],
   },
   {
     id: 'termite_mound',
@@ -474,7 +426,6 @@ export const HOSTS: HostDef[] = [
     stage: 7,
     biomassReward: 950,
     attackPatterns: ['summon', 'multi_phase'],
-    traits: ['summoner', 'armored'],
   },
   {
     id: 'ancient_stag',
@@ -484,7 +435,6 @@ export const HOSTS: HostDef[] = [
     stage: 7,
     biomassReward: 1050,
     attackPatterns: ['spiral_nova', 'geometric_lasers'],
-    traits: ['shielded'],
   },
   {
     id: 'ant_supercolony',
@@ -494,7 +444,6 @@ export const HOSTS: HostDef[] = [
     stage: 7,
     biomassReward: 1150,
     attackPatterns: ['summon', 'erratic_swarm'],
-    traits: ['summoner'],
   },
   {
     id: 'elder_tree',
@@ -505,7 +454,6 @@ export const HOSTS: HostDef[] = [
     isBoss: true,
     biomassReward: 1500,
     attackPatterns: ['multi_phase', 'geometric_lasers', 'summon'],
-    traits: ['armored', 'summoner'],
   },
 
   // ── Stage 8: Apex (50 m+) ──
@@ -517,7 +465,6 @@ export const HOSTS: HostDef[] = [
     stage: 8,
     biomassReward: 1300,
     attackPatterns: ['summon', 'spiral_nova'],
-    traits: ['summoner'],
   },
   {
     id: 'rival_fungus',
@@ -527,7 +474,6 @@ export const HOSTS: HostDef[] = [
     stage: 8,
     biomassReward: 1500,
     attackPatterns: ['pattern_combo', 'multi_phase'],
-    traits: ['revives'],
   },
   {
     id: 'hive_mind',
@@ -537,7 +483,6 @@ export const HOSTS: HostDef[] = [
     stage: 8,
     biomassReward: 1700,
     attackPatterns: ['summon', 'homing', 'geometric_lasers'],
-    traits: ['summoner'],
   },
   {
     id: 'apex_mycelium',
@@ -548,7 +493,6 @@ export const HOSTS: HostDef[] = [
     isBoss: true,
     biomassReward: 2500,
     attackPatterns: ['multi_phase', 'geometric_lasers', 'summon', 'enrage_phase'],
-    traits: ['armored', 'summoner', 'revives'],
   },
 ];
 

@@ -35,7 +35,7 @@ Three verbs, each additive — later systems never replace earlier ones:
 | **Biomass**   | Accumulates + combat rewards          | Currency for generators (and respecs).                                                                 |
 | **Lysate**    | Combat only; perishable               | `Raw` Lysate stabilises into `banked` Lysate using Water + Nutrients, or decays. Spent to expand caps. |
 
-Each pool has a cap. Combat and expedition rewards that arrive above a cap are **kept** —
+Each pool has a cap. Combat rewards that arrive above a cap are **kept** —
 the network never silently deletes earned Biomass.
 
 ## Systems
@@ -108,7 +108,7 @@ gently rising cost.
 Bought with a limited budget of **genome points** on the Evolution page — not Biomass — so you
 cannot own every node and builds diverge. The budget is `6 + 2 × scale stages reached` (max
 ~20); most nodes cost `1` point per level and the capstones (Chain Reaction,
-Emergency Evac, Overmind) cost `3`. Each node has levels and prerequisites, and a prerequisite
+Emergency Evac) cost `3`. Each node has levels and prerequisites, and a prerequisite
 only needs **level 1** (not a full level-up) to unlock the next node. A **Respec** (free the first
 time, then 40 Biomass) clears all mutations, but is unavailable during combat or while recovering
 from trauma. Three trees:
@@ -117,17 +117,8 @@ from trauma. Three trees:
   Reaction.
 - **Resilience** — Compact Core, Spore Shield, Trauma Recovery, Regenerative Spores,
   Adaptive Membrane, Emergency Evac.
-- **Proliferation** — Mycelial Expansion, Metabolic Efficiency, Rapid Scouts, Resource
-  Routing, Nitrogen Fixation, Dormant Spores, Overmind, Extended Range.
-
-### Expeditions
-
-Send a host off to forage; it returns after real time for bonus Biomass. One slot by
-default, two with the **Overmind** mutation. Rewards and duration scale with the Rapid
-Scouts and Resource Routing mutations.
-
-**Currently hidden** behind the `EXPEDITIONS_ENABLED` flag (off): while false the system
-never unlocks, is never announced, and has no panel entry point.
+- **Proliferation** — Mycelial Expansion, Metabolic Efficiency, Nitrogen Fixation, Dormant
+  Spores, Extended Range.
 
 ## Hosts & discovery
 
@@ -153,10 +144,7 @@ A host joins the sonar pool when its **stage** is in reach (`host.stage`), and t
 | 7     | 5–50 m     | m    | Living forest      | Bear, Termite Mound City, Ancient Stag, Ant Supercolony, **Elder Tree**                                                                               |
 | 8     | 50 m+      | m    | Living forest      | Canopy, Rival Giant Fungus, Hive Mind, **Apex Mycelium**                                                                                              |
 
-Each host carries one or more **attack patterns** (see `COMBAT.md`) and may carry behaviour
-**traits** drawn from the roster vocabulary (`armored`, `splits`, `revives`, `leech`,
-`summoner`, `dasher`, `shielded`, `clones`); bosses combine traits the player has already
-met. Traits are being wired into combat incrementally.
+Each host carries one or more **attack patterns** (see `COMBAT.md`).
 
 ### Radar (sonar)
 
@@ -185,14 +173,6 @@ Each victory assimilates **that host** by `10 + difficulty × 5`. At 100 the hos
 **grown over**: `hostsDefeated` rises once and the host counts toward progression. Hosts
 enter the pool as **reach** opens their stage band — the band boss is what gates the next
 scale (see "Hosts & discovery").
-
-Separately, every victory adds a small, fixed amount of **ecological strain** (`2` per win)
-to a global meter, independent of the per-host assimilation progress. Strain — together with
-the combat **alert level** — slowly reduces raw passive Biomass efficiency. The two drags are
-**added and then capped** (`ECOLOGICAL_DRAG_CAP`, max `−50%`), so a string of wins can't
-compound into an income cliff; the win screen reports the current strain/alert and the drag.
-The Core's Grow panel shows the strain percentage and its current drag (`passive −N%`), so
-the trade is legible: **more complexity means lower raw efficiency but greater capability**.
 
 ## Onboarding
 
@@ -235,7 +215,7 @@ system never re-locks once reached.
 - **No terminal jargon** in player-facing copy — no `SYS:`/`EXE:` prefixes, no
   "neutralize"/"assimilate"; say "drive off", "grow over", "recover".
 - **Consistent terms**: Water, Nutrients, Biomass, Lysate, Core, Radar, Evolution,
-  Expeditions, Generators, Mutations, Hosts.
+  Generators, Mutations, Hosts.
 
 ## Persistence & QA
 
@@ -248,7 +228,7 @@ system never re-locks once reached.
 
 The colony keeps growing while the tab is closed. On return, the elapsed time (capped at
 **8 hours**) is simulated at a base **50%** rate, raised by **25%** per level of the Dormant
-Spores mutation (up to the full online rate). Expeditions and trauma recovery run in real
+Spores mutation (up to the full online rate). Trauma recovery runs in real
 time; contacts that would have drifted away expire. A "Welcome back" banner summarises what
 the network produced.
 

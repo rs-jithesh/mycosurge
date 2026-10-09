@@ -1,14 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
-  getAlertMultiplier,
-  getDepletionMultiplier,
   getProliferationBonus,
   getTraumaReduction,
   getNutrientFixationBonus,
   getResourceProduction,
   getEffectiveMaxBiomass,
   getEffectiveBiomassPerSec,
-  getEcologicalEfficiency,
   isStarving,
   tickIdle,
   enterTrauma,
@@ -21,34 +18,6 @@ import {
 } from './math';
 import { getGeneratorCost, UPKEEP_PER_REACH } from '@mycosurge/config';
 import { createInitialState, type GameState } from './state';
-
-describe('getAlertMultiplier', () => {
-  it('returns 1 at alert level 0', () => {
-    expect(getAlertMultiplier(0)).toBe(1);
-  });
-
-  it('returns 0.5 at alert level 100', () => {
-    expect(getAlertMultiplier(100)).toBe(0.5);
-  });
-
-  it('linearly scales between 0 and 100', () => {
-    expect(getAlertMultiplier(50)).toBe(0.75);
-  });
-});
-
-describe('getDepletionMultiplier', () => {
-  it('returns 1 at 0% assimilation', () => {
-    expect(getDepletionMultiplier(0)).toBe(1);
-  });
-
-  it('returns 0.7 at 100% assimilation', () => {
-    expect(getDepletionMultiplier(100)).toBeCloseTo(0.7);
-  });
-
-  it('floors at 0.1', () => {
-    expect(getDepletionMultiplier(500)).toBe(0.1);
-  });
-});
 
 describe('getProliferationBonus', () => {
   it('returns 0 with no allocations', () => {
@@ -165,26 +134,6 @@ describe('getEffectiveBiomassPerSec', () => {
   it('returns base rate with no modifiers', () => {
     const state = createInitialState();
     expect(getEffectiveBiomassPerSec(state)).toBe(0.5);
-  });
-
-  it('ignores alert while the drag is disabled', () => {
-    const state = createInitialState();
-    state.alertLevel = 50;
-    expect(getEffectiveBiomassPerSec(state)).toBe(0.5);
-  });
-});
-
-describe('getEcologicalEfficiency', () => {
-  it('reads 1 with no strain or alert', () => {
-    const state = createInitialState();
-    expect(getEcologicalEfficiency(state)).toBe(1);
-  });
-
-  it('stays neutral while strain/alert drag is disabled', () => {
-    const state = createInitialState();
-    state.alertLevel = 100;
-    state.assimilationPercent = 100;
-    expect(getEcologicalEfficiency(state)).toBe(1);
   });
 });
 

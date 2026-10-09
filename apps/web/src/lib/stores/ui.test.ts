@@ -27,7 +27,7 @@ describe('ui store overlays', () => {
 
   it('closeAll clears both layers', () => {
     const ui = createUiStore();
-    ui.openPanel('expeditions');
+    ui.openPanel('bestiary');
     ui.openCombat('seasonal_mite');
     ui.closeAll();
     expect(ui.activePanel).toBeNull();
@@ -37,7 +37,7 @@ describe('ui store overlays', () => {
   it('opening a different panel replaces the current one', () => {
     const ui = createUiStore();
     ui.openPanel('evolution');
-    ui.openPanel('expeditions');
-    expect(ui.activePanel).toBe('expeditions');
+    ui.openPanel('bestiary');
+    expect(ui.activePanel).toBe('bestiary');
   });
 });

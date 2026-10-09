@@ -107,10 +107,6 @@ export function applyDefeat(state: GameState): void {
   enterTrauma(state);
 }
 
-export function getCombatDifficultyMultiplier(alertLevel: number): number {
-  return 1 + (alertLevel / 100) * 0.5;
-}
-
 /**
  * Combat stats used by the arena. Mutation effects are already baked into
  * `state.combatStats`, so this is a defensive copy for the renderer.

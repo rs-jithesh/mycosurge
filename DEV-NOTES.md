@@ -11,6 +11,8 @@ for the arena see `COMBAT.md`.
   `mycosurge_reveals`, then reload.
 - **Skip intro** — the tutorial-header button (shown only when the dev flag is on) completes
   onboarding immediately. The `?skipintro` URL flag does the same for QA.
+- **Skip to fight** — a second tutorial-header dev button that parks the tutorial at its
+  threat handoff and drops straight into the nematode encounter.
 
 ## Developer flag
 
@@ -106,23 +108,21 @@ twitch. The arena passes the live spore pool as `SteeringWorld.threats` (only wh
 **Files:** `packages/game-engine/src/math.ts`, `economy.balance.test.ts`,
 `packages/config/src/constants.ts`.
 
-Gentle metabolic upkeep (`UPKEEP_PER_LEVEL`, `UPKEEP_PER_ECHO`, `UPKEEP_PER_EXPANSION`)
-drains Water/Nutrients with network complexity; global ecological strain is a separate
-`GLOBAL_STRAIN_PER_WIN` meter from per-host echo progress. Coefficients are intentionally
-tunable — `economy.balance.test.ts` runs 30-minute idle-only and upgrade-rush simulations and
-asserts the maxed net lands in the target band (`+5.5…+7.5/s`), upkeep is 15–40% of
-production, and the early single generator stays net-positive. Re-run it after any balance
-change.
+Metabolic upkeep is a reach-driven drain on Water/Nutrients (`UPKEEP_PER_REACH` per mm) —
+growing the network deeper costs more to maintain. Coefficients are intentionally tunable —
+`economy.balance.test.ts` runs 30-minute idle-only and upgrade-rush simulations and asserts the
+maxed net lands in the target band, upkeep is a sensible share of production, and the early
+single generator stays net-positive. Re-run it after any balance change.
 
 ### Offline progression — implemented
 
 **File:** `packages/game-engine/src/offline.ts`.
 
 The save stamps `lastSavedAt`; on load the elapsed gap (capped at 8h) is simulated at a base
-50% rate, `+25%` per `Dormant Spores` level. Expeditions and trauma use real time; stale
-contacts expire. Tuning lives in `OFFLINE_*` constants. The result is presented by
+50% rate, `+25%` per `Dormant Spores` level. Trauma recovery uses real time; stale contacts
+expire. Tuning lives in `OFFLINE_*` constants. The result is presented by
 `WelcomeBackDialog.svelte` — a centered modal that greets the player and lists the Biomass /
-Water / Nutrients / Lysate change and any expeditions that returned, plus the offline rate.
+Water / Nutrients / Lysate change plus the offline rate.
 
 ## Verification
 

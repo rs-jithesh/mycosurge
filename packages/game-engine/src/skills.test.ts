@@ -63,7 +63,6 @@ describe('genome point budget', () => {
     expect(getSkillPointCost(getSkill('spore_speed')!)).toBe(1);
     expect(getSkillPointCost(getSkill('chain_reaction')!)).toBe(3);
     expect(getSkillPointCost(getSkill('emergency_evac')!)).toBe(3);
-    expect(getSkillPointCost(getSkill('overmind')!)).toBe(3);
   });
 });
 
@@ -78,11 +77,11 @@ describe('mutation prerequisites', () => {
 
   it('still requires every listed prerequisite', () => {
     const state = createInitialState();
-    state.skillAllocations['rapid_scouts'] = 1;
-    expect(arePrerequisitesMet(state, 'dormant_spores')).toBe(false);
+    state.skillAllocations['trauma_recovery'] = 1;
+    expect(arePrerequisitesMet(state, 'adaptive_membrane')).toBe(false);
 
-    state.skillAllocations['resource_routing'] = 1;
-    expect(arePrerequisitesMet(state, 'dormant_spores')).toBe(true);
+    state.skillAllocations['regenerative_spores'] = 1;
+    expect(arePrerequisitesMet(state, 'adaptive_membrane')).toBe(true);
   });
 
   it('nitrogen_fixation needs Mycelial Expansion at level 1 only', () => {
@@ -149,18 +148,15 @@ describe('respec', () => {
     expect(respecSkills(trauma)).toBe(false);
   });
 
-  it('recomputes all derived effects and resets slot counts', () => {
+  it('recomputes all derived effects and resets combat stats', () => {
     const state = createInitialState();
     state.skillAllocations['spore_speed'] = 3;
-    state.skillAllocations['overmind'] = 1;
     state.combatStats.projectileSpeed = 1.3;
     state.combatStats.shieldHits = 2;
-    state.maxExpeditionSlots = 2;
 
     expect(respecSkills(state)).toBe(true);
     expect(state.combatStats.projectileSpeed).toBe(1);
     expect(state.combatStats.shieldHits).toBe(0);
-    expect(state.maxExpeditionSlots).toBe(1);
   });
 
   it('clamps Biomass to the reduced cap after losing Mycelial Expansion', () => {
@@ -196,8 +192,8 @@ describe('old-save migration', () => {
 
   it('clamps Biomass when a reset drops the cap', () => {
     const state = createInitialState();
-    // 15 points of Mycelial Expansion would raise the cap, but the budget is 6.
-    state.skillAllocations = { mycelial_expansion: 3, metabolic_efficiency: 3, rapid_scouts: 3 };
+    // More points than the budget allows, so the migration clears everything.
+    state.skillAllocations = { mycelial_expansion: 3, metabolic_efficiency: 3, dormant_spores: 1 };
     state.biomass = 175;
 
     expect(migrateSkillAllocations(state)).toBe(true);

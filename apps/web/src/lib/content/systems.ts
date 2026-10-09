@@ -24,11 +24,4 @@ export const SYSTEM_META: Record<SystemId, SystemMeta> = {
     blurb: 'Spend Biomass on permanent mutations and growth upgrades.',
     toast: 'The genome can be rewritten — Evolution is open.',
   },
-  expeditions: {
-    id: 'expeditions',
-    name: 'Expeditions',
-    glyph: '➤',
-    blurb: 'Send a subdued host to forage for Biomass while you tend the network.',
-    toast: 'A host can be sent to forage — Expeditions are open.',
-  },
 };

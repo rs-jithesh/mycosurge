@@ -2,7 +2,6 @@ export { createInitialState } from './state';
 export type {
   GameState,
   CombatStats,
-  Expedition,
   RadarContact,
   GamePhase,
   TutorialUpgrades,
@@ -34,7 +33,6 @@ export { getSystemUnlocks } from './systems';
 export type { SystemId, SystemUnlocks } from './systems';
 export {
   tickIdle,
-  tickAlertDecay,
   getEffectiveBiomassPerSec,
   getBiomassConverterOutput,
   getBiomassConverterConsumption,
@@ -58,7 +56,6 @@ export {
   getResourceProduction,
   getResourceDrain,
   getNetResourceRate,
-  getEcologicalEfficiency,
   getNutrientFixationBonus,
 } from './math';
 export type { CapResource, PoolResource } from './math';
@@ -80,13 +77,6 @@ export {
   respecSkills,
   migrateSkillAllocations,
 } from './skills';
-export {
-  startExpedition,
-  tickExpeditions,
-  collectExpedition,
-  removeCollectedExpeditions,
-  getActiveExpeditions,
-} from './expeditions';
 export { tickGenerators, purchaseGenerator, isGeneratorUnlocked } from './generators';
 export {
   manualAbsorb,
@@ -150,10 +140,6 @@ export {
   getContactMarkers,
   catalogueHost,
   isCatalogued,
-  getDefaultCordBranch,
-  getCordCost,
-  canBuildCord,
-  buildCord,
   mulberry32,
 } from './network';
 export type {
@@ -168,7 +154,6 @@ export {
   applyDefeat,
   calculateVictoryReward,
   previewCombatReward,
-  getCombatDifficultyMultiplier,
   getEffectiveCombatStats,
 } from './combat';
 export type { CombatResult } from './combat';
@@ -197,7 +182,6 @@ export type {
 } from './combat-ai';
 export {
   absorbResources,
-  synthesizeBiomass,
   purchaseTutorialUpgrade,
   growTutorialSector,
   tutorialTick,
@@ -228,8 +212,6 @@ export {
   TUTORIAL_GENERATOR2_NUTRIENT_COST,
   TUTORIAL_GENERATOR_RATE,
   TUTORIAL_MAX_GENERATOR_TIER,
-  TUTORIAL_SYNTH_WATER_COST,
-  TUTORIAL_SYNTH_NUTRIENT_COST,
 } from './tutorial';
 export { getNextHookObjective, tutorialGeneratorCount } from './hook';
 export type { HookObjective, HookObjectiveId } from './hook';

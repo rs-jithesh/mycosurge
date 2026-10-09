@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { EXPANSION_MAP } from '@mycosurge/config';
 import { createInitialState } from './state';
 import type { RadarContact } from './state';
-import { getReachCost } from './reach';
 import {
   mulberry32,
   generateNetwork,
@@ -12,10 +11,6 @@ import {
   getContactMarkers,
   catalogueHost,
   isCatalogued,
-  getDefaultCordBranch,
-  getCordCost,
-  canBuildCord,
-  buildCord,
 } from './network';
 
 describe('mulberry32', () => {
@@ -180,34 +175,5 @@ describe('contact markers', () => {
     expect(markers.map((m) => m.contactId)).toEqual(['contact-1', 'contact-2']);
     expect(markers[0].x).not.toBeCloseTo(markers[1].x);
     expect(markers[0].revealed).toBe(true);
-  });
-});
-
-describe('rhizomorph cord', () => {
-  it('picks the furthest branch by default', () => {
-    const geometry = generateNetwork(3);
-    const branch = getDefaultCordBranch(geometry);
-    expect(branch).toMatch(/^branch-\d+$/);
-  });
-
-  it('scales the cost off the next reach cost and upgrades once', () => {
-    const state = createInitialState();
-    state.mycelialNetwork = 5;
-    state.biomass = 1_000;
-    expect(getCordCost(state)).toBe(getReachCost(5) * EXPANSION_MAP.cordCostMult);
-    expect(canBuildCord(state)).toBe(true);
-
-    expect(buildCord(state, 'branch-0')).toBe(true);
-    expect(state.cordBranchId).toBe('branch-0');
-    expect(buildCord(state, 'branch-1')).toBe(false);
-    expect(canBuildCord(state)).toBe(false);
-  });
-
-  it('refuses when Biomass is short', () => {
-    const state = createInitialState();
-    state.mycelialNetwork = 5;
-    state.biomass = 0;
-    expect(buildCord(state, 'branch-0')).toBe(false);
-    expect(state.cordBranchId).toBeNull();
   });
 });

@@ -53,12 +53,6 @@ game icon, a dense knot of pale hyphae forming a biomass clump, flat vector, thi
 game icon, a ruptured host cell releasing amber lysate sap, flat vector, thick clean outline, bio-luminescent amber (#f5c055) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
 ```
 
-### echo — amber `#f5c055` → `echo.png`
-
-```
-game icon, a glowing DNA helix forming a circular imprint ring of amber light, flat vector, thick clean outline, bio-luminescent amber (#f5c055) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
-```
-
 ### core — mint `#70fdc3` → `core.png`
 
 ```
@@ -77,12 +71,6 @@ game icon, a sonar pulse of concentric rings with a small mushroom antenna, flat
 
 ```
 game icon, a helix-and-mycelium evolution symbol with an upward arrow, flat vector, thick clean outline, bio-luminescent mint (#70fdc3) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
-```
-
-### expeditions — amber `#f5c055` → `expeditions.png`
-
-```
-game icon, a compass needle shaped like a hypha pointing forward, flat vector, thick clean outline, bio-luminescent amber (#f5c055) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
 ```
 
 ### gather — cyan `#68d6e3` → `gather.png`

@@ -65,14 +65,6 @@ export interface CombatStats {
   evadeChance: number;
 }
 
-export interface Expedition {
-  hostId: string;
-  timeRemaining: number;
-  duration: number;
-  completed: boolean;
-  rewardCollected: boolean;
-}
-
 export interface RadarContact {
   id: string;
   hostId: string;
@@ -93,8 +85,6 @@ export interface GameState {
   lastContactHostId: string | null;
   activeStrainId: string;
   hostAssimilation: Record<string, number>;
-  assimilationPercent: number;
-  alertLevel: number;
   traumaTimer: number;
   isInTrauma: boolean;
   combatStats: CombatStats;
@@ -113,8 +103,6 @@ export interface GameState {
   radarSlotLevel: number;
   /** Host ids fully grown over (assimilation reached its target). */
   grownOverHosts: string[];
-  expeditions: Expedition[];
-  maxExpeditionSlots: number;
   totalBiomassEarned: number;
   hostsDefeated: number;
   gamePhase: GamePhase;
@@ -139,8 +127,6 @@ export interface GameState {
   reachSectors: number[];
   /** Seed for the deterministic expansion-map geometry (0 = not yet assigned). */
   networkSeed: number;
-  /** Branch id reinforced into a rhizomorph cord, or null. */
-  cordBranchId: string | null;
   /** Host ids uncovered (first defeat); drives the bestiary and farming pool. */
   cataloguedHosts: string[];
   /** Expansion landmark nodes claimed by growing past their depth. */
@@ -164,8 +150,6 @@ export function createInitialState(): GameState {
     lastContactHostId: null,
     activeStrainId: NORMAL_STRAIN_ID,
     hostAssimilation: {},
-    assimilationPercent: 0,
-    alertLevel: 0,
     traumaTimer: 0,
     isInTrauma: false,
     combatStats: {
@@ -197,8 +181,6 @@ export function createInitialState(): GameState {
     capExpansions: { water: 0, nutrients: 0, biomass: 0 },
     radarSlotLevel: 0,
     grownOverHosts: [],
-    expeditions: [],
-    maxExpeditionSlots: 1,
     totalBiomassEarned: 0,
     hostsDefeated: 0,
     gamePhase: 'awakening',
@@ -211,7 +193,6 @@ export function createInitialState(): GameState {
     tutorialGeneratorTier: 0,
     reachSectors: [],
     networkSeed: 0,
-    cordBranchId: null,
     cataloguedHosts: [],
     claimedNodes: [],
     advisor: {

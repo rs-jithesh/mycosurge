@@ -33,15 +33,15 @@ local install, no API key. See the workflow below; ready-to-paste prompts for ev
 | Nutrients      | violet | `#b9a7ff` | Enzymatic Exudates, gather phase |
 | Biomass        | mint   | `#70fdc3` | grow phase, primary actions      |
 | Lysate         | amber  | `#f5c055` | expand phase, spend currency     |
-| Echo / warning | coral  | `#ffb4ab` | hunt phase, alerts               |
+| Warning / host | coral  | `#ffb4ab` | hunt phase, alerts               |
 | Backdrop disc  | moss   | `#161d1b` | every badge background           |
 
 ## Priority tiers
 
-### Tier 0 — Resource & currency icons (6) — ✅ generated
+### Tier 0 — Resource & currency icons (5) — ✅ generated
 
-Highest ROI: 6 icons make the entire economy legible across Core, generators, radar, evolution,
-expeditions, and the tutorial.
+Highest ROI: 5 icons make the entire economy legible across Core, generators, radar, evolution,
+and the tutorial.
 
 | File            | Subject                        | Colour |
 | --------------- | ------------------------------ | ------ |
@@ -49,7 +49,6 @@ expeditions, and the tutorial.
 | `nutrients.png` | spore cluster / root-node      | violet |
 | `biomass.png`   | hyphal knot / mycelial clump   | mint   |
 | `lysate.png`    | ruptured host cell / amber sap | amber  |
-| `echo.png`      | imprint ring / DNA helix       | amber  |
 | `core.png`      | fungal nucleus (brand mark)    | mint   |
 
 ### Tier 1 — Systems & phases (7) — ✅ generated
@@ -57,12 +56,12 @@ expeditions, and the tutorial.
 Replaces the Unicode glyphs in `apps/web/src/lib/content/phases.ts` and
 `apps/web/src/lib/content/systems.ts`.
 
-- Systems: `radar`, `evolution`, `expeditions`
+- Systems: `radar`, `evolution`
 - Phases: `gather` (cyan), `grow` (amber), `hunt` (coral), `expand` (mint)
 
 ### Tier 2 — Hosts (11, but start with 4)
 
-Reused three ways: **radar contacts + combat tiles + echo cards**. Start with the early-game
+Reused three ways: **radar contacts + combat tiles + bestiary entries**. Start with the early-game
 hosts, then fill in.
 
 - First: `soil_nematode`, `fallen_leaf`, `garden_beetle`, `field_mouse`

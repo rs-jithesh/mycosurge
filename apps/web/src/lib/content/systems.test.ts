@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { SYSTEM_META } from './systems';
 
-const SYSTEM_IDS = ['radar', 'evolution', 'expeditions'] as const;
+const SYSTEM_IDS = ['radar', 'evolution'] as const;
 
 describe('SYSTEM_META', () => {
   it('describes every revealable system', () => {

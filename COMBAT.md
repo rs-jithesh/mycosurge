@@ -116,26 +116,6 @@ Twelve patterns, per host config. Each node runs one (cycling through the host's
 | `geometric_lasers` | Fast shots along four rotating spokes.                  |
 | `summon`           | Slow 8-way ring on a long interval.                     |
 
-## Host traits
-
-Alongside attack patterns, a host may carry one or more behaviour **traits** — the roster's
-"one new idea per host" vocabulary. A boss combines traits the player has already met, and
-each host's stage band on the map ends with such a boss.
-
-| Trait      | Intent                                                                |
-| ---------- | --------------------------------------------------------------------- |
-| `armored`  | A plated front; damage from the side or a specific arc is reduced.    |
-| `shielded` | A carried/raised shield (e.g. a leaf) that must be broken or flanked. |
-| `splits`   | Splits into smaller nodes when damaged.                               |
-| `clones`   | Clones itself if left alive too long.                                 |
-| `revives`  | Survives one lethal hit and returns.                                  |
-| `leech`    | Drains a resource (Water/Nutrients) while alive.                      |
-| `summoner` | Calls additional nodes in waves.                                      |
-| `dasher`   | Telegraphs and dashes across the arena.                               |
-
-Traits are declared on `HostDef.traits` in `packages/config/src/hosts.ts` and wired into the
-arena incrementally; the data can be authored ahead of the engine hooks.
-
 ## Skills that affect combat
 
 Mutations on the Evolution page feed directly into the arena via `combatStats`:
@@ -165,8 +145,7 @@ retreat).
 
 Assimilation is tracked **per host** in `hostAssimilation`. Each victory adds
 `10 + difficulty × 5` to that host; reaching 100 grows it fully over and raises
-`hostsDefeated` once. A separate global `assimilationPercent` still accumulates as
-ecological strain and is what `getDepletionMultiplier` reads.
+`hostsDefeated` once.
 
 ## Defeat & trauma
 
@@ -181,8 +160,8 @@ halved briefly).
 - `createRadar(container, hostId, combatStats, callbacks, modifiers)` builds the app and
   returns `{ destroy }`. Callers **must** call `destroy()` when closing the overlay.
 - Callbacks: `onVictory()` (the arena reports the win; the **store** computes the real
-  reward), `onDefeat()`, and `onStats({ hp, maxHp, shieldHits, hostHp, hostMaxHp })` for
-  the HUD.
+  reward), `onDefeat()`, and `onStats({ hp, maxHp, shieldHits, hostHp, hostMaxHp, charge,
+charging })` for the HUD.
 - Keyboard listeners are attached to `window` and removed on `destroy`; touch listeners
   are attached to the canvas. On small screens the drag delta is scaled by the canvas
   fit ratio.

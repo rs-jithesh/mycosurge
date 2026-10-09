@@ -80,9 +80,6 @@
   let hoverSector = $state<number | null>(null);
   let selectedSector = $state<number | null>(null);
   let activeSector = $derived(hoverSector ?? selectedSector);
-  let cordBranch = $derived(
-    gameStore.cordBranchId ? Number(gameStore.cordBranchId.split('-')[1]) : -1,
-  );
 
   let zoom = $state(1);
   let panX = $state(0);
@@ -534,9 +531,9 @@
             y1={s.y1}
             x2={s.x2}
             y2={s.y2}
-            stroke={s.branch === cordBranch ? 'var(--cord)' : 'var(--primary)'}
-            stroke-width={(s.branch === cordBranch ? s.width * 2.2 : s.width) * inv}
-            opacity={s.branch === cordBranch ? 1 : 0.85}
+            stroke="var(--primary)"
+            stroke-width={s.width * inv}
+            opacity={0.85}
             stroke-linecap="round"
           />
         {/each}
@@ -703,7 +700,6 @@
 
 <style>
   .map-overlay {
-    --cord: color-mix(in srgb, var(--primary) 55%, #0d1512);
     position: relative;
     display: flex;
     flex-direction: column;

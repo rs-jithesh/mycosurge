@@ -5,7 +5,6 @@ import {
 } from '@mycosurge/config';
 import type { GameState } from './state';
 import { tickIdle } from './math';
-import { tickExpeditions } from './expeditions';
 
 export interface OfflineReport {
   /** Real seconds since the last save (uncapped). */
@@ -18,7 +17,6 @@ export interface OfflineReport {
   waterGained: number;
   nutrientsGained: number;
   lysateStabilized: number;
-  expeditionsCompleted: number;
   /** True when the absence was longer than the offline cap. */
   wasCapped: boolean;
 }
@@ -31,7 +29,7 @@ export function getOfflineRate(skillAllocations: Record<string, number>): number
 
 /**
  * Advance the colony while the tab was closed. Economy and Lysate run at the
- * offline rate; expeditions and trauma recovery use the full real elapsed time.
+ * offline rate; trauma recovery uses the full real elapsed time.
  * Radar contacts simply expire. Returns null when nothing was applied.
  */
 export function applyOfflineProgress(
@@ -57,12 +55,7 @@ export function applyOfflineProgress(
     lysateRaw: state.lysateRaw,
   };
 
-  // Expeditions and trauma proceed in real time.
-  const completedBefore = state.expeditions.filter((e) => e.completed).length;
-  tickExpeditions(state, realSeconds);
-  const expeditionsCompleted =
-    state.expeditions.filter((e) => e.completed).length - completedBefore;
-
+  // Trauma recovery uses the full real elapsed time.
   if (state.isInTrauma) {
     state.traumaTimer = Math.max(0, state.traumaTimer - realSeconds);
     if (state.traumaTimer <= 0) state.isInTrauma = false;
@@ -85,7 +78,6 @@ export function applyOfflineProgress(
     waterGained: state.water - before.water,
     nutrientsGained: state.nutrients - before.nutrients,
     lysateStabilized: state.lysateBanked - before.lysateBanked,
-    expeditionsCompleted,
     wasCapped,
   };
 }

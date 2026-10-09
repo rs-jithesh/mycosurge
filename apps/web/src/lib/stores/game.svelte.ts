@@ -1,7 +1,6 @@
 import {
   createInitialState,
   tickIdle,
-  tickExpeditions,
   purchaseSkill as enginePurchaseSkill,
   getTotalGenomePoints,
   getSpentGenomePoints,
@@ -10,16 +9,11 @@ import {
   getRespecCost,
   respecSkills as engineRespecSkills,
   migrateSkillAllocations,
-  startExpedition as engineStartExpedition,
-  collectExpedition as engineCollectExpedition,
-  removeCollectedExpeditions,
   getEffectiveBiomassPerSec,
   getEffectiveMaxBiomass,
-  tickAlertDecay,
   applyVictory as engineApplyVictory,
   applyDefeat as engineApplyDefeat,
   absorbResources as engineAbsorb,
-  synthesizeBiomass as engineSynthesize,
   purchaseTutorialUpgrade as enginePurchaseUpgrade,
   growTutorialSector as engineGrowTutorialSector,
   upgradeTutorialGenerators as engineUpgradeGenerators,
@@ -76,7 +70,6 @@ import {
   getUpkeepRate,
   getResourceProduction,
   getNetResourceRate,
-  getEcologicalEfficiency,
   getSystemUnlocks,
   applyOfflineProgress,
   getFarmPool,
@@ -87,11 +80,6 @@ import {
   recordCombatOutcome,
   getAdvisorEvent,
   catalogueHost,
-  buildCord as engineBuildCord,
-  getCordCost,
-  getDefaultCordBranch,
-  generateNetwork,
-  canBuildCord as engineCanBuildCord,
 } from '@mycosurge/game-engine';
 import type {
   GameState,
@@ -110,7 +98,6 @@ import {
   GENERATORS,
   REACH_START,
   ADVISOR_TUNING,
-  EXPEDITIONS_ENABLED,
   getLysateCapExpandAmount,
 } from '@mycosurge/config';
 import type { ManualUpgradeId } from '@mycosurge/config';
@@ -119,9 +106,7 @@ import { logStore } from './log.svelte';
 
 const SAVE_KEY = 'mycosurge_save';
 const REVEAL_KEY = 'mycosurge_reveals';
-const ALL_SYSTEM_IDS: SystemId[] = EXPEDITIONS_ENABLED
-  ? ['radar', 'evolution', 'expeditions']
-  : ['radar', 'evolution'];
+const ALL_SYSTEM_IDS: SystemId[] = ['radar', 'evolution'];
 const TICK_INTERVAL = 1000;
 
 interface RevealState {
@@ -168,7 +153,7 @@ function createGameStore() {
 
   function unlockedSystems(): SystemUnlocks {
     if (allSystemsUnlocked) {
-      return { radar: true, evolution: true, expeditions: EXPEDITIONS_ENABLED };
+      return { radar: true, evolution: true };
     }
     return getSystemUnlocks(state);
   }
@@ -210,10 +195,8 @@ function createGameStore() {
           generators: { ...(parsed.generators ?? {}) },
           hostAssimilation: { ...(parsed.hostAssimilation ?? {}) },
           contacts: parsed.contacts ?? [],
-          expeditions: parsed.expeditions ?? [],
           grownOverHosts: parsed.grownOverHosts ?? [],
           networkSeed: parsed.networkSeed ?? initial.networkSeed,
-          cordBranchId: parsed.cordBranchId ?? initial.cordBranchId,
           cataloguedHosts: parsed.cataloguedHosts ?? initial.cataloguedHosts,
           claimedNodes: parsed.claimedNodes ?? initial.claimedNodes,
           reachSectors: parsed.reachSectors ?? initial.reachSectors,
@@ -273,7 +256,7 @@ function createGameStore() {
         const elapsed = merged.lastSavedAt > 0 ? (Date.now() - merged.lastSavedAt) / 1000 : 0;
         if (elapsed > 0) {
           const report = applyOfflineProgress(merged, elapsed);
-          if (report && (report.biomassGained >= 1 || report.expeditionsCompleted > 0)) {
+          if (report && report.biomassGained >= 1) {
             offlineReport = report;
           }
         }
@@ -345,13 +328,9 @@ function createGameStore() {
       if (state.gamePhase === 'active') {
         assignNetworkSeed(state);
         tickIdle(state, 1);
-        tickExpeditions(state, 1);
         const spawned = engineTickRadar(state, 1);
         if (spawned) {
           logStore.info('A tremor in the substrate — a signal drifts in. Scan to identify.');
-        }
-        if (!state.currentHostId && !state.isInTrauma) {
-          tickAlertDecay(state, 1);
         }
         const starving = engineIsStarving(state);
         if (starving && !wasStarving) {
@@ -422,25 +401,6 @@ function createGameStore() {
       saveState();
     }
     return result;
-  }
-
-  function startExpedition(hostId: string): boolean {
-    const host = HOSTS.find((h) => h.id === hostId);
-    const result = engineStartExpedition(state, hostId);
-    if (result && host) {
-      logStore.info(`${host.name} sets out to forage.`);
-      saveState();
-    }
-    return result;
-  }
-
-  function collectExpedition(index: number): number {
-    const reward = engineCollectExpedition(state, index);
-    if (reward > 0) {
-      logStore.success(`The forager returns, heavy with ${reward} Biomass.`);
-      saveState();
-    }
-    return reward;
   }
 
   function expandWaterCap(): boolean {
@@ -645,11 +605,6 @@ function createGameStore() {
     return result;
   }
 
-  function cleanupExpeditions() {
-    removeCollectedExpeditions(state);
-    saveState();
-  }
-
   function disengageHost() {
     // Dismiss the originating contact too, so a retreated signal leaves the map.
     clearActiveEncounter(state);
@@ -714,14 +669,6 @@ function createGameStore() {
     if (result.success) logStore.success(result.message);
     saveState();
     return result.success;
-  }
-
-  function synthesizeBiomass() {
-    const result = engineSynthesize(state);
-    if (result.success) {
-      logStore.info(result.message);
-    }
-    saveState();
   }
 
   function purchaseTutorialUpgrade(upgrade: 'osmoticPump' | 'enzymaticExudates') {
@@ -790,12 +737,6 @@ function createGameStore() {
     get biomassPerSec() {
       return getEffectiveBiomassPerSec(state);
     },
-    get ecologicalEfficiency() {
-      return getEcologicalEfficiency(state);
-    },
-    get strainPercent() {
-      return state.assimilationPercent;
-    },
     resourceUpkeep(resource: PoolResource) {
       return getUpkeepRate(state, resource);
     },
@@ -840,25 +781,6 @@ function createGameStore() {
     },
     get cataloguedHosts() {
       return state.cataloguedHosts;
-    },
-    get cordBranchId() {
-      return state.cordBranchId;
-    },
-    get cordCost() {
-      return getCordCost(state);
-    },
-    get canBuildCord() {
-      return engineCanBuildCord(state);
-    },
-    reinforceCord() {
-      const geometry = generateNetwork(state.networkSeed);
-      const branch = getDefaultCordBranch(geometry);
-      const ok = engineBuildCord(state, branch);
-      if (ok) {
-        logStore.success('The main hypha thickens — a rhizomorph cord forms.');
-        saveState();
-      }
-      return ok;
     },
     get currentHost() {
       return state.currentHostId;
@@ -947,9 +869,6 @@ function createGameStore() {
     get respecCost() {
       return getRespecCost(state);
     },
-    get expeditions() {
-      return state.expeditions;
-    },
     get hostsDefeated() {
       return state.hostsDefeated;
     },
@@ -979,9 +898,6 @@ function createGameStore() {
     scanContact,
     engageContact,
     dismissContact,
-    startExpedition,
-    collectExpedition,
-    cleanupExpeditions,
     resetGame,
     startTick,
     stopTick,
@@ -1007,7 +923,6 @@ function createGameStore() {
       return generatorUpgradeCost(state);
     },
     absorbResources,
-    synthesizeBiomass,
     purchaseTutorialUpgrade,
     upgradeTutorialGenerators,
     growTutorialSector,

@@ -1,6 +1,5 @@
 import { REACH_START } from '@mycosurge/config';
 import type { GameState } from './state';
-import { addBiomass } from './math';
 
 export const AWAKENING_MESSAGES = [
   'The substrate is dry. You are a single spore, waiting.',
@@ -86,9 +85,6 @@ export function upgradeTutorialGenerators(state: GameState): { success: boolean;
     message: `Generators upgraded — +${tutorialGeneratorRate(state)} per second each.`,
   };
 }
-/** Full-game Biomass synthesis costs (kept, but not part of the first-session hook). */
-export const TUTORIAL_SYNTH_WATER_COST = 10;
-export const TUTORIAL_SYNTH_NUTRIENT_COST = 10;
 
 /** Which sector holds the signal — deterministic from the map seed. */
 export function signalSectorFor(state: GameState): number {
@@ -199,23 +195,6 @@ export function growTutorialSector(
         ? 'A hypha reaches into the dark.'
         : 'The hypha presses on.',
   };
-}
-
-/**
- * Full-game Synthesis (10 Water + 10 Nutrients → 1 Biomass). Not used by the first-session
- * hook — Biomass arrives with the full game — but kept for the store and future use.
- */
-export function synthesizeBiomass(state: GameState): { success: boolean; message: string } {
-  if (state.water < TUTORIAL_SYNTH_WATER_COST || state.nutrients < TUTORIAL_SYNTH_NUTRIENT_COST) {
-    return {
-      success: false,
-      message: `You need ${TUTORIAL_SYNTH_WATER_COST} Water and ${TUTORIAL_SYNTH_NUTRIENT_COST} Nutrients.`,
-    };
-  }
-  state.water -= TUTORIAL_SYNTH_WATER_COST;
-  state.nutrients -= TUTORIAL_SYNTH_NUTRIENT_COST;
-  state.totalBiomassEarned += addBiomass(state, 1);
-  return { success: true, message: 'Biomass formed — your cell has structural mass now.' };
 }
 
 /** Install one of the two tutorial generators. The economy reveal; no phase gate. */

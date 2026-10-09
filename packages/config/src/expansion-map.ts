@@ -53,12 +53,6 @@ export const EXPANSION_MAP = {
   /** Flat fill opacity of the claimed-territory wash. */
   territoryOpacity: 0.06,
 
-  // ── Rhizomorph cord ──
-  /** Cord build cost, as a multiple of the next reach cost. */
-  cordCostMult: 5,
-  /** Reserved: upkeep multiplier once a cord exists (wired in a later slice). */
-  cordUpkeepMult: 0.6,
-
   // ── Rendering ──
   /** Milliseconds the drawn reach takes to ease toward its target. */
   reachAnimMs: 320,

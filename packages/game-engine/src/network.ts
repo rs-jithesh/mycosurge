@@ -7,7 +7,6 @@ import {
   getStageForReach,
 } from '@mycosurge/config';
 import type { GameState, RadarContact } from './state';
-import { getReachCost } from './reach';
 import { getSectorDepths, sectorIndexForAngle } from './sectors';
 
 /**
@@ -303,40 +302,4 @@ export function catalogueHost(state: GameState, hostId: string): void {
 
 export function isCatalogued(state: GameState, hostId: string): boolean {
   return state.cataloguedHosts.includes(hostId);
-}
-
-/** The branch that currently reaches furthest — the natural cord candidate. */
-export function getDefaultCordBranch(geometry: NetworkGeometry): string {
-  const furthest = new Map<number, number>();
-  for (const segment of geometry.segments) {
-    furthest.set(segment.branch, Math.max(furthest.get(segment.branch) ?? 0, segment.endMm));
-  }
-  let best = 0;
-  let bestMm = -1;
-  for (const [branch, mm] of furthest) {
-    if (mm > bestMm) {
-      bestMm = mm;
-      best = branch;
-    }
-  }
-  return `branch-${best}`;
-}
-
-/** Biomass price to reinforce a rhizomorph cord. */
-export function getCordCost(state: GameState): number {
-  return Math.floor(getReachCost(state.mycelialNetwork) * EXPANSION_MAP.cordCostMult);
-}
-
-export function canBuildCord(state: GameState): boolean {
-  return state.cordBranchId === null && state.biomass >= getCordCost(state);
-}
-
-/** Reinforce a branch into a cord (stub: visual + persisted state; upkeep effect later). */
-export function buildCord(state: GameState, branchId: string): boolean {
-  if (state.cordBranchId !== null) return false;
-  const cost = getCordCost(state);
-  if (state.biomass < cost) return false;
-  state.biomass -= cost;
-  state.cordBranchId = branchId;
-  return true;
 }

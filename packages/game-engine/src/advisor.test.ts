@@ -128,12 +128,12 @@ describe('advisor normal bucket', () => {
     expect(evaluateAdvisor(state).phase).toBe('grow');
   });
 
-  it('scores Expand when a reserve is full and Lysate is ready', () => {
+  it('scores Gather when a reserve is full and Lysate is ready', () => {
     const state = activeState();
     state.biomass = 100;
     state.water = state.waterCap;
     state.lysateBanked = 10;
-    expect(evaluateAdvisor(state).phase).toBe('expand');
+    expect(evaluateAdvisor(state).phase).toBe('gather');
   });
 
   it('scores Expand once every generator is maxed and Lysate is banked', () => {

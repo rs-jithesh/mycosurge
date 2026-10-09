@@ -222,7 +222,7 @@ export const ADVISOR_ACTIONS: AdvisorActionDef[] = [
   ...(['water', 'nutrients', 'biomass'] as const).map(
     (resource): AdvisorActionDef => ({
       id: `expand.cap.${resource}`,
-      phase: 'expand',
+      phase: 'gather',
       label: `Raise the ${resource} ceiling`,
       considerations: [
         {

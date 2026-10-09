@@ -58,22 +58,6 @@ describe('applyOfflineProgress', () => {
     expect(report!.appliedSeconds).toBeCloseTo(OFFLINE_MAX_SECONDS * 0.5);
   });
 
-  it('completes expeditions in real time', () => {
-    const state = activeState();
-    state.expeditions = [
-      {
-        hostId: 'bacterial_film',
-        timeRemaining: 60,
-        duration: 60,
-        completed: false,
-        rewardCollected: false,
-      },
-    ];
-    const report = applyOfflineProgress(state, 120);
-    expect(report!.expeditionsCompleted).toBe(1);
-    expect(state.expeditions[0].completed).toBe(true);
-  });
-
   it('clears contacts that drift away', () => {
     const state = activeState();
     state.contacts = [

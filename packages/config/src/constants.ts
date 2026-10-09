@@ -1,27 +1,8 @@
 export const BASE_BIOMASS_PER_SEC = 0.5;
 
-// ── Feature flags ──
-/**
- * Expeditions are hidden until explicitly enabled. While false the system never
- * unlocks, is never announced, and has no panel entry point. Flip to true to
- * surface it again.
- */
-export const EXPEDITIONS_ENABLED = false;
-
 export const MAX_BIOMASS_BASE = 100;
 
-export const ALERT_INCREASE_RATE = 0.5;
-export const ALERT_DECAY_RATE = 0.3;
-export const ALERT_EFFECT_CAP = 0.5;
-
-export const DEPLETION_RATE_PER_ASSIM = 0.003;
-
-/** Hard ceiling on the *combined* alert + strain drag on passive Biomass. */
-export const ECOLOGICAL_DRAG_CAP = 0.5;
-
 export const TRAUMA_BASE_DURATION = 30;
-
-export const EXPEDITION_BASE_TIME = 300;
 
 export const COMBAT_BIOMASS_BASE = 25;
 export const COMBAT_BIOMASS_PER_DIFFICULTY = 15;
@@ -56,9 +37,6 @@ export const STARVATION_STATE_THRESHOLD = 0.05;
 // only while `gamePhase === 'active'` (the tutorial runs its own economy).
 /** Continuous drain on Water and Nutrients per mm of reach. */
 export const UPKEEP_PER_REACH = 0.02;
-/** Legacy complexity-based upkeep (disabled while reach drives upkeep). */
-export const UPKEEP_PER_LEVEL = 0.1;
-export const UPKEEP_PER_EXPANSION = 0.05;
 
 // ── Lysate ──
 export const LYSATE_BASE_REWARD = 5;
@@ -100,9 +78,6 @@ export const RADAR_SLOT_TIERS: RadarSlotTier[] = [
 
 // ── Assimilation ──
 export const HOST_ASSIMILATION_TARGET = 100;
-// Ecological strain added to `assimilationPercent` per victory. Kept small and
-// separate from the per-host assimilation progress so the two meters mean different things.
-export const GLOBAL_STRAIN_PER_WIN = 2;
 
 // ── Manual actions (full game) ──
 export const MANUAL_ABSORB_AMOUNT = 2;

@@ -14,7 +14,6 @@ export type IconKey =
   | 'core'
   | 'radar'
   | 'evolution'
-  | 'expeditions'
   | 'gather'
   | 'grow'
   | 'hunt'
@@ -51,7 +50,6 @@ export const ICON_META: Record<IconKey, IconMeta> = {
 
   radar: { file: 'radar.png', glyph: '◎', label: 'Radar', tone: 'cyan' },
   evolution: { file: 'evolution.png', glyph: '❖', label: 'Evolution', tone: 'mint' },
-  expeditions: { file: 'expeditions.png', glyph: '➤', label: 'Expeditions', tone: 'amber' },
 
   gather: { file: 'gather.png', glyph: '≋', label: 'Gather', tone: 'cyan' },
   grow: { file: 'grow.png', glyph: '✦', label: 'Grow', tone: 'amber' },

@@ -54,7 +54,6 @@ const SAMPLE_REPORT: OfflineReport = {
   waterGained: 96.4,
   nutrientsGained: 88.2,
   lysateStabilized: 24,
-  expeditionsCompleted: 2,
   wasCapped: true,
 };
 

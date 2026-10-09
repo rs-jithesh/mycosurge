@@ -208,21 +208,6 @@
         every stage.
       </p>
 
-      <div class="map-section">
-        {#if gameStore.cordBranchId}
-          <span class="cord-status text-data-mono">Rhizomorph cord: active</span>
-        {:else}
-          <button
-            class="cmd-btn secondary cord-btn"
-            disabled={!gameStore.canBuildCord}
-            onclick={() => gameStore.reinforceCord()}
-          >
-            Reinforce cord · {gameStore.cordCost}
-            {resourceLabel('biomass')}
-          </button>
-        {/if}
-      </div>
-
       {#if gameStore.unlockedSystems.evolution}
         <div class="genome-available text-data-mono">
           Genome: {gameStore.genomePointsAvailable} available
@@ -313,24 +298,6 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-  }
-
-  /* ── Expand: cord ── */
-  .map-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .cord-btn {
-    font-size: 12px;
-    padding: 8px 12px;
-    min-height: 40px;
-  }
-
-  .cord-status {
-    font-size: 12px;
-    color: var(--primary);
   }
 
   /* ── Grow: generators ── */

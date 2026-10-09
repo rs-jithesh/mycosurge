@@ -2,8 +2,6 @@
   import { onMount, tick } from 'svelte';
   import type { OfflineReport } from '@mycosurge/game-engine';
   import ResourceSymbol from './ResourceSymbol.svelte';
-  import CountUp from './CountUp.svelte';
-  import ResourceIcon from './ResourceIcon.svelte';
 
   let {
     report,
@@ -130,18 +128,6 @@
           <span class="stat-label text-label-caps"
             ><ResourceSymbol id="lysate" focusable={false} /> banked</span
           >
-        </div>
-      {/if}
-
-      {#if report.expeditionsCompleted > 0}
-        <div class="stat" data-tone="amber">
-          <ResourceIcon name="expeditions" size={28} round />
-          <span class="stat-val text-data-mono">
-            <CountUp value={report.expeditionsCompleted} />
-          </span>
-          <span class="stat-label text-label-caps">
-            {report.expeditionsCompleted === 1 ? 'Expedition back' : 'Expeditions back'}
-          </span>
         </div>
       {/if}
     </div>

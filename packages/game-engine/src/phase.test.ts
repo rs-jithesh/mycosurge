@@ -90,12 +90,12 @@ describe('getRecommendedPhase', () => {
     expect(getRecommendedPhase(state)).toBe('hunt');
   });
 
-  it('points at Expand when a reserve is full and Lysate is ready', () => {
+  it('points at Gather when a reserve is full and Lysate is ready', () => {
     const state = activeState();
     state.biomass = 100;
     state.water = state.waterCap;
     state.lysateBanked = 10;
-    expect(getRecommendedPhase(state)).toBe('expand');
+    expect(getRecommendedPhase(state)).toBe('gather');
   });
 
   it('does not suggest Expand when only an unaffordable pool is full', () => {

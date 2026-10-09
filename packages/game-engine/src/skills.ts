@@ -156,7 +156,6 @@ function recomputeSkillEffects(state: GameState): void {
   state.combatStats.hpRegen = 0;
   state.combatStats.damageResistance = 0;
   state.combatStats.emergencyEvac = false;
-  state.maxExpeditionSlots = 1;
 
   for (const def of SKILL_NODES) {
     if ((state.skillAllocations[def.id] ?? 0) > 0) applySkillEffects(state, def.id);
@@ -207,14 +206,7 @@ function applySkillEffects(state: GameState, skillId: string): void {
       break;
     case 'metabolic_efficiency':
       break;
-    case 'rapid_scouts':
-      break;
-    case 'resource_routing':
-      break;
     case 'dormant_spores':
-      break;
-    case 'overmind':
-      state.maxExpeditionSlots = 2;
       break;
     case 'extended_range':
       // Extra radar contact slot is read lazily by getRadarSlots(); no raw stat here.

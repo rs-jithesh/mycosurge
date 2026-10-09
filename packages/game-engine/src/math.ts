@@ -1,8 +1,4 @@
 import {
-  ALERT_INCREASE_RATE,
-  ALERT_DECAY_RATE,
-  ALERT_EFFECT_CAP,
-  DEPLETION_RATE_PER_ASSIM,
   WATER_DEPLETION_RATE,
   NUTRIENT_DEPLETION_RATE,
   WATER_YIELD_THRESHOLD,
@@ -25,23 +21,6 @@ import type { GameState } from './state';
 import { tickGenerators } from './generators';
 import { getCoverage } from './sectors';
 
-export function getAlertMultiplier(alertLevel: number): number {
-  return 1 - (alertLevel / 100) * ALERT_EFFECT_CAP;
-}
-
-export function getDepletionMultiplier(assimilationPercent: number): number {
-  return Math.max(0.1, 1 - assimilationPercent * DEPLETION_RATE_PER_ASSIM);
-}
-
-/**
- * Combined passive-Biomass efficiency from ecological strain and alert level (0–1).
- * `1` means no drag. **Ecological strain / alert drag is disabled for now** while the
- * economy is simplified — re-enable by restoring the drag calculation below.
- */
-export function getEcologicalEfficiency(_state: GameState): number {
-  return 1;
-}
-
 export function getProliferationBonus(allocations: Record<string, number>): number {
   const level = allocations['metabolic_efficiency'] ?? 0;
   return level * 0.25;
@@ -50,16 +29,6 @@ export function getProliferationBonus(allocations: Record<string, number>): numb
 export function getMaxBiomassBonus(allocations: Record<string, number>): number {
   const level = allocations['mycelial_expansion'] ?? 0;
   return level * 0.75;
-}
-
-export function getExpeditionTimeBonus(allocations: Record<string, number>): number {
-  const level = allocations['rapid_scouts'] ?? 0;
-  return level * 0.2;
-}
-
-export function getExpeditionRewardBonus(allocations: Record<string, number>): number {
-  const level = allocations['resource_routing'] ?? 0;
-  return level * 0.3;
 }
 
 export function getTraumaReduction(allocations: Record<string, number>): number {
@@ -110,7 +79,7 @@ function getPassiveBiomassPerSec(state: GameState): number {
   // Starvation halts passive growth in the full game (the tutorial manages its own economy).
   if (state.gamePhase === 'active' && isStarving(state)) return 0;
 
-  const efficiency = getEcologicalEfficiency(state);
+  const efficiency = 1;
   const skillBonus = getProliferationBonus(state.skillAllocations);
 
   return state.baseBiomassPerSec * efficiency * (1 + skillBonus);
@@ -331,18 +300,6 @@ export function tickIdle(state: GameState, deltaSec: number): void {
 
   addBiomass(state, gained);
   state.totalBiomassEarned += gained;
-
-  if (state.assimilationPercent > 0 && !state.isInTrauma) {
-    state.alertLevel = Math.min(100, state.alertLevel + ALERT_INCREASE_RATE * deltaSec);
-  }
-}
-
-export function tickAlertDecay(state: GameState, deltaSec: number): void {
-  state.alertLevel = Math.max(0, state.alertLevel - ALERT_DECAY_RATE * deltaSec);
-}
-
-export function applyDepletion(state: GameState, assimilationDelta: number): void {
-  state.assimilationPercent = Math.min(100, state.assimilationPercent + assimilationDelta);
 }
 
 export function enterTrauma(state: GameState): void {
