@@ -1,19 +1,21 @@
 # Game icons
 
-PNG raster icons for the UI. **Optional** — every icon has a Unicode glyph fallback, so the game
-works before any file lands here and progressively upgrades as PNGs are added.
+The UI currently renders **Unicode glyphs only** — resources use Greek symbols (`ψ ν β λ μ`) and
+everything else a small pictograph. Raster icon artwork is **deferred** (see `ASSET-PLAN.md`);
+no PNGs ship right now.
 
 ## How it works
 
-- Registry: `apps/web/src/lib/content/icons.ts` (`ICON_META` maps key → `{ file, glyph, ... }`).
-- Component: `apps/web/src/lib/components/ResourceIcon.svelte`.
-- This folder is served at `/assets/icons/<file>` (prefixed by `paths.base` in the app).
+- Registry: `apps/web/src/lib/content/icons.ts` (`ICON_META` maps a key → `{ glyph, label, tone }`).
+  Resource glyphs/labels/tones come from `@mycosurge/config` `RESOURCES`, not this registry.
+- Component: `apps/web/src/lib/components/ResourceIcon.svelte` — `<ResourceIcon name="water" size={18} />`.
+  Accepts a registry key or a resource id and renders the resolved glyph (with a resource tooltip).
 
-## Adding an icon
+## Re-introducing raster art (later)
 
-1. Generate it per `ASSET-PLAN.md` (DiffusionBee workflow).
-2. Name the file exactly as the manifest's `file` field (lowercase `snake_case`, `.png`).
-3. Export at 64px (inline UI), 128px (cards), or 256px (hero/boss) and drop it here.
-4. Refresh — `<ResourceIcon name="..." />` now shows the PNG instead of the glyph.
-
-Icons are generated on a dark moss disc (`#161d1b`), so no transparency is required.
+1. Restore the `file` field on `IconMeta` and add each key's PNG filename in `ICON_META`.
+2. Restore the `<img>` → glyph fallback branch in `ResourceIcon.svelte`.
+3. Generate the PNGs (see `ASSET-PLAN.md` / `PROMPTS.md`) and drop them here, named exactly as the
+   manifest's `file` (lowercase `snake_case`, `.png`). Export at 64px (inline), 128px (cards), or
+   256px (hero/boss).
+4. This folder is served at `/assets/icons/<file>` (prefixed by `paths.base` in the app).

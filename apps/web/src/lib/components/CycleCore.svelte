@@ -28,7 +28,7 @@
 </script>
 
 <div class="core" class:is-hero={variant === 'hero'} data-tone={meta.tone}>
-  <span class="icon" aria-hidden="true"><ResourceIcon name={phase} size={44} round /></span>
+  <span class="icon" aria-hidden="true"><ResourceIcon name={phase} size={44} /></span>
   <span class="stage text-label-caps">{meta.label}</span>
   <p class="objective">{meta.objective}</p>
   <div class="wish-slot" class:is-hero={variant === 'hero'}>

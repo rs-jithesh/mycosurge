@@ -148,7 +148,7 @@
             {@const tutorialIcon = hostIconKey(tutorialHost.id)}
             <button class="host-row" class:blink-border={blinkOn} onclick={engageTutorial}>
               {#if tutorialIcon}
-                <ResourceIcon name={tutorialIcon} size={20} round />
+                <ResourceIcon name={tutorialIcon} size={20} />
               {/if}
               <span class="host-name">{tutorialHost.name}</span>
               <span class="host-lvl">{lvl}</span>
@@ -205,7 +205,7 @@
           <div class="contact-card">
             <div class="contact-top">
               {#if contact.revealed && contactIcon}
-                <ResourceIcon name={contactIcon} size={50} round />
+                <ResourceIcon name={contactIcon} size={50} />
               {:else}
                 <span class="host-icon-unknown text-data-mono">?</span>
               {/if}

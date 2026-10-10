@@ -298,7 +298,7 @@
           <span class="tag-alert text-label-caps">◆ Objective</span>
           <div class="objective-head">
             {#if hostIcon}
-              <ResourceIcon name={hostIcon} size={30} round />
+              <ResourceIcon name={hostIcon} size={30} />
             {/if}
             <h2 class="objective-title">Drive off {host?.name ?? hostId}</h2>
           </div>

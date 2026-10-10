@@ -29,7 +29,7 @@
       aria-selected={i === activeIndex}
       onclick={() => onselect(p.id)}
     >
-      <span class="mode-icon" aria-hidden="true"><ResourceIcon name={p.id} size={22} round /></span>
+      <span class="mode-icon" aria-hidden="true"><ResourceIcon name={p.id} size={22} /></span>
       <span class="mode-label">{p.label}</span>
     </button>
   {/each}

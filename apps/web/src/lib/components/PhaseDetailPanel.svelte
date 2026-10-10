@@ -68,9 +68,7 @@
   {#if !isMobile}
     <header class="panel-head">
       <div class="head-left">
-        <span class="head-icon" aria-hidden="true"
-          ><ResourceIcon name={phase} size={34} round /></span
-        >
+        <span class="head-icon" aria-hidden="true"><ResourceIcon name={phase} size={34} /></span>
         <div class="head-text">
           <h2 class="head-title">{meta.label}</h2>
           <p class="head-tagline">{meta.tagline}</p>

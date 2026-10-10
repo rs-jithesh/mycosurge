@@ -49,7 +49,7 @@
     <div class="cards">
       {#each UNLOCKED_SYSTEMS as system (system.name)}
         <div class="card">
-          <span class="glyph"><ResourceIcon name={system.icon} size={34} round /></span>
+          <span class="glyph"><ResourceIcon name={system.icon} size={34} /></span>
           <div>
             <div class="name text-label-caps">{system.name}</div>
             <p class="blurb">{system.blurb}</p>

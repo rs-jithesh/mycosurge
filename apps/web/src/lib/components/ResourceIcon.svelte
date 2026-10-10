@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { base } from '$app/paths';
   import { resolveIcon } from '$lib/content/icons';
   import type { IconName } from '$lib/content/icons';
   import Tooltip from './Tooltip.svelte';
@@ -7,8 +6,6 @@
   let {
     name,
     size = 18,
-    label,
-    round = false,
     class: className = '',
     detail = '',
     focusable = true,
@@ -17,8 +14,6 @@
     /** A registry key (`gather`, `soil_nematode`, …) or a resource id (`water`, `reach`, …). */
     name: IconName;
     size?: number;
-    label?: string;
-    round?: boolean;
     class?: string;
     /** Live detail (e.g. `140 / 140`) shown in a resource tooltip. */
     detail?: string;
@@ -28,32 +23,16 @@
   } = $props();
 
   const meta = $derived(resolveIcon(name));
-  let failed = $state(false);
   const showTip = $derived(tooltip ?? meta.description !== undefined);
 </script>
 
 {#snippet glyph()}
-  {#if !meta.file || failed}
-    <span
-      class="resource-icon resource-icon--glyph {className}"
-      style="width: {size}px; height: {size}px; font-size: {size}px;"
-      data-tone={meta.tone}
-      aria-hidden="true">{meta.glyph}</span
-    >
-  {:else}
-    <img
-      class="resource-icon resource-icon--img {className}"
-      class:resource-icon--round={round}
-      src="{base}/assets/icons/{meta.file}"
-      width={size}
-      height={size}
-      style="width: {size}px; height: {size}px;"
-      alt={label ?? ''}
-      aria-hidden={label ? undefined : 'true'}
-      draggable="false"
-      onerror={() => (failed = true)}
-    />
-  {/if}
+  <span
+    class="resource-icon {className}"
+    style="width: {size}px; height: {size}px; font-size: {size}px;"
+    data-tone={meta.tone}
+    aria-hidden="true">{meta.glyph}</span
+  >
 {/snippet}
 
 {#if showTip}
@@ -70,41 +49,34 @@
 {/if}
 
 <style>
+  /* Everything renders as a glyph for now; raster artwork is deferred (ASSET-PLAN.md). */
   .resource-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex: none;
-    vertical-align: -0.125em;
-    object-fit: contain;
-  }
-
-  .resource-icon--round {
-    border-radius: 50%;
-  }
-
-  .resource-icon--glyph {
     line-height: 1;
+    vertical-align: -0.125em;
     color: var(--primary);
   }
 
-  .resource-icon--glyph[data-tone='cyan'] {
+  .resource-icon[data-tone='cyan'] {
     color: var(--secondary);
   }
 
-  .resource-icon--glyph[data-tone='violet'] {
+  .resource-icon[data-tone='violet'] {
     color: var(--nutrient);
   }
 
-  .resource-icon--glyph[data-tone='amber'] {
+  .resource-icon[data-tone='amber'] {
     color: var(--tertiary);
   }
 
-  .resource-icon--glyph[data-tone='coral'] {
+  .resource-icon[data-tone='coral'] {
     color: var(--alert);
   }
 
-  .resource-icon--glyph[data-tone='mint'] {
+  .resource-icon[data-tone='mint'] {
     color: var(--primary);
   }
 </style>

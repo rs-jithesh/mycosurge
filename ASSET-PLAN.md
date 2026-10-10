@@ -8,8 +8,11 @@ Generated manually with **Google Gemini image models** ("Nano Banana") in Google
 local install, no API key. See the workflow below; ready-to-paste prompts for every icon live in
 `PROMPTS.md`.
 
-**Status:** Tier 0 (resources) and Tier 1 (systems & phases) are generated (256px PNG in
-`apps/web/static/assets/icons/`) and wired into the UI. Next up: Tier 2 host portraits.
+**Status:** deferred. The UI currently renders **Unicode glyphs** only (resources use Greek
+symbols like `ψ ν β λ μ`); the icon PNGs were removed from the repo and the raster pipeline is
+disabled. Re-introduce art later: regenerate from `PROMPTS.md`, restore the `file` field in
+`content/icons.ts` plus the `<img>` branch in `ResourceIcon.svelte`, and drop the PNGs into
+`apps/web/static/assets/icons/`.
 
 ## Principles
 
@@ -38,7 +41,7 @@ local install, no API key. See the workflow below; ready-to-paste prompts for ev
 
 ## Priority tiers
 
-### Tier 0 — Resource & currency icons (5) — ✅ generated
+### Tier 0 — Resource & currency icons (5) — deferred
 
 Highest ROI: 5 icons make the entire economy legible across Core, generators, radar, evolution,
 and the tutorial.
@@ -51,7 +54,7 @@ and the tutorial.
 | `lysate.png`    | ruptured host cell / amber sap | amber  |
 | `core.png`      | fungal nucleus (brand mark)    | mint   |
 
-### Tier 1 — Systems & phases (7) — ✅ generated
+### Tier 1 — Systems & phases (7) — deferred
 
 Replaces the Unicode glyphs in `apps/web/src/lib/content/phases.ts` and
 `apps/web/src/lib/content/systems.ts`.
@@ -81,9 +84,8 @@ hosts, then fill in.
 
 - **Generate** 512×512. **Export** 64px (inline UI), 128px (cards/portraits), 256px (hero/boss).
 - Lowercase `snake_case` filenames matching the manifest key: `water.png`, `soil_nematode.png`.
-- Drop into `apps/web/static/assets/icons/`. The `<ResourceIcon>` component and
-  `apps/web/src/lib/content/icons.ts` manifest already handle the rest, falling back to the
-  original glyph until each PNG exists.
+- Drop into `apps/web/static/assets/icons/` and wire the filename into `content/icons.ts`. (The
+  raster pipeline is currently disabled — see **Status** above.)
 
 ---
 
@@ -164,13 +166,14 @@ spores` (nutrients), `a radiant nucleus with hyphae` (core). Keep colour + suffi
 
 ### Verification loop
 
-The `<ResourceIcon>` component renders the PNG when present and silently falls back to the glyph
-when it is missing. So you can generate **one icon at a time** — copy it in, refresh, and watch
-the UI progressively upgrade. Check that each icon is readable at 32px before moving on.
+The raster pipeline is disabled for now, so icons render as glyphs regardless of the files
+present. When it is restored (see **Status**), `<ResourceIcon>` will render the PNG when present
+and fall back to the glyph otherwise, so you can generate one icon at a time and watch the UI
+upgrade. Check each at 32px before moving on.
 
 ## Integration
 
-- Manifest: `apps/web/src/lib/content/icons.ts` (`IconKey`, `ICON_META`).
+- Manifest: `apps/web/src/lib/content/icons.ts` (`IconKey`, `ICON_META`) — glyphs only for now.
 - Component: `apps/web/src/lib/components/ResourceIcon.svelte` — `<ResourceIcon name="water" size={18} />`.
-- Files: `apps/web/static/assets/icons/<key>.png` (see `README.md` in that folder).
+- Files (future): `apps/web/static/assets/icons/<key>.png` (see `README.md` in that folder).
 - Prompts: `PROMPTS.md` — copy-paste Gemini prompt for every key, tier by tier.

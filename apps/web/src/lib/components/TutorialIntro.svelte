@@ -187,7 +187,7 @@
                 {#each TUTORIAL_GENERATORS as gen (gen.id)}
                   {@const owned = gen.id === 'osmoticPump' ? hasPump : hasExudates}
                   <div class="gen-row" class:current={objective.id === 'build' && !owned}>
-                    <span class="gen-glyph"><ResourceIcon name={gen.icon} size={34} round /></span>
+                    <span class="gen-glyph"><ResourceIcon name={gen.icon} size={34} /></span>
                     <span class="gen-info">
                       <span class="gen-name">{gen.recommended ? '★ ' : ''}{gen.name}</span>
                       <span class="gen-rate text-data-mono">{generatorEffectText(gen.id)}</span>
