@@ -1,8 +1,4 @@
-import {
-  OFFLINE_MAX_SECONDS,
-  OFFLINE_BASE_RATE,
-  OFFLINE_DORMANT_BONUS_PER_LEVEL,
-} from '@mycosurge/config';
+import { OFFLINE_MAX_SECONDS, OFFLINE_BASE_RATE } from '@mycosurge/config';
 import type { GameState } from './state';
 import { tickIdle } from './math';
 
@@ -21,10 +17,9 @@ export interface OfflineReport {
   wasCapped: boolean;
 }
 
-/** Offline economy rate for a given Dormant Spores level, capped at 1. */
-export function getOfflineRate(skillAllocations: Record<string, number>): number {
-  const level = skillAllocations['dormant_spores'] ?? 0;
-  return Math.min(1, OFFLINE_BASE_RATE + level * OFFLINE_DORMANT_BONUS_PER_LEVEL);
+/** Offline economy rate. */
+export function getOfflineRate(): number {
+  return OFFLINE_BASE_RATE;
 }
 
 /**
@@ -43,7 +38,7 @@ export function applyOfflineProgress(
   const capped = Math.min(elapsed, OFFLINE_MAX_SECONDS);
   if (capped < 1) return null;
 
-  const rate = getOfflineRate(state.skillAllocations);
+  const rate = getOfflineRate();
   const realSeconds = Math.floor(capped);
   const ecoSeconds = Math.floor(capped * rate);
 

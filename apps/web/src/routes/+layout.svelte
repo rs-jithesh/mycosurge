@@ -8,7 +8,6 @@
   import { uiStore } from '$lib/stores/ui.svelte';
   import { devStore } from '$lib/stores/dev.svelte';
   import ConsolePanel from '$lib/components/ConsolePanel.svelte';
-  import EvolutionPanel from '$lib/components/panels/EvolutionPanel.svelte';
   import ResourceStrip from '$lib/components/ResourceStrip.svelte';
   import ResourcesPanel from '$lib/components/panels/ResourcesPanel.svelte';
   import BestiaryPanel from '$lib/components/bestiary/BestiaryPanel.svelte';
@@ -336,9 +335,7 @@
 {/if}
 
 <!-- System drawers -->
-{#if uiStore.activePanel === 'evolution'}
-  <EvolutionPanel onClose={() => uiStore.closeTop()} />
-{:else if uiStore.activePanel === 'bestiary'}
+{#if uiStore.activePanel === 'bestiary'}
   <BestiaryPanel onClose={() => uiStore.closeTop()} />
 {:else if uiStore.activePanel === 'resources'}
   <ResourcesPanel onClose={() => uiStore.closeTop()} />

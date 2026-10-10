@@ -15,16 +15,6 @@ export const TRAUMA_BASE_DURATION = 30;
 export const COMBAT_BIOMASS_BASE = 25;
 export const COMBAT_BIOMASS_PER_DIFFICULTY = 15;
 
-// ── Genome points (mutation budget) ──
-// Mutations are paid with a limited point budget, not Biomass, so a player
-// cannot own every node and builds diverge. The budget grows as the network
-// climbs the scale ladder.
-export const GENOME_BASE_POINTS = 6;
-/** Extra genome points granted for each scale stage the network has reached. */
-export const GENOME_POINTS_PER_STAGE = 2;
-/** Biomass cost of every respec after the first (free) one. */
-export const RESPEC_BIOMASS_COST = 40;
-
 // ── Water & Nutrients ──
 export const WATER_DEPLETION_RATE = 0.8;
 export const NUTRIENT_DEPLETION_RATE = 0.8;
@@ -61,7 +51,7 @@ export const CONTACT_LINGER = 120;
 export const SCAN_WATER_COST = 5;
 /** Radar contacts you can hold at once, before any upgrades. */
 export const BASE_CONTACT_SLOTS = 5;
-/** Hard ceiling, including the Extended Range mutation. */
+/** Hard ceiling on contact slots. */
 export const MAX_CONTACT_SLOTS = 12;
 
 export interface RadarSlotTier {
@@ -83,9 +73,6 @@ export const RADAR_SLOT_TIERS: RadarSlotTier[] = [
   { reachMm: 600, lysate: 250, biomass: 4000 },
   { reachMm: 1000, lysate: 600, biomass: 10000 },
 ];
-
-// ── Assimilation ──
-export const HOST_ASSIMILATION_TARGET = 100;
 
 // ── Manual actions (full game) ──
 export const MANUAL_ABSORB_AMOUNT = 2;
@@ -127,5 +114,3 @@ export const LOG_REPEAT_WINDOW_SECONDS = 30;
 export const OFFLINE_MAX_SECONDS = 8 * 60 * 60;
 /** Fraction of the online economy that runs while away. */
 export const OFFLINE_BASE_RATE = 0.5;
-/** Extra offline rate per level of the Dormant Spores mutation. */
-export const OFFLINE_DORMANT_BONUS_PER_LEVEL = 0.25;

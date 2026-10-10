@@ -126,7 +126,7 @@ single generator stays net-positive. Re-run it after any balance change.
 **File:** `packages/game-engine/src/offline.ts`.
 
 The save stamps `lastSavedAt`; on load the elapsed gap (capped at 8h) is simulated at a base
-50% rate, `+25%` per `Dormant Spores` level. Trauma recovery uses real time; stale contacts
+50% rate. Trauma recovery uses real time; stale contacts
 expire. Tuning lives in `OFFLINE_*` constants. The result is presented by
 `WelcomeBackDialog.svelte` — a centered modal that greets the player and lists the Biomass /
 Water / Nutrients / Lysate change plus the offline rate.

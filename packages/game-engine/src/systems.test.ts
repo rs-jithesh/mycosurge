@@ -3,31 +3,13 @@ import { createInitialState } from './state';
 import { getSystemUnlocks } from './systems';
 
 describe('getSystemUnlocks', () => {
-  it('keeps every optional system locked during the tutorial', () => {
-    const state = createInitialState();
-    expect(getSystemUnlocks(state)).toEqual({ radar: false, evolution: false });
+  it('keeps the radar locked during the tutorial', () => {
+    expect(getSystemUnlocks(createInitialState())).toEqual({ radar: false });
   });
 
-  it('reveals only the core chain at the start of the full game', () => {
+  it('reveals the radar once the full game is active', () => {
     const state = createInitialState();
     state.gamePhase = 'active';
-    expect(getSystemUnlocks(state)).toEqual({ radar: true, evolution: false });
-  });
-
-  it('reveals Evolution once a host has been grown over', () => {
-    const state = createInitialState();
-    state.gamePhase = 'active';
-    state.hostsDefeated = 1;
-    const unlocks = getSystemUnlocks(state);
-    expect(unlocks.radar).toBe(true);
-    expect(unlocks.evolution).toBe(true);
-  });
-
-  it('does not re-lock a system once a host has been grown over', () => {
-    const state = createInitialState();
-    state.gamePhase = 'active';
-    state.hostsDefeated = 1;
-    state.biomass = 0;
-    expect(getSystemUnlocks(state).evolution).toBe(true);
+    expect(getSystemUnlocks(state)).toEqual({ radar: true });
   });
 });

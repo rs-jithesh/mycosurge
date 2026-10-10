@@ -76,5 +76,4 @@ export const UNLOCKED_SYSTEMS: UnlockCard[] = [
   },
 ];
 
-export const UNLOCKED_NOTE =
-  'Evolution unfolds as your network grows — nothing else to learn right now.';
+export const UNLOCKED_NOTE = 'That is the whole network — grow, gather, and hunt.';

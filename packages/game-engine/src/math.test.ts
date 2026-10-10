@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  getProliferationBonus,
-  getTraumaReduction,
-  getNutrientFixationBonus,
   getResourceProduction,
   getEffectiveMaxBiomass,
   getEffectiveBiomassPerSec,
@@ -20,60 +17,17 @@ import { getGeneratorCost, UPKEEP_PER_REACH } from '@mycosurge/config';
 import { createInitialState, type GameState } from './state';
 import { setReachMm } from './sectors';
 
-describe('getProliferationBonus', () => {
-  it('returns 0 with no allocations', () => {
-    expect(getProliferationBonus({})).toBe(0);
-  });
-
-  it('returns 0.25 per level', () => {
-    expect(getProliferationBonus({ metabolic_efficiency: 2 })).toBe(0.5);
-  });
-});
-
-describe('getTraumaReduction', () => {
-  it('returns 0.15 per level', () => {
-    expect(getTraumaReduction({ trauma_recovery: 3 })).toBeCloseTo(0.45);
-  });
-});
-
-describe('getNutrientFixationBonus', () => {
-  it('returns 0 with no allocations', () => {
-    expect(getNutrientFixationBonus({})).toBe(0);
-  });
-
-  it('returns 0.5 per level', () => {
-    expect(getNutrientFixationBonus({ nitrogen_fixation: 1 })).toBe(0.5);
-  });
-
-  it('feeds into Nutrients production but not Water', () => {
+describe('getResourceProduction', () => {
+  it('returns 0 with no generators installed', () => {
     const state = createInitialState();
-    state.skillAllocations['nitrogen_fixation'] = 1;
-    expect(getResourceProduction(state, 'nutrients')).toBe(0.5);
+    expect(getResourceProduction(state, 'nutrients')).toBe(0);
     expect(getResourceProduction(state, 'water')).toBe(0);
   });
 
-  it('adds a passive Nutrients trickle each tick', () => {
-    const baseline = createInitialState();
-    baseline.gamePhase = 'active';
-    baseline.nutrients = 50;
-    tickIdle(baseline, 1);
-
-    const fixed = createInitialState();
-    fixed.gamePhase = 'active';
-    fixed.nutrients = 50;
-    fixed.skillAllocations['nitrogen_fixation'] = 1;
-    tickIdle(fixed, 1);
-
-    expect(fixed.nutrients - baseline.nutrients).toBeCloseTo(0.5);
-  });
-
-  it('does not push Nutrients past the cap', () => {
+  it('scales with the pool generator level', () => {
     const state = createInitialState();
-    state.gamePhase = 'active';
-    state.nutrients = state.nutrientsCap;
-    state.skillAllocations['nitrogen_fixation'] = 1;
-    tickIdle(state, 1);
-    expect(state.nutrients).toBeLessThanOrEqual(state.nutrientsCap);
+    state.generators = { osmotic_pump: 2 };
+    expect(getResourceProduction(state, 'water')).toBe(2);
   });
 });
 
@@ -83,26 +37,12 @@ describe('getEffectiveMaxBiomass', () => {
     expect(getEffectiveMaxBiomass(state)).toBe(100);
   });
 
-  it('increases with mycelial_expansion', () => {
-    const state = createInitialState();
-    state.skillAllocations['mycelial_expansion'] = 1;
-    expect(getEffectiveMaxBiomass(state)).toBe(175);
-  });
-
   it('grows when the biomass cap is expanded with Lysate', () => {
     const state = createInitialState();
     state.lysateBanked = 100;
     expect(expandBiomassCap(state)).toBe(true);
     expect(state.maxBiomass).toBe(150);
     expect(getEffectiveMaxBiomass(state)).toBe(150);
-  });
-
-  it('combines Lysate expansions with the expansion skill', () => {
-    const state = createInitialState();
-    state.lysateBanked = 100;
-    expandBiomassCap(state);
-    state.skillAllocations['mycelial_expansion'] = 1;
-    expect(getEffectiveMaxBiomass(state)).toBeCloseTo(262.5);
   });
 
   it('grows with network reach beyond the starting depth', () => {
@@ -284,20 +224,6 @@ describe('enterTrauma', () => {
     enterTrauma(state);
     expect(state.isInTrauma).toBe(true);
     expect(state.traumaTimer).toBe(30);
-  });
-
-  it('reduces duration with trauma_recovery skill', () => {
-    const state = createInitialState();
-    state.skillAllocations['trauma_recovery'] = 2;
-    enterTrauma(state);
-    expect(state.traumaTimer).toBeCloseTo(21);
-  });
-
-  it('floors at 5 seconds minimum', () => {
-    const state = createInitialState();
-    state.skillAllocations['trauma_recovery'] = 3;
-    enterTrauma(state);
-    expect(state.traumaTimer).toBeGreaterThanOrEqual(5);
   });
 
   it('resets shield hits', () => {

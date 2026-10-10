@@ -90,11 +90,9 @@ describe('getFarmPool', () => {
 });
 
 describe('getRadarSlots', () => {
-  it('starts at 5 and grows with the extended_range mutation', () => {
+  it('starts at the base slot count', () => {
     const state = createInitialState();
     expect(getRadarSlots(state)).toBe(5);
-    state.skillAllocations['extended_range'] = 1;
-    expect(getRadarSlots(state)).toBe(6);
   });
 });
 
@@ -273,31 +271,6 @@ describe('contact id uniqueness', () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids).toContain('contact-1');
     expect(ids).toContain('contact-2');
-  });
-});
-
-describe('per-host assimilation', () => {
-  it('adds progress to the fought host only', () => {
-    const state: GameState = createInitialState();
-    state.water = state.waterCap;
-    state.nutrients = state.nutrientsCap;
-    calculateVictoryReward(state, 'bacterial_film');
-    expect(state.hostAssimilation['bacterial_film']).toBe(15);
-    expect(state.hostAssimilation['tardigrade']).toBeUndefined();
-  });
-
-  it('grows a host over once and bumps hostsDefeated once', () => {
-    const state: GameState = createInitialState();
-    state.water = state.waterCap;
-    state.nutrients = state.nutrientsCap;
-    for (let i = 0; i < 7; i++) {
-      applyVictory(state, 'bacterial_film');
-    }
-    expect(state.grownOverHosts).toContain('bacterial_film');
-    expect(state.hostsDefeated).toBe(1);
-
-    applyVictory(state, 'bacterial_film');
-    expect(state.hostsDefeated).toBe(1);
   });
 });
 

@@ -23,8 +23,8 @@ Three verbs, each additive — later systems never replace earlier ones:
 
 1. **Harvest & grow** — gather Water and Nutrients, synthesise Biomass.
 2. **Automate** — install and upgrade generators; Water and Nutrients tick up passively.
-3. **Fight & evolve** — engage hosts in the arena for Biomass and Lysate; spend Biomass on
-   generators, genome points on Mutations, and Lysate on larger resource caps.
+3. **Fight** — engage hosts in the arena for Biomass and Lysate; spend Biomass on generators
+   and Lysate on larger resource caps.
 
 ## Resources
 
@@ -32,7 +32,7 @@ Three verbs, each additive — later systems never replace earlier ones:
 | ------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | **Water**     | Passive drain; produced by generators | Gating resource. Below 35% cuts combat yield; below 15% is starvation.                                 |
 | **Nutrients** | Passive drain; produced by generators | Digestion gate. Below 40% cuts combat yield; below 15% is starvation.                                  |
-| **Biomass**   | Accumulates + combat rewards          | Currency for generators (and respecs).                                                                 |
+| **Biomass**   | Accumulates + combat rewards          | Currency for generators.                                                                               |
 | **Lysate**    | Combat only; perishable               | `Raw` Lysate stabilises into `banked` Lysate using Water + Nutrients, or decays. Spent to expand caps. |
 
 Each pool has a cap. Combat rewards that arrive above a cap are **kept** —
@@ -103,23 +103,6 @@ spending Water and Nutrients; if the network can't pay, raw Lysate decays. Banke
 buys cheap cap upgrades: the first expansion adds **+50**, each one after ~10% more, at a
 gently rising cost.
 
-### Mutations (skill tree)
-
-Bought with a limited budget of **genome points** on the Evolution page — not Biomass — so you
-cannot own every node and builds diverge. The budget is `6 + 2 × scale stages reached` (max
-~20); most nodes cost `1` point per level and the capstones (Chain Reaction,
-Emergency Evac) cost `3`. Each node has levels and prerequisites, and a prerequisite
-only needs **level 1** (not a full level-up) to unlock the next node. A **Respec** (free the first
-time, then 40 Biomass) clears all mutations, but is unavailable during combat or while recovering
-from trauma. Three trees:
-
-- **Aggression** — Spore Speed, Fire Rate, Multi-Shot, Piercing Shot, Overcharge, Chain
-  Reaction.
-- **Resilience** — Compact Core, Spore Shield, Trauma Recovery, Regenerative Spores,
-  Adaptive Membrane, Emergency Evac.
-- **Proliferation** — Mycelial Expansion, Metabolic Efficiency, Nitrogen Fixation, Dormant
-  Spores, Extended Range.
-
 ## Hosts & discovery
 
 Hosts are ordered along an **8-stage scale ladder**, from microbial grazers a few
@@ -150,11 +133,10 @@ Each host carries one or more **attack patterns** (see `COMBAT.md`).
 
 The Radar is a scanning instrument, not a host menu. **Blips** drift in over time (roughly
 every 20s) while you are idle, up to your **contact-slot limit** — 5 to start, plus more via
-**reach-gated upgrades bought with Lysate and Biomass** (the **Extended Range** mutation adds
-one more). Spend 5 Water to **scan** a blip and reveal the host, or **ping
-the substrate** (5 Water) to force a new blip onto a free slot. Revealed contacts show
-level, variant, reward, and how far that host is from being fully grown over. Contacts drift
-away after two minutes if left alone.
+**reach-gated upgrades bought with Lysate and Biomass**. Spend 5 Water to **scan** a blip and
+reveal the host, or **ping the substrate** (5 Water) to force a new blip onto a free slot.
+Revealed contacts show level, variant and reward. Contacts drift away after two minutes if
+left alone.
 
 ### Variants
 
@@ -166,13 +148,6 @@ Any contact can carry a **variant**, a light per-encounter modifier:
 | Swift   | 10%  | +30% projectile speed, +25% reward   |
 | Armored | 10%  | +50% HP, +30% reward                 |
 | Bloated | 8%   | −15% speed, +60% reward, +50% Lysate |
-
-### Assimilation
-
-Each victory assimilates **that host** by `10 + difficulty × 5`. At 100 the host is fully
-**grown over**: `hostsDefeated` rises once and the host counts toward progression. Hosts
-enter the pool as **reach** opens their stage band — the band boss is what gates the next
-scale (see "Hosts & discovery").
 
 ## Onboarding
 
@@ -202,20 +177,13 @@ Finishing the tutorial unlocks the **core chain** — Core and Radar — alongsi
 "systems unlocked" overlay, and the first return reports what the network produced while
 away (see Offline progression).
 
-The remaining systems are **unfolded as the player reaches them** rather than dumped at once:
-**Evolution** appears once the first host has been grown over. Locked
-tabs are hidden, each new system announces itself once in the activity log, and
-its tab carries a "New" badge until first visited. Unlocks are based on lifetime totals, so a
-system never re-locks once reached.
-
 ## Tone & voice
 
 - **Plain verbs first, flavour second.** Buttons and instructions are literal; the
   activity log carries the atmosphere.
 - **No terminal jargon** in player-facing copy — no `SYS:`/`EXE:` prefixes, no
   "neutralize"/"assimilate"; say "drive off", "grow over", "recover".
-- **Consistent terms**: Water, Nutrients, Biomass, Lysate, Core, Radar, Evolution,
-  Generators, Mutations, Hosts.
+- **Consistent terms**: Water, Nutrients, Biomass, Lysate, Core, Radar, Generators, Hosts.
 
 ## Persistence & QA
 
@@ -227,15 +195,12 @@ system never re-locks once reached.
 ### Offline progression
 
 The colony keeps growing while the tab is closed. On return, the elapsed time (capped at
-**8 hours**) is simulated at a base **50%** rate, raised by **25%** per level of the Dormant
-Spores mutation (up to the full online rate). Trauma recovery runs in real
-time; contacts that would have drifted away expire. A "Welcome back" banner summarises what
-the network produced.
+**8 hours**) is simulated at a base **50%** rate. Trauma recovery runs in real time; contacts
+that would have drifted away expire. A "Welcome back" banner summarises what the network
+produced.
 
 ## Longevity
 
-- **Build diversity** — a limited genome-point budget and distinct mutation trees force
-  trade-offs between a glass-cannon spread build and a tiny shielded core.
 - **Varied hosts** — each host mixes attack patterns, so later encounters feel different
   from the worm.
 - **Rising caps** — Lysate cap expansion and Biomass rewards keep the numbers climbing

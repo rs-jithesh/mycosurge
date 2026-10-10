@@ -12,17 +12,8 @@ function activeState() {
 }
 
 describe('getOfflineRate', () => {
-  it('starts at half rate', () => {
-    expect(getOfflineRate({})).toBe(0.5);
-  });
-
-  it('rises with Dormant Spores', () => {
-    expect(getOfflineRate({ dormant_spores: 1 })).toBeCloseTo(0.75);
-    expect(getOfflineRate({ dormant_spores: 2 })).toBe(1);
-  });
-
-  it('never exceeds the online rate', () => {
-    expect(getOfflineRate({ dormant_spores: 9 })).toBe(1);
+  it('is a flat half rate', () => {
+    expect(getOfflineRate()).toBe(0.5);
   });
 });
 
@@ -42,13 +33,6 @@ describe('applyOfflineProgress', () => {
     // 0.5 Biomass/s * 100s * 0.5 rate = 25
     expect(report!.biomassGained).toBeCloseTo(25);
     expect(state.biomass).toBeCloseTo(25);
-  });
-
-  it('uses the full rate with Dormant Spores maxed', () => {
-    const state = activeState();
-    state.skillAllocations.dormant_spores = 2;
-    const report = applyOfflineProgress(state, 100);
-    expect(report!.biomassGained).toBeCloseTo(50);
   });
 
   it('caps long absences at the offline limit', () => {

@@ -85,14 +85,10 @@ export interface GameState {
   sonarTimer: number;
   lastContactHostId: string | null;
   activeVariantId: string;
-  hostAssimilation: Record<string, number>;
   traumaTimer: number;
   isInTrauma: boolean;
   combatStats: CombatStats;
-  skillAllocations: Record<string, number>;
   manualUpgrades: Record<string, number>;
-  /** Number of times the player has respecced mutations (first is free). */
-  respecsUsed: number;
   generators: Record<string, number>;
   lysateRaw: number;
   lysateBanked: number;
@@ -102,10 +98,7 @@ export interface GameState {
   capExpansions: { water: number; nutrients: number; biomass: number };
   /** How many radar slot upgrades have been bought (0 → `RADAR_SLOT_TIERS.length`). */
   radarSlotLevel: number;
-  /** Host ids fully grown over (assimilation reached its target). */
-  grownOverHosts: string[];
   totalBiomassEarned: number;
-  hostsDefeated: number;
   gamePhase: GamePhase;
   water: number;
   waterCap: number;
@@ -148,7 +141,6 @@ export function createInitialState(): GameState {
     sonarTimer: SONAR_INITIAL_DELAY,
     lastContactHostId: null,
     activeVariantId: NORMAL_VARIANT_ID,
-    hostAssimilation: {},
     traumaTimer: 0,
     isInTrauma: false,
     combatStats: {
@@ -170,18 +162,14 @@ export function createInitialState(): GameState {
       dodgeWindowMult: 1,
       evadeChance: 0,
     },
-    skillAllocations: {},
     manualUpgrades: {},
-    respecsUsed: 0,
     generators: {},
     lysateRaw: 0,
     lysateBanked: 0,
     lysateEarned: 0,
     capExpansions: { water: 0, nutrients: 0, biomass: 0 },
     radarSlotLevel: 0,
-    grownOverHosts: [],
     totalBiomassEarned: 0,
-    hostsDefeated: 0,
     gamePhase: 'awakening',
     water: 0,
     waterCap: MAX_WATER_BASE,

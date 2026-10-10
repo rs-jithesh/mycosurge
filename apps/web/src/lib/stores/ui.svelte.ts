@@ -1,9 +1,9 @@
-export type PanelId = 'evolution' | 'bestiary' | 'resources' | 'console';
+export type PanelId = 'bestiary' | 'resources' | 'console';
 
 /**
- * Overlay state for the full-screen systems. The game is a single view now, so
- * Evolution opens as a drawer instead of a route. Combat is layered on top of the
- * single view when a host is engaged (Hunt).
+ * Overlay state for the full-screen systems. The game is a single view now, so panels open
+ * as drawers instead of routes. Combat is layered on top of the single view when a host is
+ * engaged (Hunt).
  */
 export function createUiStore() {
   let activePanel = $state<PanelId | null>(null);

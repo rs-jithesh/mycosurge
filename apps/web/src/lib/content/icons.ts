@@ -12,7 +12,6 @@ import type { Tone } from './onboarding';
 export type IconKey =
   | 'core'
   | 'radar'
-  | 'evolution'
   | 'gather'
   | 'grow'
   | 'hunt'
@@ -31,7 +30,6 @@ export interface IconMeta {
 export const ICON_META: Record<IconKey, IconMeta> = {
   core: { glyph: '◎', label: 'Core', tone: 'mint' },
   radar: { glyph: '◎', label: 'Radar', tone: 'cyan' },
-  evolution: { glyph: '❖', label: 'Evolution', tone: 'mint' },
 
   gather: { glyph: '≋', label: 'Gather', tone: 'cyan' },
   grow: { glyph: '✦', label: 'Grow', tone: 'amber' },

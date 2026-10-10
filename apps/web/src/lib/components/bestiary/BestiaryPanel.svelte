@@ -1,7 +1,6 @@
 <script lang="ts">
   import { HOSTS, getStageByIndex } from '@mycosurge/config';
   import Overlay from '$lib/components/Overlay.svelte';
-  import ProgressBar from '$lib/components/ProgressBar.svelte';
   import { gameStore } from '$lib/stores/game.svelte';
 
   let { onClose }: { onClose: () => void } = $props();
@@ -10,7 +9,6 @@
     (a, b) => a.stage - b.stage || a.name.localeCompare(b.name),
   );
 
-  let gs = $derived(gameStore.state);
   let catalogued = $derived(new Set(gameStore.cataloguedHosts));
   let foundCount = $derived(hosts.filter((h) => catalogued.has(h.id)).length);
 </script>
@@ -44,14 +42,6 @@
               Something stronger in {getStageByIndex(host.stage).biome}
             </span>
           {/if}
-          <div class="entry-progress" class:locked={!found}>
-            <ProgressBar
-              value={found ? (gs.hostAssimilation[host.id] ?? 0) : 0}
-              max={100}
-              tone="mint"
-              showValue={found}
-            />
-          </div>
         </div>
       </li>
     {/each}
@@ -126,14 +116,6 @@
     gap: 2px;
     min-width: 0;
     flex: 1;
-  }
-
-  .entry-progress {
-    margin-top: 6px;
-  }
-
-  .entry-progress.locked {
-    opacity: 0.3;
   }
 
   .entry-name {

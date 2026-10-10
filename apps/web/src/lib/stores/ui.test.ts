@@ -5,20 +5,20 @@ describe('ui store overlays', () => {
   it('opens a panel', () => {
     const ui = createUiStore();
     expect(ui.hasOverlay).toBe(false);
-    ui.openPanel('evolution');
-    expect(ui.activePanel).toBe('evolution');
+    ui.openPanel('bestiary');
+    expect(ui.activePanel).toBe('bestiary');
     expect(ui.hasOverlay).toBe(true);
   });
 
   it('layers combat over a panel and closes it first', () => {
     const ui = createUiStore();
-    ui.openPanel('evolution');
+    ui.openPanel('bestiary');
     ui.openCombat('soil_nematode');
     expect(ui.combatHostId).toBe('soil_nematode');
 
     ui.closeTop();
     expect(ui.combatHostId).toBeNull();
-    expect(ui.activePanel).toBe('evolution');
+    expect(ui.activePanel).toBe('bestiary');
 
     ui.closeTop();
     expect(ui.activePanel).toBeNull();
@@ -36,7 +36,7 @@ describe('ui store overlays', () => {
 
   it('opening a different panel replaces the current one', () => {
     const ui = createUiStore();
-    ui.openPanel('evolution');
+    ui.openPanel('resources');
     ui.openPanel('bestiary');
     expect(ui.activePanel).toBe('bestiary');
   });

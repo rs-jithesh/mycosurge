@@ -3,7 +3,6 @@ import {
   COMBAT_BIOMASS_BASE,
   COMBAT_BIOMASS_PER_DIFFICULTY,
   LYSATE_BASE_REWARD,
-  HOST_ASSIMILATION_TARGET,
   getVariant,
 } from '@mycosurge/config';
 import type { CombatStats, GameState } from './state';
@@ -13,21 +12,13 @@ import { clearActiveEncounter } from './radar';
 export interface CombatResult {
   victory: boolean;
   biomassEarned: number;
-  assimilationGained: number;
   lysateEarned: number;
-  hostDefeated: boolean;
 }
 
 export function calculateVictoryReward(state: GameState, hostId: string): CombatResult {
   const host = HOSTS.find((h) => h.id === hostId);
   if (!host) {
-    return {
-      victory: true,
-      biomassEarned: 0,
-      assimilationGained: 0,
-      lysateEarned: 0,
-      hostDefeated: false,
-    };
+    return { victory: true, biomassEarned: 0, lysateEarned: 0 };
   }
 
   const variant = getVariant(state.activeVariantId);
@@ -37,22 +28,9 @@ export function calculateVictoryReward(state: GameState, hostId: string): Combat
       yieldMult *
       variant.rewardMult,
   );
-  const assimilationGained = 10 + host.difficulty * 5;
-
-  const previous = state.hostAssimilation[hostId] ?? 0;
-  const next = Math.min(HOST_ASSIMILATION_TARGET, previous + assimilationGained);
-  state.hostAssimilation[hostId] = next;
-  const hostDefeated = next >= HOST_ASSIMILATION_TARGET;
-
   const lysateEarned = Math.floor(LYSATE_BASE_REWARD * host.difficulty * variant.lysateMult);
 
-  return {
-    victory: true,
-    biomassEarned,
-    assimilationGained,
-    lysateEarned,
-    hostDefeated,
-  };
+  return { victory: true, biomassEarned, lysateEarned };
 }
 
 /**
@@ -83,19 +61,12 @@ export function previewCombatReward(
 }
 
 export function applyVictory(state: GameState, hostId: string): CombatResult {
-  const alreadyGrownOver = state.grownOverHosts.includes(hostId);
-
   const result = calculateVictoryReward(state, hostId);
 
   result.biomassEarned = addBiomass(state, result.biomassEarned);
   state.totalBiomassEarned += result.biomassEarned;
   state.lysateRaw += result.lysateEarned;
   state.lysateEarned += result.lysateEarned;
-
-  if (result.hostDefeated && !alreadyGrownOver) {
-    state.grownOverHosts = [...state.grownOverHosts, hostId];
-    state.hostsDefeated += 1;
-  }
 
   clearActiveEncounter(state);
 
@@ -108,8 +79,7 @@ export function applyDefeat(state: GameState): void {
 }
 
 /**
- * Combat stats used by the arena. Mutation effects are already baked into
- * `state.combatStats`, so this is a defensive copy for the renderer.
+ * Combat stats used by the arena — a defensive copy for the renderer.
  */
 export function getEffectiveCombatStats(state: GameState): CombatStats {
   return { ...state.combatStats };

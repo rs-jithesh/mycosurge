@@ -41,8 +41,8 @@ mycosurge/
 │       │   └── stores/      # Svelte 5 rune-based stores (game, log, ui)
 │       └── routes/          # / (Core) only — systems open as overlays, not routes
 ├── packages/
-│   ├── config/              # Constants, hosts, generators, upgrades, skill trees (pure TS)
-│   ├── game-engine/         # Combat, math, skills, tutorial (pure TS, depends on config)
+│   ├── config/              # Constants, hosts, generators, resources, variants (pure TS)
+│   ├── game-engine/         # Combat, math, radar, sectors, tutorial (pure TS, depends on config)
 │   └── design-system/       # CSS tokens + @theme block (CSS only, no build step)
 ```
 
@@ -86,7 +86,7 @@ mycosurge/
 ## Testing
 
 - Vitest with glob patterns: `src/**/*.{test,spec}.{js,ts}`.
-- `packages/game-engine` covers math, skills, radar, and tutorial logic.
+- `packages/game-engine` covers math, radar, sectors, and tutorial logic.
 - `apps/web` covers onboarding content; components are exercised via `svelte-check` and the dev
   server.
 

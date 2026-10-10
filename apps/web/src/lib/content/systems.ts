@@ -17,11 +17,4 @@ export const SYSTEM_META: Record<SystemId, SystemMeta> = {
     blurb: 'Scan the substrate, engage hosts, and earn Lysate from combat.',
     toast: 'Sensory hyphae reach outward — Hunt is open. Scan for hosts.',
   },
-  evolution: {
-    id: 'evolution',
-    name: 'Evolution',
-    glyph: '❖',
-    blurb: 'Spend Biomass on permanent mutations and growth upgrades.',
-    toast: 'The genome can be rewritten — Evolution is open.',
-  },
 };

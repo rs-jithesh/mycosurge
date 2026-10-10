@@ -92,8 +92,7 @@ export function getFarmPool(state: GameState): HostDef[] {
 
 /** How many contacts the radar can hold at once. */
 export function getRadarSlots(state: GameState): number {
-  const mutation = state.skillAllocations['extended_range'] ?? 0;
-  return Math.min(MAX_CONTACT_SLOTS, BASE_CONTACT_SLOTS + state.radarSlotLevel + mutation);
+  return Math.min(MAX_CONTACT_SLOTS, BASE_CONTACT_SLOTS + state.radarSlotLevel);
 }
 
 /** The next signal-slot upgrade (with its reach gate), or null when fully upgraded. */

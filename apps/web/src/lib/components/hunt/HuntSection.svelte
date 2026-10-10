@@ -200,7 +200,6 @@
           {@const cvariant = getVariant(contact.variantId)}
           {@const contactIcon = chost ? hostIconKey(chost.id) : null}
           {@const lvl = chost ? hostLvl(chost.difficulty) : 1}
-          {@const assim = gs.hostAssimilation[contact.hostId] ?? 0}
           {@const preview = previewCombatReward(gs, contact.hostId, contact.variantId)}
           <div class="contact-card">
             <div class="contact-top">
@@ -234,7 +233,6 @@
                 {#if cvariant.id !== 'normal'}
                   <span class="variant-tag text-label-caps">{cvariant.name}</span>
                 {/if}
-                <span class="text-data-mono contact-assim">Grown {Math.floor(assim)}/100</span>
               </div>
               <div class="contact-reward text-data-mono">
                 +{preview.biomassEarned}
@@ -678,10 +676,6 @@
     border-radius: var(--radius-pill);
     padding: 1px 7px;
     font-size: 9px;
-  }
-
-  .contact-assim {
-    margin-left: auto;
   }
 
   .contact-reward {

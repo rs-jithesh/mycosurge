@@ -116,18 +116,6 @@ Twelve patterns, per host config. Each node runs one (cycling through the host's
 | `geometric_lasers` | Fast shots along four rotating spokes.                  |
 | `summon`           | Slow 8-way ring on a long interval.                     |
 
-## Skills that affect combat
-
-Mutations on the Evolution page feed directly into the arena via `combatStats`:
-
-- **Offense** — Spore Speed, Fire Rate, Multi-Shot, Piercing Shot, Overcharge, Chain
-  Reaction (splash damage on hit).
-- **Defense** — Compact Core (smaller hitbox), Spore Shield (absorb hits), Adaptive
-  Membrane (damage resistance), Regenerative Spores (HP regen), Emergency Evac (survive
-  at 1 HP), Trauma Recovery (shorter trauma).
-
-Combat yield is additionally gated by Water/Nutrients (see `GAME-DESIGN.md`).
-
 ## Variants
 
 Contacts from the Radar may carry a **variant** (see `GAME-DESIGN.md`). When a contact is
@@ -141,11 +129,7 @@ engaged, its variant is stored on the state (`activeVariantId`) and read by:
 The active variant resets to `normal` when the encounter ends (victory, defeat, or
 retreat).
 
-## Assimilation
-
-Assimilation is tracked **per host** in `hostAssimilation`. Each victory adds
-`10 + difficulty × 5` to that host; reaching 100 grows it fully over and raises
-`hostsDefeated` once.
+Combat yield is gated by Water/Nutrients (see `GAME-DESIGN.md`).
 
 ## Defeat & trauma
 

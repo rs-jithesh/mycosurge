@@ -43,8 +43,8 @@ disabled. Re-introduce art later: regenerate from `PROMPTS.md`, restore the `fil
 
 ### Tier 0 — Resource & currency icons (5) — deferred
 
-Highest ROI: 5 icons make the entire economy legible across Core, generators, radar, evolution,
-and the tutorial.
+Highest ROI: 5 icons make the entire economy legible across Core, generators, radar, and the
+tutorial.
 
 | File            | Subject                        | Colour |
 | --------------- | ------------------------------ | ------ |
@@ -59,7 +59,7 @@ and the tutorial.
 Replaces the Unicode glyphs in `apps/web/src/lib/content/phases.ts` and
 `apps/web/src/lib/content/systems.ts`.
 
-- Systems: `radar`, `evolution`
+- Systems: `radar`
 - Phases: `gather` (cyan), `grow` (amber), `hunt` (coral), `expand` (mint)
 
 ### Tier 2 — Hosts (11, but start with 4)

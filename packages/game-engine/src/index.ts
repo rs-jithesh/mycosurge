@@ -56,27 +56,8 @@ export {
   getResourceProduction,
   getResourceDrain,
   getNetResourceRate,
-  getNutrientFixationBonus,
 } from './math';
 export type { CapResource, PoolResource } from './math';
-export {
-  purchaseSkill,
-  getAllSkills,
-  getSkill,
-  getCurrentLevel,
-  getNextCost,
-  arePrerequisitesMet,
-  getAvailableSkills,
-  getPurchasableSkills,
-  getSkillPointCost,
-  getTotalGenomePoints,
-  getSpentGenomePoints,
-  getAvailableGenomePoints,
-  canRespec,
-  getRespecCost,
-  respecSkills,
-  migrateSkillAllocations,
-} from './skills';
 export { tickGenerators, purchaseGenerator, isGeneratorUnlocked } from './generators';
 export {
   manualAbsorb,

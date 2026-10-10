@@ -194,13 +194,6 @@
       </div>
     {/if}
   </div>
-
-  <div class="vitals">
-    <div class="vital">
-      <span class="text-label-caps vital-label">Grown over</span>
-      <span class="text-data-mono vital-val">{gameStore.hostsDefeated}</span>
-    </div>
-  </div>
 </div>
 
 <style>
@@ -406,32 +399,6 @@
     gap: 6px;
   }
 
-  /* ── Vitals ── */
-  .vitals {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    padding: 10px var(--space-panel-padding);
-    border-top: 1px solid var(--border);
-    background: var(--surface-container-low);
-  }
-
-  .vital {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .vital-label {
-    color: var(--on-surface-variant);
-    font-size: 9px;
-  }
-
-  .vital-val {
-    color: var(--on-surface);
-    font-size: 15px;
-  }
-
   /* ── Compact (mobile): tighter rows, every datum kept ── */
   .panel.compact .res-list {
     padding: 0 var(--space-panel-padding);
@@ -452,13 +419,5 @@
 
   .panel.compact .res-foot {
     font-size: 10px;
-  }
-
-  .panel.compact .vitals {
-    padding: 8px var(--space-panel-padding);
-  }
-
-  .panel.compact .vital-val {
-    font-size: 14px;
   }
 </style>

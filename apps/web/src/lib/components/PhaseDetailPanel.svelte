@@ -2,7 +2,6 @@
   import { isGeneratorUnlocked, type CapResource, type GrowthPhase } from '@mycosurge/game-engine';
   import { GENERATORS, getGeneratorCost, resourceLabel } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
-  import { uiStore } from '$lib/stores/ui.svelte';
   import { numberPrecision } from '$lib/format';
   import { phaseMeta } from '$lib/content/phases';
   import ResourceIcon from './ResourceIcon.svelte';
@@ -204,18 +203,6 @@
         Grow by tapping a wedge on the map — each step extends that direction. Reach works from
         every stage.
       </p>
-
-      {#if gameStore.unlockedSystems.evolution}
-        <div class="genome-available text-data-mono">
-          Genome: {gameStore.genomePointsAvailable} available
-        </div>
-        <button
-          class="cmd-btn secondary evolution-btn"
-          onclick={() => uiStore.openPanel('evolution')}
-        >
-          Evolution · spend genome points
-        </button>
-      {/if}
 
       <p class="hint">
         Capacity upgrades live in the Gather stage — raise a cap there to hold more at once.
@@ -499,16 +486,6 @@
     padding: 6px 10px;
     min-height: 40px;
     flex-shrink: 0;
-  }
-
-  .genome-available {
-    color: var(--primary);
-    font-size: 12px;
-  }
-
-  .evolution-btn {
-    font-size: 12px;
-    padding: 8px 12px;
   }
 
   .hint {

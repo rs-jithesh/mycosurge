@@ -21,35 +21,13 @@ import type { GameState } from './state';
 import { tickGenerators } from './generators';
 import { getCoverage } from './sectors';
 
-export function getProliferationBonus(allocations: Record<string, number>): number {
-  const level = allocations['metabolic_efficiency'] ?? 0;
-  return level * 0.25;
-}
-
-export function getMaxBiomassBonus(allocations: Record<string, number>): number {
-  const level = allocations['mycelial_expansion'] ?? 0;
-  return level * 0.75;
-}
-
-export function getTraumaReduction(allocations: Record<string, number>): number {
-  const level = allocations['trauma_recovery'] ?? 0;
-  return level * 0.15;
-}
-
-/** Passive Nutrients per second from the Nitrogen Fixation mutation. */
-export function getNutrientFixationBonus(allocations: Record<string, number>): number {
-  const level = allocations['nitrogen_fixation'] ?? 0;
-  return level * 0.5;
-}
-
 /**
- * Biomass storage. Grows with network reach (a deeper network holds more) and with the
- * Mycelial Expansion mutation, on top of any Lysate cap expansions.
+ * Biomass storage. Grows with network reach (a deeper network holds more), on top of any
+ * Lysate cap expansions.
  */
 export function getEffectiveMaxBiomass(state: GameState): number {
-  const bonus = getMaxBiomassBonus(state.skillAllocations);
   const reachCap = BIOMASS_CAP_PER_REACH * getCoverage(state);
-  return (state.maxBiomass + reachCap) * (1 + bonus);
+  return state.maxBiomass + reachCap;
 }
 
 /**
@@ -73,16 +51,12 @@ export function isStarving(state: GameState): boolean {
   return waterRatio < STARVATION_STATE_THRESHOLD || nutrientRatio < STARVATION_STATE_THRESHOLD;
 }
 
-/** Passive Biomass per second (base + mutations), under the trauma/starvation gates. */
+/** Passive Biomass per second, under the trauma/starvation gates. */
 function getPassiveBiomassPerSec(state: GameState): number {
   if (state.isInTrauma) return 0;
   // Starvation halts passive growth in the full game (the tutorial manages its own economy).
   if (state.gamePhase === 'active' && isStarving(state)) return 0;
-
-  const efficiency = 1;
-  const skillBonus = getProliferationBonus(state.skillAllocations);
-
-  return state.baseBiomassPerSec * efficiency * (1 + skillBonus);
+  return state.baseBiomassPerSec;
 }
 
 /** Biomass per second a Biomass converter could make at its current level. */
@@ -163,13 +137,11 @@ export function getUpkeepRate(state: GameState, _resource: PoolResource): number
   return UPKEEP_PER_REACH * (REACH_START + getCoverage(state));
 }
 
-/** Passive production from a pool's generator, plus any mutation trickle, before drain. */
+/** Passive production from a pool's generator, before drain. */
 export function getResourceProduction(state: GameState, resource: PoolResource): number {
   const def = GENERATORS.find((g) => g.resource === resource);
   const level = def ? (state.generators[def.id] ?? 0) : 0;
-  const generatorRate = def ? def.baseRate * level : 0;
-  const fixation = resource === 'nutrients' ? getNutrientFixationBonus(state.skillAllocations) : 0;
-  return generatorRate + fixation;
+  return def ? def.baseRate * level : 0;
 }
 
 /** Baseline drain: depletion plus metabolic upkeep, without converter consumption. */
@@ -275,11 +247,6 @@ export function tickIdle(state: GameState, deltaSec: number): void {
     state.nutrients - getBaseResourceDrain(state, 'nutrients') * deltaSec,
   );
 
-  const fixation = getNutrientFixationBonus(state.skillAllocations) * deltaSec;
-  if (fixation > 0) {
-    state.nutrients = Math.min(state.nutrientsCap, state.nutrients + fixation);
-  }
-
   tickGenerators(state, deltaSec);
   tickLysate(state, deltaSec);
 
@@ -304,11 +271,9 @@ export function tickIdle(state: GameState, deltaSec: number): void {
 
 export function enterTrauma(state: GameState): void {
   if (state.isInTrauma) return;
-  const reduction = getTraumaReduction(state.skillAllocations);
-  const duration = TRAUMA_BASE_DURATION * (1 - reduction);
 
   state.isInTrauma = true;
-  state.traumaTimer = Math.max(5, duration);
+  state.traumaTimer = TRAUMA_BASE_DURATION;
   state.combatStats.hp = state.combatStats.maxHp;
   state.combatStats.shieldHits = 0;
 }

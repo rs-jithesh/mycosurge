@@ -67,12 +67,6 @@ game icon, a radiant fungal nucleus with short radiating hyphae, flat vector, th
 game icon, a sonar pulse of concentric rings with a small mushroom antenna, flat vector, thick clean outline, bio-luminescent cyan (#68d6e3) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
 ```
 
-### evolution — mint `#70fdc3` → `evolution.png`
-
-```
-game icon, a helix-and-mycelium evolution symbol with an upward arrow, flat vector, thick clean outline, bio-luminescent mint (#70fdc3) glow, centered on a dark moss-green circular badge (#161d1b), simple bold silhouette, high contrast, readable at small size, fungal biology, no text
-```
-
 ### gather — cyan `#68d6e3` → `gather.png`
 
 ```

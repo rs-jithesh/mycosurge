@@ -1,14 +1,6 @@
 import {
   createInitialState,
   tickIdle,
-  purchaseSkill as enginePurchaseSkill,
-  getTotalGenomePoints,
-  getSpentGenomePoints,
-  getAvailableGenomePoints,
-  canRespec as engineCanRespec,
-  getRespecCost,
-  respecSkills as engineRespecSkills,
-  migrateSkillAllocations,
   getEffectiveBiomassPerSec,
   getEffectiveMaxBiomass,
   applyVictory as engineApplyVictory,
@@ -93,7 +85,6 @@ import type {
 } from '@mycosurge/game-engine';
 import {
   HOSTS,
-  SKILL_NODES,
   GENERATORS,
   REACH_START,
   REACH_SECTORS,
@@ -108,7 +99,7 @@ import { logStore } from './log.svelte';
 
 const SAVE_KEY = 'mycosurge_save';
 const REVEAL_KEY = 'mycosurge_reveals';
-const ALL_SYSTEM_IDS: SystemId[] = ['radar', 'evolution'];
+const ALL_SYSTEM_IDS: SystemId[] = ['radar'];
 const TICK_INTERVAL = 1000;
 
 interface RevealState {
@@ -137,7 +128,6 @@ function assignNetworkSeed(target: GameState): void {
 
 function createGameStore() {
   let offlineReport = $state<OfflineReport | null>(null);
-  let didResetSkills = $state(false);
   let state = $state<GameState>(loadState());
   let tickHandle: ReturnType<typeof setInterval> | null = null;
   let revealState = $state<RevealState>(loadReveals());
@@ -155,7 +145,7 @@ function createGameStore() {
 
   function unlockedSystems(): SystemUnlocks {
     if (allSystemsUnlocked) {
-      return { radar: true, evolution: true };
+      return { radar: true };
     }
     return getSystemUnlocks(state);
   }
@@ -190,14 +180,12 @@ function createGameStore() {
           ...parsed,
           combatStats: { ...initial.combatStats, ...parsed.combatStats },
           tutorialUpgrades: { ...initial.tutorialUpgrades, ...parsed.tutorialUpgrades },
-          skillAllocations: { ...(parsed.skillAllocations ?? {}) },
           manualUpgrades: {
             ...(parsed.manualUpgrades ??
               (parsed as { upgradeLevels?: Record<string, number> }).upgradeLevels ??
               {}),
           },
           generators: { ...(parsed.generators ?? {}) },
-          hostAssimilation: { ...(parsed.hostAssimilation ?? {}) },
           activeVariantId:
             parsed.activeVariantId ??
             (parsed as { activeStrainId?: string }).activeStrainId ??
@@ -206,7 +194,6 @@ function createGameStore() {
             ...c,
             variantId: c.variantId ?? (c as { strainId?: string }).strainId ?? NORMAL_VARIANT_ID,
           })),
-          grownOverHosts: parsed.grownOverHosts ?? [],
           networkSeed: parsed.networkSeed ?? initial.networkSeed,
           cataloguedHosts: parsed.cataloguedHosts ?? initial.cataloguedHosts,
           claimedNodes: parsed.claimedNodes ?? initial.claimedNodes,
@@ -230,18 +217,8 @@ function createGameStore() {
           },
         };
 
-        // Pre-release: drop mutations that no longer fit the genome-point budget.
-        if (migrateSkillAllocations(merged)) didResetSkills = true;
         // Repair duplicate radar-contact ids from older saves (they crash keyed lists).
         ensureUniqueContactIds(merged);
-
-        // Slice 2 migration: hosts already fought count as catalogued, so an existing
-        // save keeps its radar farm pool.
-        if (merged.cataloguedHosts.length === 0) {
-          merged.cataloguedHosts = Object.entries(merged.hostAssimilation)
-            .filter(([id, value]) => id !== 'soil_nematode' && value > 0)
-            .map(([id]) => id);
-        }
 
         // Migration: older saves predate the lifetime Lysate counter.
         if (
@@ -323,11 +300,6 @@ function createGameStore() {
   function startTick() {
     if (tickHandle) return;
 
-    if (didResetSkills) {
-      didResetSkills = false;
-      logStore.error('Some mutations unravel — the genome overreached. Rebuild the network.');
-    }
-
     let wasInTrauma = state.isInTrauma;
     let wasStarving = engineIsStarving(state);
 
@@ -387,28 +359,6 @@ function createGameStore() {
     logStore.info(`You close on ${host.name}. Spores fire on their own — dodge.`);
     observeAction('hunt.engage');
     if (ADVISOR_ENABLED) recordHostEngaged(state, hostId);
-  }
-
-  function purchaseSkill(skillId: string): boolean {
-    const result = enginePurchaseSkill(state, skillId);
-    if (result) {
-      const def = SKILL_NODES.find((s) => s.id === skillId);
-      if (def) {
-        const level = state.skillAllocations[skillId] ?? 0;
-        logStore.success(`A new pattern settles in: ${def.name} (Lv.${level}).`);
-      }
-      saveState();
-    }
-    return result;
-  }
-
-  function respecSkills(): boolean {
-    const result = engineRespecSkills(state);
-    if (result) {
-      logStore.info('The patterns unwind; their points scatter back.');
-      saveState();
-    }
-    return result;
   }
 
   function expandWaterCap(): boolean {
@@ -615,9 +565,6 @@ function createGameStore() {
       logStore.success(
         `The ${host?.name ?? hostId} stills — ${result.biomassEarned} Biomass harvested.`,
       );
-      if (result.hostDefeated) {
-        logStore.success(`Its pattern sinks in — ${host?.name ?? hostId} is fully grown over.`);
-      }
       const wasKnown = state.cataloguedHosts.includes(hostId);
       catalogueHost(state, hostId);
       if (!wasKnown) {
@@ -856,24 +803,6 @@ function createGameStore() {
     capExpandAmount(resource: CapResource) {
       return getLysateCapExpandAmount(state.capExpansions[resource]);
     },
-    get genomePointsSpent() {
-      return getSpentGenomePoints(state);
-    },
-    get genomePointsTotal() {
-      return getTotalGenomePoints(state);
-    },
-    get genomePointsAvailable() {
-      return getAvailableGenomePoints(state);
-    },
-    get canRespec() {
-      return engineCanRespec(state);
-    },
-    get respecCost() {
-      return getRespecCost(state);
-    },
-    get hostsDefeated() {
-      return state.hostsDefeated;
-    },
     get combatStats() {
       return state.combatStats;
     },
@@ -887,8 +816,6 @@ function createGameStore() {
     disengageHost,
     updateCombatHp,
     resolveCombat,
-    purchaseSkill,
-    respecSkills,
     purchaseGenerator,
     expandWaterCap,
     expandNutrientCap,
