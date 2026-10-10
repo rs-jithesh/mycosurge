@@ -8,6 +8,7 @@ import type { SkillNodeDef } from '@mycosurge/config';
 import type { GameState } from './state';
 import { getEffectiveMaxBiomass } from './math';
 import { getReachBand } from './reach';
+import { getMaxReach } from './sectors';
 
 const DEFAULT_POINT_COST = 1;
 
@@ -33,7 +34,7 @@ export function getCurrentLevel(state: GameState, skillId: string): number {
  * stage the network has reached. Growing into a new band widens the genome.
  */
 export function getTotalGenomePoints(state: GameState): number {
-  const stagesReached = Math.max(0, getReachBand(state.mycelialNetwork) - 1);
+  const stagesReached = Math.max(0, getReachBand(getMaxReach(state)) - 1);
   return GENOME_BASE_POINTS + GENOME_POINTS_PER_STAGE * stagesReached;
 }
 

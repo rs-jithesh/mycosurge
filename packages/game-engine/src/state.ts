@@ -5,6 +5,7 @@ import {
   MAX_NUTRIENT_BASE,
   SONAR_INITIAL_DELAY,
   NORMAL_VARIANT_ID,
+  REACH_SECTORS,
 } from '@mycosurge/config';
 
 export type GamePhase = 'awakening' | 'manager' | 'explorer' | 'tactician' | 'active';
@@ -110,7 +111,6 @@ export interface GameState {
   waterCap: number;
   nutrients: number;
   nutrientsCap: number;
-  mycelialNetwork: number;
   /**
    * First-session sector growth, in steps per sector (length `REACH_SECTORS`). Empty until
    * the player grows a direction. Purely the tutorial's board; the full game uses
@@ -120,9 +120,8 @@ export interface GameState {
   /** How many times the tutorial generators have been upgraded (0–2). */
   tutorialGeneratorTier: number;
   /**
-   * Per-wedge growth beyond the base circle, newest design. Empty = a uniform
-   * circle at `mycelialNetwork` (legacy/tutorial); otherwise each entry is the
-   * extra mm grown in that sector (see `sectors.ts`).
+   * Per-wedge growth beyond the base circle (length `REACH_SECTORS`), each entry the extra
+   * mm grown in that sector. The single source of truth for reach (see `sectors.ts`).
    */
   reachSectors: number[];
   /** Seed for the deterministic expansion-map geometry (0 = not yet assigned). */
@@ -188,10 +187,9 @@ export function createInitialState(): GameState {
     waterCap: MAX_WATER_BASE,
     nutrients: 0,
     nutrientsCap: MAX_NUTRIENT_BASE,
-    mycelialNetwork: 0,
     tutorialSectors: [],
     tutorialGeneratorTier: 0,
-    reachSectors: [],
+    reachSectors: Array.from({ length: REACH_SECTORS }, () => 0),
     networkSeed: 0,
     cataloguedHosts: [],
     claimedNodes: [],

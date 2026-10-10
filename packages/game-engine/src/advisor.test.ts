@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { ADVISOR_TUNING } from '@mycosurge/config';
 import { createInitialState } from './state';
 import type { GameState, RadarContact } from './state';
+import { setReachMm } from './sectors';
+import { generateHostPlacements } from './network';
 import {
   evaluateAdvisor,
   observePlayerChoice,
@@ -19,6 +21,9 @@ function activeState(): GameState {
   state.gamePhase = 'active';
   state.water = state.waterCap * 0.7;
   state.nutrients = state.nutrientsCap * 0.7;
+  // Catalogue every placed host so `getSectorAdvice` reports no signal pull, isolating the
+  // economy ladder these tests exercise (a live frontier host is its own consideration).
+  state.cataloguedHosts = generateHostPlacements(state.networkSeed).map((p) => p.hostId);
   return state;
 }
 
@@ -199,7 +204,6 @@ describe('advisor maturity ladder', () => {
 describe('advisor sector advice', () => {
   it('has no pull from a standing start', () => {
     const state = activeState();
-    state.mycelialNetwork = 0;
     state.biomass = 1000;
     const advice = getSectorAdvice(state);
     expect(advice.pull).toBe(0);
@@ -207,7 +211,7 @@ describe('advisor sector advice', () => {
 
   it('pulls toward a sensed host once it is within sensing range', () => {
     const state = activeState();
-    state.mycelialNetwork = 5;
+    state.cataloguedHosts = [];
     state.biomass = 1000;
     const advice = getSectorAdvice(state);
     expect(advice.affordable).toBe(true);
@@ -370,7 +374,7 @@ describe('advisor robustness (seeded random states)', () => {
       state.biomass = rng() * 200;
       state.lysateBanked = rng() * 100;
       state.lysateRaw = rng() * 30;
-      state.mycelialNetwork = Math.floor(rng() * 12);
+      setReachMm(state, Math.floor(rng() * 12));
       state.waterCap = 100 + Math.floor(rng() * 10) * 10;
       state.nutrientsCap = 100 + Math.floor(rng() * 10) * 10;
       if (rng() < 0.2) state.currentHostId = 'mycelium_mite';

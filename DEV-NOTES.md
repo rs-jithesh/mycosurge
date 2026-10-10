@@ -54,7 +54,7 @@ made fully skippable, this counter can go.
 
 **File:** `packages/game-engine/src/state.ts`.
 
-`gamePhase`, `water`, `nutrients`, `mycelialNetwork`, and `tutorialUpgrades` persist in
+`gamePhase`, `water`, `nutrients`, and `tutorialUpgrades` persist in
 `GameState` but are unused once `gamePhase === 'active'`. Negligible in size; could be
 stripped from serialization if desired.
 

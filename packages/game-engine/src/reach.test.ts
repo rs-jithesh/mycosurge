@@ -3,12 +3,13 @@ import { REACH_COST_BASE, REACH_START } from '@mycosurge/config';
 import { createInitialState } from './state';
 import { getReachCost, getReachBand, getNextReachTier } from './reach';
 import {
-  canExtendReach,
-  extendReach,
+  canGrowSector,
   growSector,
+  growEvenly,
   getSectorDepths,
   getGrowStepMm,
   getEvenStepMm,
+  getMaxReach,
 } from './sectors';
 import { resetRadarSeq } from './radar';
 
@@ -45,60 +46,54 @@ describe('reach bands', () => {
   });
 });
 
-describe('extendReach', () => {
-  it('spends Biomass and nudges the whole network outward', () => {
+describe('growing reach', () => {
+  function activeState() {
     const state = createInitialState();
     state.gamePhase = 'active';
-    state.mycelialNetwork = REACH_START;
     state.biomass = 1000;
+    return state;
+  }
 
+  it('nudges every wedge outward with grow-evenly', () => {
+    const state = activeState();
     const before = state.biomass;
     const step = getEvenStepMm(state);
-    const result = extendReach(state);
+    const result = growEvenly(state);
 
     expect(result.success).toBe(true);
-    expect(state.mycelialNetwork).toBeCloseTo(REACH_START + step);
+    expect(getMaxReach(state)).toBeCloseTo(REACH_START + step);
     expect(state.biomass).toBe(before - result.cost);
   });
 
   it('grows a single wedge a full step', () => {
-    const state = createInitialState();
-    state.gamePhase = 'active';
-    state.mycelialNetwork = REACH_START;
-    state.biomass = 1000;
-
+    const state = activeState();
     const step = getGrowStepMm(state);
     const result = growSector(state, 0);
 
     expect(result.success).toBe(true);
     expect(result.sector).toBe(0);
-    expect(state.mycelialNetwork).toBeCloseTo(REACH_START + step);
+    expect(getMaxReach(state)).toBeCloseTo(REACH_START + step);
     const depths = getSectorDepths(state);
     expect(depths[0]).toBeCloseTo(REACH_START + step);
     expect(depths[1]).toBeCloseTo(REACH_START);
   });
 
   it('refuses when Biomass is short', () => {
-    const state = createInitialState();
-    state.gamePhase = 'active';
-    state.mycelialNetwork = REACH_START;
+    const state = activeState();
     state.biomass = 1;
 
-    expect(canExtendReach(state)).toBe(false);
-    const result = extendReach(state);
+    expect(canGrowSector(state, 0)).toBe(false);
+    const result = growSector(state, 0);
     expect(result.success).toBe(false);
-    expect(state.mycelialNetwork).toBe(REACH_START);
+    expect(getMaxReach(state)).toBe(REACH_START);
     expect(state.biomass).toBe(1);
   });
 
   it('draws a signal in from the new frontier when a slot is free', () => {
-    const state = createInitialState();
-    state.gamePhase = 'active';
-    state.mycelialNetwork = REACH_START;
-    state.biomass = 1000;
+    const state = activeState();
     state.cataloguedHosts = ['bacterial_film'];
 
-    const result = extendReach(state);
+    const result = growSector(state, 0);
     expect(result.spawned).not.toBeNull();
     expect(state.contacts).toHaveLength(1);
   });

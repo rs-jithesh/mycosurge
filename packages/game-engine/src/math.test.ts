@@ -18,6 +18,7 @@ import {
 } from './math';
 import { getGeneratorCost, UPKEEP_PER_REACH } from '@mycosurge/config';
 import { createInitialState, type GameState } from './state';
+import { setReachMm } from './sectors';
 
 describe('getProliferationBonus', () => {
   it('returns 0 with no allocations', () => {
@@ -106,7 +107,7 @@ describe('getEffectiveMaxBiomass', () => {
 
   it('grows with network reach beyond the starting depth', () => {
     const state = createInitialState();
-    state.mycelialNetwork = 20;
+    setReachMm(state, 20);
     // 100 base + 24 per mm × (20 − 5) = 460
     expect(getEffectiveMaxBiomass(state)).toBe(460);
   });
@@ -140,7 +141,7 @@ describe('getEffectiveBiomassPerSec', () => {
 describe('reach upkeep', () => {
   it('is not charged before the full game', () => {
     const state = createInitialState();
-    state.mycelialNetwork = 20;
+    setReachMm(state, 20);
     expect(getUpkeepRate(state, 'water')).toBe(0);
     expect(getUpkeepRate(state, 'nutrients')).toBe(0);
   });
@@ -148,7 +149,7 @@ describe('reach upkeep', () => {
   it('scales with reach in the full game', () => {
     const state = createInitialState();
     state.gamePhase = 'active';
-    state.mycelialNetwork = 10;
+    setReachMm(state, 10);
     expect(getUpkeepRate(state, 'water')).toBeCloseTo(UPKEEP_PER_REACH * 10);
     expect(getUpkeepRate(state, 'nutrients')).toBeCloseTo(UPKEEP_PER_REACH * 10);
   });
@@ -156,14 +157,14 @@ describe('reach upkeep', () => {
   it('adds reach upkeep to the baseline drain', () => {
     const state = createInitialState();
     state.gamePhase = 'active';
-    state.mycelialNetwork = 5;
+    setReachMm(state, 5);
     expect(getResourceDrain(state, 'water')).toBeCloseTo(0.8 + UPKEEP_PER_REACH * 5);
   });
 
   it('drags net production negative when reach outruns income', () => {
     const state = createInitialState();
     state.gamePhase = 'active';
-    state.mycelialNetwork = 35;
+    setReachMm(state, 35);
     state.generators = { osmotic_pump: 1 };
     expect(getNetResourceRate(state, 'water')).toBeLessThan(0);
   });

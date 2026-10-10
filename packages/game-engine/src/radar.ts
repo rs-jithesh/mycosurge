@@ -1,6 +1,7 @@
 import {
   HOSTS,
   VARIANTS,
+  TUTORIAL_HOST_ID,
   BASE_CONTACT_SLOTS,
   MAX_CONTACT_SLOTS,
   RADAR_SLOT_TIERS,
@@ -14,8 +15,7 @@ import {
 } from '@mycosurge/config';
 import type { HostDef, VariantDef, RadarSlotTier } from '@mycosurge/config';
 import type { GameState, RadarContact } from './state';
-
-export const TUTORIAL_HOST_ID = 'soil_nematode';
+import { getMaxReach } from './sectors';
 
 let contactSeq = 0;
 
@@ -77,7 +77,7 @@ export function pickVariant(): VariantDef {
 
 /** Hosts currently eligible to appear as sonar contacts — gated by network reach. */
 export function getUnlockedHosts(state: GameState): HostDef[] {
-  return HOSTS.filter((h) => h.id !== TUTORIAL_HOST_ID && isHostUnlocked(h, state.mycelialNetwork));
+  return HOSTS.filter((h) => h.id !== TUTORIAL_HOST_ID && isHostUnlocked(h, getMaxReach(state)));
 }
 
 /**
@@ -106,7 +106,7 @@ export function canUpgradeRadarSlots(state: GameState): boolean {
   const tier = getRadarSlotTier(state);
   if (!tier) return false;
   return (
-    state.mycelialNetwork >= tier.reachMm &&
+    getMaxReach(state) >= tier.reachMm &&
     state.lysateBanked >= tier.lysate &&
     state.biomass >= tier.biomass
   );

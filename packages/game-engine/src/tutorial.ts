@@ -1,4 +1,3 @@
-import { REACH_START } from '@mycosurge/config';
 import type { GameState } from './state';
 
 export const AWAKENING_MESSAGES = [
@@ -240,10 +239,6 @@ export function getTutorialShockMultiplier(state: GameState): number {
 export function applyTutorialDefeat(state: GameState): string[] {
   const penalties: string[] = [];
 
-  const prevMN = state.mycelialNetwork;
-  state.mycelialNetwork = Math.max(0, state.mycelialNetwork - 2);
-  penalties.push(`Hyphae pushed back ${prevMN - state.mycelialNetwork}mm`);
-
   const prevBio = state.biomass;
   state.biomass = Math.floor(state.biomass * 0.9);
   const lost = prevBio - state.biomass;
@@ -291,7 +286,5 @@ export function completeTutorial(state: GameState): void {
     state.generators['enzymatic_exudates'] = level;
   }
   state.gamePhase = 'active';
-  // Reach continues into the full game from the tutorial's 5 mm (even when skipped).
-  state.mycelialNetwork = Math.max(state.mycelialNetwork, REACH_START);
   _absorbCount = 0;
 }

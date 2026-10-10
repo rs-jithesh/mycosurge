@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EXPANSION_MAP } from '@mycosurge/config';
 import { createInitialState } from './state';
 import type { RadarContact } from './state';
+import { setReachMm } from './sectors';
 import {
   mulberry32,
   generateNetwork,
@@ -118,13 +119,13 @@ describe('catalogue + first contact', () => {
 
   it('offers the nearest uncatalogued host as first contact once in reach', () => {
     const state = createInitialState();
-    state.mycelialNetwork = 5;
+    setReachMm(state, 5);
     const placements = generateHostPlacements(555);
     // At the starting 5 mm every host is still only sensed.
     expect(getFirstContact(state, placements)).toBeNull();
 
     // Extending past the stage-1 host distances makes the nearest one encountered.
-    state.mycelialNetwork = 9;
+    setReachMm(state, 9);
     const first = getFirstContact(state, placements);
     expect(first).not.toBeNull();
     expect(first!.distanceMm).toBeLessThanOrEqual(9);

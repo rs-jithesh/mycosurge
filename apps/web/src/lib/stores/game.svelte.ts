@@ -35,7 +35,6 @@ import {
   expandCap as engineExpandCap,
   tickRadar as engineTickRadar,
   ensureUniqueContactIds,
-  extendReach as engineExtendReach,
   growSector as engineGrowSector,
   growEvenly as engineGrowEvenly,
   getSectorDepths,
@@ -97,6 +96,7 @@ import {
   SKILL_NODES,
   GENERATORS,
   REACH_START,
+  REACH_SECTORS,
   ADVISOR_TUNING,
   NORMAL_VARIANT_ID,
   getLysateCapExpandAmount,
@@ -175,6 +175,15 @@ function createGameStore() {
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<GameState>;
         const initial = createInitialState();
+        // Reach migration: `reachSectors` is the single source of truth now. Older saves
+        // stored a legacy uniform `mycelialNetwork`; expand it into per-wedge extras.
+        const savedSectors = Array.isArray(parsed.reachSectors) ? [...parsed.reachSectors] : [];
+        const legacyReach = (parsed as { mycelialNetwork?: number }).mycelialNetwork;
+        while (savedSectors.length < REACH_SECTORS) savedSectors.push(0);
+        const reachSectors =
+          savedSectors.some((value) => value > 0) || legacyReach === undefined
+            ? savedSectors.slice(0, REACH_SECTORS)
+            : Array.from({ length: REACH_SECTORS }, () => Math.max(0, legacyReach - REACH_START));
         const merged: GameState = {
           ...initial,
           ...parsed,
@@ -200,7 +209,7 @@ function createGameStore() {
           networkSeed: parsed.networkSeed ?? initial.networkSeed,
           cataloguedHosts: parsed.cataloguedHosts ?? initial.cataloguedHosts,
           claimedNodes: parsed.claimedNodes ?? initial.claimedNodes,
-          reachSectors: parsed.reachSectors ?? initial.reachSectors,
+          reachSectors,
           advisor: {
             ...initial.advisor,
             ...(parsed.advisor ?? {}),
@@ -224,10 +233,6 @@ function createGameStore() {
         if (migrateSkillAllocations(merged)) didResetSkills = true;
         // Repair duplicate radar-contact ids from older saves (they crash keyed lists).
         ensureUniqueContactIds(merged);
-        // Reach drives progression; active saves continue from at least the tutorial's 5 mm.
-        if (merged.gamePhase === 'active') {
-          merged.mycelialNetwork = Math.max(merged.mycelialNetwork, REACH_START);
-        }
 
         // Slice 2 migration: hosts already fought count as catalogued, so an existing
         // save keeps its radar farm pool.
@@ -496,22 +501,6 @@ function createGameStore() {
     }
   }
 
-  function extendReach(): boolean {
-    const result = engineExtendReach(state);
-    if (!result.success) {
-      logStore.warn('The network cannot stretch that far yet.');
-      return false;
-    }
-    announceClaimed();
-    logStore.success('New filaments press deeper into the dark.');
-    if (result.spawned) {
-      logStore.info('A signal blooms at the frontier.');
-    }
-    observeAction('expand.reach');
-    saveState();
-    return true;
-  }
-
   function growSector(index: number): boolean {
     const result = engineGrowSector(state, index);
     if (!result.success) {
@@ -767,9 +756,6 @@ function createGameStore() {
     },
     get nextReachTier() {
       return getNextReachTier(getMaxReach(state));
-    },
-    extendReach() {
-      return extendReach();
     },
     growSector(index: number) {
       return growSector(index);

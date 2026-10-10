@@ -231,7 +231,7 @@ function buildInputs(state: GameState, advice: SectorAdvice): Record<AdvisorInpu
     noContacts: state.contacts.length === 0 ? 1 : 0,
     waterForPing: state.water >= SCAN_WATER_COST ? 1 : 0,
     systemSaturated: anyPoolFull || generatorMaxed ? 1 : 0,
-    reachAffordable: state.biomass >= getReachCost(state.mycelialNetwork) ? 1 : 0,
+    reachAffordable: state.biomass >= getReachCost(getMaxReach(state)) ? 1 : 0,
     sectorAffordable: advice.affordable ? 1 : 0,
     sectorPull: advice.pull,
     poolFullWater: waterRatio >= full ? 1 : 0,

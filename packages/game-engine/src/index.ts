@@ -92,7 +92,6 @@ export {
 } from './manual';
 export type { SynthesisResult } from './manual';
 export {
-  TUTORIAL_HOST_ID,
   getUnlockedHosts,
   getFarmPool,
   getRadarSlots,
@@ -113,8 +112,6 @@ export {
 } from './radar';
 export { getReachCost, getReachBand, getNextReachTier } from './reach';
 export {
-  canExtendReach,
-  extendReach,
   growSector,
   growEvenly,
   getSectorDepths,
@@ -129,7 +126,7 @@ export {
   sectorCentres,
   sectorIndexForAngle,
 } from './sectors';
-export type { ReachResult, SectorGrowResult } from './sectors';
+export type { SectorGrowResult } from './sectors';
 export { getNodeMarkers, claimReachedNodes, describeReward } from './nodes';
 export type { NodeMarker } from './nodes';
 export {

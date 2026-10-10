@@ -8,7 +8,7 @@
     TUTORIAL_GENERATOR_WATER_COST,
     TUTORIAL_SIGNAL_STEPS,
   } from '@mycosurge/game-engine';
-  import { resourceLabel } from '@mycosurge/config';
+  import { resourceLabel, TUTORIAL_HOST_ID } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { devStore } from '$lib/stores/dev.svelte';
@@ -17,7 +17,6 @@
   import ResourceIcon from './ResourceIcon.svelte';
   import { TUTORIAL_GENERATORS, LOCK_REASONS, ONBOARDING_COPY } from '$lib/content/onboarding';
 
-  const TUTORIAL_HOST_ID = 'soil_nematode';
   const BAND_MM = 5;
   const STEP_MM = BAND_MM / TUTORIAL_SIGNAL_STEPS;
 

@@ -283,7 +283,7 @@
           {resourceLabel('lysate')} + {tier.biomass}
           {resourceLabel('biomass')}
         </button>
-        {#if gs.mycelialNetwork < tier.reachMm}
+        {#if gameStore.reach < tier.reachMm}
           <span class="slot-gate text-label-caps">Reach {tier.reachMm}mm to unlock</span>
         {/if}
       </div>

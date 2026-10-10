@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState } from './state';
+import { setReachMm } from './sectors';
 import {
   getSkill,
   getCurrentLevel,
@@ -28,10 +29,10 @@ describe('genome point budget', () => {
   it('grows as the network climbs the scale ladder', () => {
     const state = createInitialState();
     // Stage 1: no stages yet reached.
-    state.mycelialNetwork = 5;
+    setReachMm(state, 5);
     expect(getTotalGenomePoints(state)).toBe(6);
     // Stage 3 reached → 2 stages beyond the first × 2 points.
-    state.mycelialNetwork = 50;
+    setReachMm(state, 50);
     expect(getTotalGenomePoints(state)).toBe(10);
   });
 

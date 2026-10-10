@@ -17,12 +17,13 @@ import {
   growSector,
   sectorCentres,
   sectorIndexForAngle,
+  setReachMm,
 } from './sectors';
 
 function activeState() {
   const state = createInitialState();
   state.gamePhase = 'active';
-  state.mycelialNetwork = REACH_START;
+  setReachMm(state, REACH_START);
   state.biomass = 10_000;
   return state;
 }
@@ -36,7 +37,7 @@ describe('sector geometry', () => {
 
   it('reports a uniform circle as equal depths', () => {
     const state = activeState();
-    state.mycelialNetwork = 10;
+    setReachMm(state, 10);
     expect(getSectorDepths(state)).toEqual(Array(REACH_SECTORS).fill(10));
     expect(getMaxReach(state)).toBe(10);
     expect(getCoverage(state)).toBe(5);

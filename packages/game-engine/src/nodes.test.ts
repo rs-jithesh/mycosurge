@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { EXPANSION_NODES, REACH_START } from '@mycosurge/config';
 import { createInitialState } from './state';
 import { claimReachedNodes, describeReward, getNodeMarkers } from './nodes';
-import { growSector } from './sectors';
+import { growSector, setReachMm } from './sectors';
 
 function activeState() {
   const state = createInitialState();
   state.gamePhase = 'active';
-  state.mycelialNetwork = REACH_START;
+  setReachMm(state, REACH_START);
   state.biomass = 100_000;
   return state;
 }
@@ -28,7 +28,7 @@ describe('expansion landmarks', () => {
   it('is idempotent', () => {
     const state = activeState();
     state.reachSectors = [10, 0, 0, 0, 0, 0];
-    state.mycelialNetwork = REACH_START + 10;
+    setReachMm(state, REACH_START + 10);
 
     claimReachedNodes(state);
     const count = state.claimedNodes.length;

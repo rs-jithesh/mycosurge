@@ -8,6 +8,7 @@ import {
 } from '@mycosurge/config';
 import { createInitialState } from './state';
 import type { GameState } from './state';
+import { setReachMm } from './sectors';
 import {
   tickIdle,
   getNetResourceRate,
@@ -26,7 +27,7 @@ function fullGameState(): GameState {
   const state = createInitialState();
   state.gamePhase = 'active';
   // A freshly-unlocked full game continues from the tutorial's reach.
-  state.mycelialNetwork = REACH_START;
+  setReachMm(state, REACH_START);
   state.water = state.waterCap * 0.6;
   state.nutrients = state.nutrientsCap * 0.6;
   return state;
@@ -82,7 +83,7 @@ describe('reach upkeep', () => {
     shallow.generators = { osmotic_pump: 1 };
 
     const deep = fullGameState();
-    deep.mycelialNetwork = 35;
+    setReachMm(deep, 35);
     deep.generators = { osmotic_pump: 1 };
 
     expect(getNetResourceRate(deep, 'water')).toBeLessThan(getNetResourceRate(shallow, 'water'));

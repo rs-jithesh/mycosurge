@@ -2,12 +2,16 @@ import { describe, it, expect } from 'vitest';
 import { createInitialState } from './state';
 import type { RadarContact } from './state';
 import { getRecommendedPhase, getCheapestGeneratorCost, getCheapestExpandCost } from './phase';
+import { generateHostPlacements } from './network';
 
 function activeState() {
   const state = createInitialState();
   state.gamePhase = 'active';
   state.water = state.waterCap * 0.7;
   state.nutrients = state.nutrientsCap * 0.7;
+  // Catalogue every placed host so the advisor reports no frontier pull, isolating the
+  // phase-priority ladder these tests exercise.
+  state.cataloguedHosts = generateHostPlacements(state.networkSeed).map((p) => p.hostId);
   return state;
 }
 
