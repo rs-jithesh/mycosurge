@@ -13,7 +13,7 @@
   import { gameStore } from '$lib/stores/game.svelte';
   import CountUp from './CountUp.svelte';
   import ProgressBar from './ProgressBar.svelte';
-  import ResourceSymbol from './ResourceSymbol.svelte';
+  import ResourceIcon from './ResourceIcon.svelte';
   import LysateInfo from './LysateInfo.svelte';
 
   let {
@@ -107,7 +107,7 @@
       <div class="res-row" data-tone={m.tone} class:is-critical={m.critical}>
         <div class="res-top">
           <span class="res-name">
-            <span class="res-sym"><ResourceSymbol id={m.resource} /></span>
+            <span class="res-sym"><ResourceIcon name={m.resource} size={18} /></span>
             {#if m.full}<span class="full-tag text-label-caps">Full</span>{/if}
           </span>
           <span class="text-data-mono res-val">
@@ -144,7 +144,9 @@
 
     <div class="res-row reach-row" data-tone="mint">
       <div class="res-top">
-        <span class="res-name"><span class="res-sym"><ResourceSymbol id="reach" /></span></span>
+        <span class="res-name"
+          ><span class="res-sym"><ResourceIcon name="reach" size={18} /></span></span
+        >
         <span class="text-data-mono res-val">
           <b>{reachLabel.value}</b>
           <span class="cap">{reachLabel.unit}</span>
@@ -170,7 +172,7 @@
     {#if showLysate}
       <div class="res-row lysate" data-tone="amber">
         <div class="res-top">
-          <span class="res-name"><ResourceSymbol id="lysate" /></span>
+          <span class="res-name"><ResourceIcon name="lysate" size={18} /></span>
           <span class="lysate-head-right">
             <span class="tag text-label-caps">Spendable</span>
             <LysateInfo />

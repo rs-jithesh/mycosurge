@@ -1,7 +1,8 @@
 <script lang="ts">
   import { base } from '$app/paths';
-  import { ICON_META } from '$lib/content/icons';
-  import type { IconKey } from '$lib/content/icons';
+  import { resolveIcon } from '$lib/content/icons';
+  import type { IconName } from '$lib/content/icons';
+  import Tooltip from './Tooltip.svelte';
 
   let {
     name,
@@ -9,38 +10,63 @@
     label,
     round = false,
     class: className = '',
+    detail = '',
+    focusable = true,
+    tooltip,
   }: {
-    name: IconKey;
+    /** A registry key (`gather`, `soil_nematode`, …) or a resource id (`water`, `reach`, …). */
+    name: IconName;
     size?: number;
     label?: string;
     round?: boolean;
     class?: string;
+    /** Live detail (e.g. `140 / 140`) shown in a resource tooltip. */
+    detail?: string;
+    focusable?: boolean;
+    /** Show the resource tooltip. Defaults to true for resources, false otherwise. */
+    tooltip?: boolean;
   } = $props();
 
-  const meta = $derived(ICON_META[name]);
+  const meta = $derived(resolveIcon(name));
   let failed = $state(false);
+  const showTip = $derived(tooltip ?? meta.description !== undefined);
 </script>
 
-{#if failed}
-  <span
-    class="resource-icon resource-icon--glyph {className}"
-    style="width: {size}px; height: {size}px; font-size: {size}px;"
-    data-tone={meta.tone}
-    aria-hidden="true">{meta.glyph}</span
-  >
+{#snippet glyph()}
+  {#if !meta.file || failed}
+    <span
+      class="resource-icon resource-icon--glyph {className}"
+      style="width: {size}px; height: {size}px; font-size: {size}px;"
+      data-tone={meta.tone}
+      aria-hidden="true">{meta.glyph}</span
+    >
+  {:else}
+    <img
+      class="resource-icon resource-icon--img {className}"
+      class:resource-icon--round={round}
+      src="{base}/assets/icons/{meta.file}"
+      width={size}
+      height={size}
+      style="width: {size}px; height: {size}px;"
+      alt={label ?? ''}
+      aria-hidden={label ? undefined : 'true'}
+      draggable="false"
+      onerror={() => (failed = true)}
+    />
+  {/if}
+{/snippet}
+
+{#if showTip}
+  <Tooltip tone={meta.tone} {focusable}>
+    {#snippet content()}
+      <span class="tip-title">{meta.label}</span>
+      {#if meta.description}<span class="tip-desc">{meta.description}</span>{/if}
+      {#if detail}<span class="tip-detail text-data-mono">{detail}</span>{/if}
+    {/snippet}
+    {@render glyph()}
+  </Tooltip>
 {:else}
-  <img
-    class="resource-icon resource-icon--img {className}"
-    class:resource-icon--round={round}
-    src="{base}/assets/icons/{meta.file}"
-    width={size}
-    height={size}
-    style="width: {size}px; height: {size}px;"
-    alt={label ?? ''}
-    aria-hidden={label ? undefined : 'true'}
-    draggable="false"
-    onerror={() => (failed = true)}
-  />
+  {@render glyph()}
 {/if}
 
 <style>

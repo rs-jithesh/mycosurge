@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import type { OfflineReport } from '@mycosurge/game-engine';
-  import ResourceSymbol from './ResourceSymbol.svelte';
+  import ResourceIcon from './ResourceIcon.svelte';
 
   let {
     report,
@@ -93,7 +93,7 @@
             {signed(report.biomassGained)}
           </span>
           <span class="stat-label text-label-caps"
-            ><ResourceSymbol id="biomass" focusable={false} /></span
+            ><ResourceIcon name="biomass" size={20} focusable={false} /></span
           >
         </div>
       {/if}
@@ -104,7 +104,7 @@
             {signed(report.waterGained)}
           </span>
           <span class="stat-label text-label-caps"
-            ><ResourceSymbol id="water" focusable={false} /></span
+            ><ResourceIcon name="water" size={20} focusable={false} /></span
           >
         </div>
       {/if}
@@ -115,7 +115,7 @@
             {signed(report.nutrientsGained)}
           </span>
           <span class="stat-label text-label-caps"
-            ><ResourceSymbol id="nutrients" focusable={false} /></span
+            ><ResourceIcon name="nutrients" size={20} focusable={false} /></span
           >
         </div>
       {/if}
@@ -126,7 +126,7 @@
             {signed(report.lysateStabilized)}
           </span>
           <span class="stat-label text-label-caps"
-            ><ResourceSymbol id="lysate" focusable={false} /> banked</span
+            ><ResourceIcon name="lysate" size={20} focusable={false} /> banked</span
           >
         </div>
       {/if}

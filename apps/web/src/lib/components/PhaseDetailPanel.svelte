@@ -6,7 +6,6 @@
   import { numberPrecision } from '$lib/format';
   import { phaseMeta } from '$lib/content/phases';
   import ResourceIcon from './ResourceIcon.svelte';
-  import ResourceSymbol from './ResourceSymbol.svelte';
   import HuntSection from '$lib/components/hunt/HuntSection.svelte';
   import PhaseAction from './core/PhaseAction.svelte';
   import ManualUpgradeRow from './ManualUpgradeRow.svelte';
@@ -108,7 +107,7 @@
             <div class="cap-row">
               <div class="cap-info">
                 <span class="cap-name" data-tone={row.tone}
-                  ><ResourceSymbol id={row.resource} /></span
+                  ><ResourceIcon name={row.resource} size={16} /></span
                 >
                 <span class="text-data-mono cap-val">
                   {Math.floor(row.cap)}
@@ -160,7 +159,7 @@
                 </div>
                 <div class="text-data-mono gen-rate">
                   +{numberPrecision(gen.baseRate * level)}
-                  <ResourceSymbol id={gen.resource} />/s
+                  <ResourceIcon name={gen.resource} size={14} />/s
                   {#if level < gen.maxLevel}<span class="gen-next"
                       >→ +{numberPrecision(gen.baseRate * (level + 1))}</span
                     >{/if}
@@ -168,10 +167,10 @@
                 {#if gen.consumes}
                   <div class="text-data-mono gen-consume">
                     −{numberPrecision((gen.consumes.water ?? 0) * level)}
-                    <ResourceSymbol id="water" /> · −{numberPrecision(
+                    <ResourceIcon name="water" size={14} /> · −{numberPrecision(
                       (gen.consumes.nutrients ?? 0) * level,
                     )}
-                    <ResourceSymbol id="nutrients" /> /s
+                    <ResourceIcon name="nutrients" size={14} /> /s
                   </div>
                 {/if}
               </div>
