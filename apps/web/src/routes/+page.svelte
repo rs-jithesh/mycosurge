@@ -8,6 +8,7 @@
   import AdvisorDebugPanel from '$lib/components/dev/AdvisorDebugPanel.svelte';
   import { devStore } from '$lib/stores/dev.svelte';
   import { viewport } from '$lib/stores/viewport.svelte';
+  import { ADVISOR_ENABLED } from '@mycosurge/config';
   import type { GrowthPhase } from '@mycosurge/game-engine';
 
   let isFullGame = $derived(gameStore.state.gamePhase === 'active');
@@ -15,10 +16,10 @@
   // The engine suggests a stage, but never switches for the player. The active stage
   // is seeded from the suggestion on load and then only changes when the player picks
   // one. The suggestion is surfaced purely as a hint while it differs from the active
-  // stage, and disappears once the player is on it.
+  // stage, and disappears once the player is on it. The advisor is disabled for now.
   let recommended = $derived(gameStore.recommendedPhase);
   let phase = $state<GrowthPhase>(gameStore.recommendedPhase);
-  let suggested = $derived(recommended === phase ? null : recommended);
+  let suggested = $derived(!ADVISOR_ENABLED || recommended === phase ? null : recommended);
   let advisor = $derived(gameStore.advisor);
 
   function selectPhase(next: GrowthPhase) {
@@ -76,6 +77,6 @@
   {/if}
 {/if}
 
-{#if devStore.enabled && devStore.showAdvisorPanel}
+{#if ADVISOR_ENABLED && devStore.enabled && devStore.showAdvisorPanel}
   <AdvisorDebugPanel />
 {/if}

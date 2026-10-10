@@ -98,6 +98,7 @@ import {
   REACH_START,
   REACH_SECTORS,
   ADVISOR_TUNING,
+  ADVISOR_ENABLED,
   NORMAL_VARIANT_ID,
   getLysateCapExpandAmount,
 } from '@mycosurge/config';
@@ -315,6 +316,7 @@ function createGameStore() {
 
   /** Record a concrete player action so the organism can learn from real play. */
   function observeAction(actionId: string) {
+    if (!ADVISOR_ENABLED) return;
     observePlayerAction(state, actionId, Date.now());
   }
 
@@ -352,7 +354,7 @@ function createGameStore() {
       }
       wasInTrauma = state.isInTrauma;
 
-      if (state.gamePhase === 'active') {
+      if (ADVISOR_ENABLED && state.gamePhase === 'active') {
         const advisor = evaluateAdvisor(state);
         reportAdvisor(advisor);
       }
@@ -384,7 +386,7 @@ function createGameStore() {
     state.combatStats.hp = state.combatStats.maxHp;
     logStore.info(`You close on ${host.name}. Spores fire on their own — dodge.`);
     observeAction('hunt.engage');
-    recordHostEngaged(state, hostId);
+    if (ADVISOR_ENABLED) recordHostEngaged(state, hostId);
   }
 
   function purchaseSkill(skillId: string): boolean {
@@ -573,7 +575,9 @@ function createGameStore() {
       const host = HOSTS.find((h) => h.id === state.currentHostId);
       logStore.info(`You close on ${host?.name ?? 'the host'}. Spores fire on their own — dodge.`);
       observeAction('hunt.engage');
-      if (state.currentHostId) recordHostEngaged(state, state.currentHostId);
+      if (state.currentHostId) {
+        if (ADVISOR_ENABLED) recordHostEngaged(state, state.currentHostId);
+      }
       saveState();
     }
     return result;
@@ -619,14 +623,14 @@ function createGameStore() {
       if (!wasKnown) {
         logStore.success(`${host?.name ?? hostId} catalogued — added to the bestiary.`);
       }
-      recordCombatOutcome(state, 'victory');
+      if (ADVISOR_ENABLED) recordCombatOutcome(state, 'victory');
       clearActiveEncounter(state);
       saveState();
       return result;
     }
     engineApplyDefeat(state);
     logStore.warn('The network recoils — retreat, and recover.');
-    recordCombatOutcome(state, 'defeat');
+    if (ADVISOR_ENABLED) recordCombatOutcome(state, 'defeat');
     clearActiveEncounter(state);
     saveState();
     return null;
@@ -799,14 +803,27 @@ function createGameStore() {
       return engineIsStarving(state);
     },
     get recommendedPhase() {
-      return getRecommendedPhase(state);
+      return ADVISOR_ENABLED ? getRecommendedPhase(state) : 'gather';
     },
     /** Full advisor result: top action, reason and every scored candidate. */
     get advisor(): AdvisorResult {
+      if (!ADVISOR_ENABLED) {
+        return {
+          bucket: 'normal',
+          actionId: 'gather.topUp',
+          phase: 'gather',
+          reasonId: 'disabled',
+          explanation: '',
+          candidates: [],
+          maturity: 'germinating',
+          sector: null,
+        };
+      }
       return evaluateAdvisor(state);
     },
     /** Record a deliberate phase choice so the organism can learn the player's habits. */
     observePhase(phase: GrowthPhase) {
+      if (!ADVISOR_ENABLED) return;
       observePlayerChoice(state, phase, Date.now());
       saveState();
     },

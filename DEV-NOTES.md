@@ -3,6 +3,13 @@
 Working notes for development and QA. For player-facing facts see `GAME-DESIGN.md`, and
 for the arena see `COMBAT.md`.
 
+## Advisor (disabled)
+
+The organism advisor (phase suggestions, habit learning, the debug panel) is **off** behind
+`ADVISOR_ENABLED` in `packages/config/src/constants.ts`. The engine module and its tests are kept
+intact; the web store stops feeding it and hides the suggestion UI, and `+page.svelte` seeds the
+active stage to Gather. Flip the flag to `true` to restore it.
+
 ## Resetting & replaying
 
 - **Top-bar Reset** (in `+layout.svelte`, shown only when the dev flag is on) clears the save

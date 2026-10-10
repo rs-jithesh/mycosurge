@@ -1,5 +1,13 @@
 export const BASE_BIOMASS_PER_SEC = 0.5;
 
+// ── Feature flags ──
+/**
+ * The organism advisor (phase suggestions + learned bias) is **disabled** while the game is
+ * simplified. The engine module is kept intact for a later rework; flipping this to `true`
+ * restores suggestions, logging, and habit learning.
+ */
+export const ADVISOR_ENABLED = false;
+
 export const MAX_BIOMASS_BASE = 100;
 
 export const TRAUMA_BASE_DURATION = 30;
