@@ -120,7 +120,7 @@ describe('manualSynthesize', () => {
 describe('manual upgrades', () => {
   it('deepens Absorb with Absorption Depth', () => {
     const state = createInitialState();
-    state.upgradeLevels['absorption_depth'] = 3;
+    state.manualUpgrades['absorption_depth'] = 3;
     expect(getManualAbsorbAmount(state)).toBe(5);
 
     state.water = 0;
@@ -132,7 +132,7 @@ describe('manual upgrades', () => {
 
   it('adds to the synthesis yield with Assimilation Yield', () => {
     const state = createInitialState();
-    state.upgradeLevels['assimilation_yield'] = 2;
+    state.manualUpgrades['assimilation_yield'] = 2;
     // Healthy but not brimming, so the brimming bonus doesn't stack on top.
     state.water = state.waterCap * 0.6;
     state.nutrients = state.nutrientsCap * 0.6;

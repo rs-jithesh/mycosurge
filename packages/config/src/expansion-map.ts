@@ -1,6 +1,6 @@
 /**
- * Expansion & discovery map tuning. Every value the map geometry, host placement,
- * sensing and cord upgrade depend on lives here so the engine stays pure math.
+ * Expansion & discovery map tuning. Every value the map geometry, host placement and
+ * sensing depend on lives here so the engine stays pure math.
  *
  * Since reach now spans an 8-stage scale ladder (mm → m), the spatial values are
  * expressed as **fractions of the current band width**, not absolute millimetres.

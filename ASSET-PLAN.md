@@ -68,15 +68,13 @@ hosts, then fill in.
 - Later: `urban_pigeon`, `stray_cat`, `lab_rat` (boss), `compost_worm`, `pond_frog`,
   `backyard_squirrel`, `feral_raccoon`
 
-### Tier 3 — Depth iconography (8)
+### Tier 3 — Depth iconography (2)
 
 - Generators: `osmotic_pump`, `enzymatic_exudates`
-- Upgrade categories: `mycelial`, `incursion`, `structural`
-- Skill trees: `combat`, `survival`, `expansion`, `meta`
 
 ### Tier 4 — Combat & flourish
 
-- `spore` projectile, `pellet`, strain badges (`normal`/`swift`/`armored`/`bloated`)
+- `spore` projectile
 - Decorative `hyphae` divider/corner motif, `favicon`
 
 ## Sizing & naming

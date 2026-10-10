@@ -55,7 +55,7 @@ import {
   getRadarSlotTier,
   canUpgradeRadarSlots as engineCanUpgradeRadarSlots,
   upgradeRadarSlots as engineUpgradeRadarSlots,
-  getActiveStrain,
+  getActiveVariant,
   manualAbsorb as engineManualAbsorb,
   manualSynthesize as engineManualSynthesize,
   getSynthesisYield,
@@ -98,6 +98,7 @@ import {
   GENERATORS,
   REACH_START,
   ADVISOR_TUNING,
+  NORMAL_VARIANT_ID,
   getLysateCapExpandAmount,
 } from '@mycosurge/config';
 import type { ManualUpgradeId } from '@mycosurge/config';
@@ -168,17 +169,6 @@ function createGameStore() {
     for (const id of fresh) logStore.success(SYSTEM_META[id].toast);
   }
 
-  function isSystemNew(id: SystemId): boolean {
-    if (id === 'radar') return false;
-    return unlockedSystems()[id] && !revealState.seen.includes(id);
-  }
-
-  function markSystemSeen(id: SystemId) {
-    if (revealState.seen.includes(id)) return;
-    revealState.seen = [...revealState.seen, id];
-    persistReveals();
-  }
-
   function loadState(): GameState {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
@@ -191,10 +181,21 @@ function createGameStore() {
           combatStats: { ...initial.combatStats, ...parsed.combatStats },
           tutorialUpgrades: { ...initial.tutorialUpgrades, ...parsed.tutorialUpgrades },
           skillAllocations: { ...(parsed.skillAllocations ?? {}) },
-          upgradeLevels: { ...(parsed.upgradeLevels ?? {}) },
+          manualUpgrades: {
+            ...(parsed.manualUpgrades ??
+              (parsed as { upgradeLevels?: Record<string, number> }).upgradeLevels ??
+              {}),
+          },
           generators: { ...(parsed.generators ?? {}) },
           hostAssimilation: { ...(parsed.hostAssimilation ?? {}) },
-          contacts: parsed.contacts ?? [],
+          activeVariantId:
+            parsed.activeVariantId ??
+            (parsed as { activeStrainId?: string }).activeStrainId ??
+            initial.activeVariantId,
+          contacts: (parsed.contacts ?? []).map((c) => ({
+            ...c,
+            variantId: c.variantId ?? (c as { strainId?: string }).strainId ?? NORMAL_VARIANT_ID,
+          })),
           grownOverHosts: parsed.grownOverHosts ?? [],
           networkSeed: parsed.networkSeed ?? initial.networkSeed,
           cataloguedHosts: parsed.cataloguedHosts ?? initial.cataloguedHosts,
@@ -805,8 +806,8 @@ function createGameStore() {
       }
       return ok;
     },
-    get activeStrain() {
-      return getActiveStrain(state);
+    get activeVariant() {
+      return getActiveVariant(state);
     },
     get isStarving() {
       return engineIsStarving(state);
@@ -826,8 +827,6 @@ function createGameStore() {
     get unlockedSystems() {
       return unlockedSystems();
     },
-    isSystemNew,
-    markSystemSeen,
     announceNewSystems,
     synthesisYield() {
       return getSynthesisYield(state);
@@ -912,9 +911,6 @@ function createGameStore() {
     },
     get canGrowTutorial() {
       return canGrowTutorial(state);
-    },
-    get tutorialGeneratorTier() {
-      return state.tutorialGeneratorTier;
     },
     get tutorialGeneratorRate() {
       return tutorialGeneratorRate(state);

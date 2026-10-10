@@ -9,7 +9,7 @@
     getStageBandWidth,
     getStageGrowMm,
     formatReach,
-    getStrain,
+    getVariant,
     resourceLabel,
   } from '@mycosurge/config';
   import {
@@ -360,8 +360,8 @@
     }
   }
 
-  function strainName(strainId: string): string {
-    return getStrain(strainId).name;
+  function variantName(variantId: string): string {
+    return getVariant(variantId).name;
   }
 </script>
 
@@ -672,8 +672,8 @@
                   font-family="var(--font-mono)"
                   font-size={9}
                 >
-                  {hostName(m.hostId)}{m.strainId !== 'normal'
-                    ? ` · ${strainName(m.strainId)}`
+                  {hostName(m.hostId)}{m.variantId !== 'normal'
+                    ? ` · ${variantName(m.variantId)}`
                     : ''}
                 </text>
               {/if}

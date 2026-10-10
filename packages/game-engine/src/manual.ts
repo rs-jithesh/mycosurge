@@ -19,10 +19,10 @@ export interface SynthesisResult {
 }
 
 // ── Manual-action upgrades ──
-// Levels live in the (otherwise unused) `upgradeLevels` record, so no new state field.
+// Levels live in the (otherwise unused) `manualUpgrades` record, so no new state field.
 
 export function getManualUpgradeLevel(state: GameState, id: ManualUpgradeId): number {
-  return state.upgradeLevels[id] ?? 0;
+  return state.manualUpgrades[id] ?? 0;
 }
 
 /** Price of the next level of a manual upgrade, or null when maxed/unknown. */
@@ -32,7 +32,7 @@ export function getManualUpgradeCost(
 ): { lysate: number; biomass: number } | null {
   const def = getManualUpgrade(id);
   if (!def) return null;
-  const level = state.upgradeLevels[id] ?? 0;
+  const level = state.manualUpgrades[id] ?? 0;
   if (level >= def.maxLevel) return null;
   return calculateManualUpgradeCost(def, level);
 }
@@ -48,7 +48,7 @@ export function purchaseManualUpgrade(state: GameState, id: ManualUpgradeId): bo
   const cost = getManualUpgradeCost(state, id)!;
   state.lysateBanked -= cost.lysate;
   state.biomass -= cost.biomass;
-  state.upgradeLevels[id] = (state.upgradeLevels[id] ?? 0) + 1;
+  state.manualUpgrades[id] = (state.manualUpgrades[id] ?? 0) + 1;
   return true;
 }
 

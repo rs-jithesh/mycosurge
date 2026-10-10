@@ -4,7 +4,7 @@ import {
   COMBAT_BIOMASS_PER_DIFFICULTY,
   LYSATE_BASE_REWARD,
   HOST_ASSIMILATION_TARGET,
-  getStrain,
+  getVariant,
 } from '@mycosurge/config';
 import type { CombatStats, GameState } from './state';
 import { enterTrauma, getCombatYieldMultiplier, getEffectiveMaxBiomass, addBiomass } from './math';
@@ -30,12 +30,12 @@ export function calculateVictoryReward(state: GameState, hostId: string): Combat
     };
   }
 
-  const strain = getStrain(state.activeStrainId);
+  const variant = getVariant(state.activeVariantId);
   const yieldMult = getCombatYieldMultiplier(state);
   const biomassEarned = Math.floor(
     (COMBAT_BIOMASS_BASE + COMBAT_BIOMASS_PER_DIFFICULTY * host.difficulty) *
       yieldMult *
-      strain.rewardMult,
+      variant.rewardMult,
   );
   const assimilationGained = 10 + host.difficulty * 5;
 
@@ -44,7 +44,7 @@ export function calculateVictoryReward(state: GameState, hostId: string): Combat
   state.hostAssimilation[hostId] = next;
   const hostDefeated = next >= HOST_ASSIMILATION_TARGET;
 
-  const lysateEarned = Math.floor(LYSATE_BASE_REWARD * host.difficulty * strain.lysateMult);
+  const lysateEarned = Math.floor(LYSATE_BASE_REWARD * host.difficulty * variant.lysateMult);
 
   return {
     victory: true,
@@ -62,19 +62,19 @@ export function calculateVictoryReward(state: GameState, hostId: string): Combat
 export function previewCombatReward(
   state: GameState,
   hostId: string,
-  strainId?: string,
+  variantId?: string,
 ): { biomassEarned: number; lysateEarned: number } {
   const host = HOSTS.find((h) => h.id === hostId);
   if (!host) return { biomassEarned: 0, lysateEarned: 0 };
 
-  const strain = getStrain(strainId ?? state.activeStrainId);
+  const variant = getVariant(variantId ?? state.activeVariantId);
   const yieldMult = getCombatYieldMultiplier(state);
   const biomassEarned = Math.floor(
     (COMBAT_BIOMASS_BASE + COMBAT_BIOMASS_PER_DIFFICULTY * host.difficulty) *
       yieldMult *
-      strain.rewardMult,
+      variant.rewardMult,
   );
-  const lysateEarned = Math.floor(LYSATE_BASE_REWARD * host.difficulty * strain.lysateMult);
+  const lysateEarned = Math.floor(LYSATE_BASE_REWARD * host.difficulty * variant.lysateMult);
   const storableBiomass = Math.min(
     biomassEarned,
     Math.max(0, getEffectiveMaxBiomass(state) - state.biomass),

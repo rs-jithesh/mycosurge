@@ -88,7 +88,7 @@ consistency with the rest of the store API.
 Host nodes steer and fire through a pure AI module: an intent FSM (`idle → reposition →
 engage`), weighted steering (arrival, orbit, wander, separation, containment), lead-aim,
 and fire discipline. Profiles derive from `difficulty` and can be overridden per host via
-`HostDef.ai` (`packages/config/src/hosts.ts`). Movement scales with the encounter strain's
+`HostDef.ai` (`packages/config/src/hosts.ts`). Movement scales with the encounter variant's
 `speedMult` through the arena `moveSpeedMult` modifier.
 
 Tuning knobs (preferred range, move speed, turn rate, aggression, orbit ratio, fire range,

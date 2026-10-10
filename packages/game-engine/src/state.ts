@@ -4,7 +4,7 @@ import {
   MAX_WATER_BASE,
   MAX_NUTRIENT_BASE,
   SONAR_INITIAL_DELAY,
-  NORMAL_STRAIN_ID,
+  NORMAL_VARIANT_ID,
 } from '@mycosurge/config';
 
 export type GamePhase = 'awakening' | 'manager' | 'explorer' | 'tactician' | 'active';
@@ -68,7 +68,7 @@ export interface CombatStats {
 export interface RadarContact {
   id: string;
   hostId: string;
-  strainId: string;
+  variantId: string;
   revealed: boolean;
   timeRemaining: number;
   totalTime: number;
@@ -83,13 +83,13 @@ export interface GameState {
   contacts: RadarContact[];
   sonarTimer: number;
   lastContactHostId: string | null;
-  activeStrainId: string;
+  activeVariantId: string;
   hostAssimilation: Record<string, number>;
   traumaTimer: number;
   isInTrauma: boolean;
   combatStats: CombatStats;
   skillAllocations: Record<string, number>;
-  upgradeLevels: Record<string, number>;
+  manualUpgrades: Record<string, number>;
   /** Number of times the player has respecced mutations (first is free). */
   respecsUsed: number;
   generators: Record<string, number>;
@@ -148,7 +148,7 @@ export function createInitialState(): GameState {
     contacts: [],
     sonarTimer: SONAR_INITIAL_DELAY,
     lastContactHostId: null,
-    activeStrainId: NORMAL_STRAIN_ID,
+    activeVariantId: NORMAL_VARIANT_ID,
     hostAssimilation: {},
     traumaTimer: 0,
     isInTrauma: false,
@@ -172,7 +172,7 @@ export function createInitialState(): GameState {
       evadeChance: 0,
     },
     skillAllocations: {},
-    upgradeLevels: {},
+    manualUpgrades: {},
     respecsUsed: 0,
     generators: {},
     lysateRaw: 0,

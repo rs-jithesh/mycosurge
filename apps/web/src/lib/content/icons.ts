@@ -20,18 +20,7 @@ export type IconKey =
   | 'expand'
   | 'osmotic_pump'
   | 'enzymatic_exudates'
-  | 'mycelial'
-  | 'incursion'
-  | 'structural'
-  | 'aggression'
-  | 'resilience'
-  | 'proliferation'
   | 'spore'
-  | 'pellet'
-  | 'normal'
-  | 'swift'
-  | 'armored'
-  | 'bloated'
   | 'soil_nematode';
 
 export interface IconMeta {
@@ -64,21 +53,7 @@ export const ICON_META: Record<IconKey, IconMeta> = {
     tone: 'violet',
   },
 
-  mycelial: { file: 'mycelial.png', glyph: '❋', label: 'Mycelial', tone: 'mint' },
-  incursion: { file: 'incursion.png', glyph: '◈', label: 'Incursion', tone: 'coral' },
-  structural: { file: 'structural.png', glyph: '⬡', label: 'Structural', tone: 'amber' },
-
-  aggression: { file: 'aggression.png', glyph: '✹', label: 'Aggression', tone: 'coral' },
-  resilience: { file: 'resilience.png', glyph: '❈', label: 'Resilience', tone: 'mint' },
-  proliferation: { file: 'proliferation.png', glyph: '❋', label: 'Proliferation', tone: 'violet' },
-
   spore: { file: 'spore.png', glyph: '•', label: 'Spore', tone: 'mint' },
-  pellet: { file: 'pellet.png', glyph: '·', label: 'Pellet', tone: 'coral' },
-
-  normal: { file: 'normal.png', glyph: '○', label: 'Normal strain', tone: 'mint' },
-  swift: { file: 'swift.png', glyph: '➤', label: 'Swift strain', tone: 'cyan' },
-  armored: { file: 'armored.png', glyph: '⬢', label: 'Armored strain', tone: 'amber' },
-  bloated: { file: 'bloated.png', glyph: '⬤', label: 'Bloated strain', tone: 'violet' },
 
   soil_nematode: { file: 'soil_nematode.png', glyph: 'N', label: 'Soil Nematode', tone: 'coral' },
 };

@@ -243,7 +243,7 @@ export interface ContactMarker {
   hostId: string;
   stage: number;
   revealed: boolean;
-  strainId: string;
+  variantId: string;
   timeRemaining: number;
   totalTime: number;
   x: number;
@@ -280,7 +280,7 @@ export function getContactMarkers(
       hostId: contact.hostId,
       stage: placement.stage,
       revealed: contact.revealed,
-      strainId: contact.strainId,
+      variantId: contact.variantId,
       timeRemaining: contact.timeRemaining,
       totalTime: contact.totalTime,
       x: Math.cos(angle) * localMm,

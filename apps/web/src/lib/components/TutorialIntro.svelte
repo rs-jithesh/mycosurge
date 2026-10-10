@@ -152,7 +152,6 @@
           stageIndex={1}
           {signalSector}
           signalMm={BAND_MM}
-          growStepMm={STEP_MM}
           interactive={!signalReached && canGrow}
           onGrow={growSector}
           label="Your network"

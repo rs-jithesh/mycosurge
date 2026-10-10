@@ -12,7 +12,7 @@ import {
   dismissContact,
   tickRadar,
   clearActiveEncounter,
-  getActiveStrain,
+  getActiveVariant,
   resetRadarSeq,
   ensureUniqueContactIds,
 } from './radar';
@@ -24,7 +24,7 @@ function makeContact(overrides: Partial<RadarContact> = {}): RadarContact {
   return {
     id: 'test-contact',
     hostId: 'bacterial_film',
-    strainId: 'normal',
+    variantId: 'normal',
     revealed: false,
     timeRemaining: 120,
     totalTime: 120,
@@ -213,11 +213,11 @@ describe('engageContact', () => {
     expect(state.currentContactId).toBe('test-contact');
   });
 
-  it('stores the contact strain as the active strain', () => {
+  it('stores the contact variant as the active variant', () => {
     const state = createInitialState();
-    state.contacts = [makeContact({ strainId: 'armored', revealed: true })];
+    state.contacts = [makeContact({ variantId: 'armored', revealed: true })];
     engageContact(state, 'test-contact');
-    expect(getActiveStrain(state).id).toBe('armored');
+    expect(getActiveVariant(state).id).toBe('armored');
   });
 
   it('clears the contact when the encounter ends', () => {
@@ -228,7 +228,7 @@ describe('engageContact', () => {
     expect(state.currentHostId).toBeNull();
     expect(state.currentContactId).toBeNull();
     expect(state.contacts).toHaveLength(0);
-    expect(state.activeStrainId).toBe('normal');
+    expect(state.activeVariantId).toBe('normal');
   });
 });
 
@@ -300,12 +300,12 @@ describe('per-host assimilation', () => {
   });
 });
 
-describe('strain rewards', () => {
-  it('applies the strain reward multiplier', () => {
+describe('variant rewards', () => {
+  it('applies the variant reward multiplier', () => {
     const state: GameState = createInitialState();
     state.water = state.waterCap;
     state.nutrients = state.nutrientsCap;
-    state.activeStrainId = 'bloated';
+    state.activeVariantId = 'bloated';
     const result = calculateVictoryReward(state, 'bacterial_film');
     expect(result.biomassEarned).toBe(64);
     expect(result.lysateEarned).toBe(7);

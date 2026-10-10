@@ -143,7 +143,7 @@ function makeContact(
   return {
     id,
     hostId,
-    strainId: 'normal',
+    variantId: 'normal',
     revealed: false,
     timeRemaining: 60,
     totalTime: 120,

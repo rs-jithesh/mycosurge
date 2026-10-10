@@ -26,7 +26,7 @@ function contact(revealed: boolean): RadarContact {
   return {
     id: 'contact-1',
     hostId: 'mycelium_mite',
-    strainId: 'normal',
+    variantId: 'normal',
     revealed,
     timeRemaining: 60,
     totalTime: 120,

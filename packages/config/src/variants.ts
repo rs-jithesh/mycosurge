@@ -1,7 +1,7 @@
-export type StrainId = 'normal' | 'swift' | 'armored' | 'bloated';
+export type VariantId = 'normal' | 'swift' | 'armored' | 'bloated';
 
-export interface StrainDef {
-  id: StrainId;
+export interface VariantDef {
+  id: VariantId;
   name: string;
   description: string;
   weight: number;
@@ -11,7 +11,7 @@ export interface StrainDef {
   speedMult: number;
 }
 
-export const STRAINS: StrainDef[] = [
+export const VARIANTS: VariantDef[] = [
   {
     id: 'normal',
     name: 'Normal',
@@ -54,8 +54,8 @@ export const STRAINS: StrainDef[] = [
   },
 ];
 
-export function getStrain(id: string): StrainDef {
-  return STRAINS.find((s) => s.id === id) ?? STRAINS[0];
+export function getVariant(id: string): VariantDef {
+  return VARIANTS.find((s) => s.id === id) ?? VARIANTS[0];
 }
 
-export const NORMAL_STRAIN_ID: StrainId = 'normal';
+export const NORMAL_VARIANT_ID: VariantId = 'normal';

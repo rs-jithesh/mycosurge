@@ -105,7 +105,7 @@ export {
   dismissContact,
   engageContact,
   clearActiveEncounter,
-  getActiveStrain,
+  getActiveVariant,
   tickRadar,
   resetRadarSeq,
   ensureUniqueContactIds,

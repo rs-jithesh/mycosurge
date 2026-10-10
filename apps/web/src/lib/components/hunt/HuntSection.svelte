@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { previewCombatReward } from '@mycosurge/game-engine';
-  import { HOSTS, getStrain, SCAN_WATER_COST, resourceLabel } from '@mycosurge/config';
+  import { HOSTS, getVariant, SCAN_WATER_COST, resourceLabel } from '@mycosurge/config';
   import { gameStore } from '$lib/stores/game.svelte';
   import { logStore } from '$lib/stores/log.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
@@ -197,11 +197,11 @@
       <div class="contact-list">
         {#each contacts as contact (contact.id)}
           {@const chost = hostFor(contact.hostId)}
-          {@const cstrain = getStrain(contact.strainId)}
+          {@const cvariant = getVariant(contact.variantId)}
           {@const contactIcon = chost ? hostIconKey(chost.id) : null}
           {@const lvl = chost ? hostLvl(chost.difficulty) : 1}
           {@const assim = gs.hostAssimilation[contact.hostId] ?? 0}
-          {@const preview = previewCombatReward(gs, contact.hostId, contact.strainId)}
+          {@const preview = previewCombatReward(gs, contact.hostId, contact.variantId)}
           <div class="contact-card">
             <div class="contact-top">
               {#if contact.revealed && contactIcon}
@@ -231,8 +231,8 @@
                 {:else}
                   <span class="text-data-mono">Level {lvl}</span>
                 {/if}
-                {#if cstrain.id !== 'normal'}
-                  <span class="strain-tag text-label-caps">{cstrain.name}</span>
+                {#if cvariant.id !== 'normal'}
+                  <span class="variant-tag text-label-caps">{cvariant.name}</span>
                 {/if}
                 <span class="text-data-mono contact-assim">Grown {Math.floor(assim)}/100</span>
               </div>
@@ -241,8 +241,8 @@
                 {resourceLabel('biomass')} · +{preview.lysateEarned}
                 {resourceLabel('lysate')}
               </div>
-              {#if cstrain.id !== 'normal'}
-                <div class="contact-desc">{cstrain.description}</div>
+              {#if cvariant.id !== 'normal'}
+                <div class="contact-desc">{cvariant.description}</div>
               {/if}
               <div class="contact-actions">
                 <button
@@ -672,7 +672,7 @@
     color: var(--alert);
   }
 
-  .strain-tag {
+  .variant-tag {
     color: var(--warning);
     border: 1px solid var(--warning);
     border-radius: var(--radius-pill);

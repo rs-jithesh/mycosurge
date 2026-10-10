@@ -66,7 +66,7 @@
   const host = $derived(HOSTS.find((h) => h.id === hostId));
   const hostIcon = $derived(hostIconKey(hostId));
   const isInTrauma = $derived(gameStore.isInTrauma);
-  const strain = $derived(gameStore.activeStrain);
+  const variant = $derived(gameStore.activeVariant);
 
   onMount(async () => {
     wasTutorial = gameStore.state.gamePhase === 'tactician';
@@ -134,9 +134,9 @@
         },
       },
       {
-        hpMult: strain.hpMult,
-        speedMult: strain.speedMult,
-        moveSpeedMult: strain.speedMult,
+        hpMult: variant.hpMult,
+        speedMult: variant.speedMult,
+        moveSpeedMult: variant.speedMult,
       },
       { melee: wasTutorial },
     );
@@ -319,8 +319,10 @@
               Spores fire on their own — focus on dodging.
             {/if}
           </p>
-          {#if strain.id !== 'normal'}
-            <p class="strain-line text-label-caps">Strain: {strain.name} — {strain.description}</p>
+          {#if variant.id !== 'normal'}
+            <p class="variant-line text-label-caps">
+              Variant: {variant.name} — {variant.description}
+            </p>
           {/if}
         </div>
 
@@ -560,7 +562,7 @@
     font-size: 13px;
   }
 
-  .strain-line {
+  .variant-line {
     margin: 6px 0 0;
     color: var(--warning);
   }

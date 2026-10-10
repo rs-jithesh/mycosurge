@@ -1,6 +1,6 @@
 import {
   HOSTS,
-  STRAINS,
+  VARIANTS,
   BASE_CONTACT_SLOTS,
   MAX_CONTACT_SLOTS,
   RADAR_SLOT_TIERS,
@@ -9,10 +9,10 @@ import {
   CONTACT_LINGER,
   SCAN_WATER_COST,
   isHostUnlocked,
-  getStrain,
-  NORMAL_STRAIN_ID,
+  getVariant,
+  NORMAL_VARIANT_ID,
 } from '@mycosurge/config';
-import type { HostDef, StrainDef, RadarSlotTier } from '@mycosurge/config';
+import type { HostDef, VariantDef, RadarSlotTier } from '@mycosurge/config';
 import type { GameState, RadarContact } from './state';
 
 export const TUTORIAL_HOST_ID = 'soil_nematode';
@@ -65,14 +65,14 @@ function pickHost(pool: HostDef[], lastHostId: string | null): HostDef {
   return usable[Math.floor(Math.random() * usable.length)];
 }
 
-export function pickStrain(): StrainDef {
-  const total = STRAINS.reduce((sum, s) => sum + s.weight, 0);
+export function pickVariant(): VariantDef {
+  const total = VARIANTS.reduce((sum, s) => sum + s.weight, 0);
   let roll = Math.random() * total;
-  for (const s of STRAINS) {
+  for (const s of VARIANTS) {
     roll -= s.weight;
     if (roll <= 0) return s;
   }
-  return STRAINS[0];
+  return VARIANTS[0];
 }
 
 /** Hosts currently eligible to appear as sonar contacts — gated by network reach. */
@@ -83,7 +83,7 @@ export function getUnlockedHosts(state: GameState): HostDef[] {
 /**
  * Species the radar can farm: only hosts the player has already catalogued (first
  * defeat). Expansion and the map unlock *discovery*; the catalogued pool is what the
- * radar pulls repeatable, strained encounters from.
+ * radar pulls repeatable, variant encounters from.
  */
 export function getFarmPool(state: GameState): HostDef[] {
   const known = new Set(state.cataloguedHosts);
@@ -127,12 +127,12 @@ export function rollContact(state: GameState): RadarContact | null {
   if (pool.length === 0) return null;
 
   const host = pickHost(pool, state.lastContactHostId);
-  const strain = pickStrain();
+  const variant = pickVariant();
 
   return {
     id: nextContactId(state),
     hostId: host.id,
-    strainId: strain.id,
+    variantId: variant.id,
     revealed: false,
     timeRemaining: CONTACT_LINGER,
     totalTime: CONTACT_LINGER,
@@ -188,7 +188,7 @@ export function engageContact(state: GameState, contactId: string): boolean {
 
   state.currentHostId = contact.hostId;
   state.currentContactId = contact.id;
-  state.activeStrainId = contact.strainId;
+  state.activeVariantId = contact.variantId;
   state.combatStats.hp = state.combatStats.maxHp;
   return true;
 }
@@ -200,11 +200,11 @@ export function clearActiveEncounter(state: GameState): void {
   }
   state.currentHostId = null;
   state.currentContactId = null;
-  state.activeStrainId = NORMAL_STRAIN_ID;
+  state.activeVariantId = NORMAL_VARIANT_ID;
 }
 
-export function getActiveStrain(state: GameState): StrainDef {
-  return getStrain(state.activeStrainId);
+export function getActiveVariant(state: GameState): VariantDef {
+  return getVariant(state.activeVariantId);
 }
 
 /**

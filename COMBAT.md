@@ -93,7 +93,7 @@ Node behaviour is driven by a small, pure AI in `packages/game-engine/src/combat
   optional `ai` block on `HostDef`. Difficulty 1 hosts are static, difficulty 2 drift,
   difficulty 3+ orbit and dodge.
 
-The movement speed of orbiting hosts also scales with the encounter strain's
+The movement speed of orbiting hosts also scales with the encounter variant's
 `speedMult` (Swift hosts move faster, Bloated slower), passed through the arena
 `moveSpeedMult` modifier.
 
@@ -128,17 +128,17 @@ Mutations on the Evolution page feed directly into the arena via `combatStats`:
 
 Combat yield is additionally gated by Water/Nutrients (see `GAME-DESIGN.md`).
 
-## Strains
+## Variants
 
-Contacts from the Radar may carry a **strain** (see `GAME-DESIGN.md`). When a contact is
-engaged, its strain is stored on the state (`activeStrainId`) and read by:
+Contacts from the Radar may carry a **variant** (see `GAME-DESIGN.md`). When a contact is
+engaged, its variant is stored on the state (`activeVariantId`) and read by:
 
 - `createRadar(…, modifiers)` — `hpMult` scales node HP, `speedMult` scales every host
   projectile, and `moveSpeedMult` scales mobile host movement. The in-arena objective
-  banner shows the strain name.
+  banner shows the variant name.
 - `applyVictory` — `rewardMult` scales Biomass, `lysateMult` scales Lysate.
 
-The active strain resets to `normal` when the encounter ends (victory, defeat, or
+The active variant resets to `normal` when the encounter ends (victory, defeat, or
 retreat).
 
 ## Assimilation

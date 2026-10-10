@@ -13,7 +13,6 @@
     stageIndex = 1,
     signalSector = null,
     signalMm = 0,
-    growStepMm = 0.5,
     interactive = false,
     onGrow,
     label = 'Network',
@@ -26,8 +25,6 @@
     signalSector?: number | null;
     /** Distance (local mm) of the signal. */
     signalMm?: number;
-    /** One growth step (mm), for the "next" ghost outline. */
-    growStepMm?: number;
     interactive?: boolean;
     onGrow?: (sector: number) => void;
     label?: string;

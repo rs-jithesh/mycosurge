@@ -153,14 +153,14 @@ every 20s) while you are idle, up to your **contact-slot limit** — 5 to start,
 **reach-gated upgrades bought with Lysate and Biomass** (the **Extended Range** mutation adds
 one more). Spend 5 Water to **scan** a blip and reveal the host, or **ping
 the substrate** (5 Water) to force a new blip onto a free slot. Revealed contacts show
-level, strain, reward, and how far that host is from being fully grown over. Contacts drift
+level, variant, reward, and how far that host is from being fully grown over. Contacts drift
 away after two minutes if left alone.
 
-### Strains
+### Variants
 
-Any contact can carry a **strain**, a light per-encounter modifier:
+Any contact can carry a **variant**, a light per-encounter modifier:
 
-| Strain  | Odds | Effect                               |
+| Variant | Odds | Effect                               |
 | ------- | ---- | ------------------------------------ |
 | Normal  | 72%  | —                                    |
 | Swift   | 10%  | +30% projectile speed, +25% reward   |

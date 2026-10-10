@@ -20,8 +20,8 @@ export {
 } from './stages';
 export type { StageDef, StageUnit } from './stages';
 
-export { STRAINS, getStrain, NORMAL_STRAIN_ID } from './strains';
-export type { StrainDef, StrainId } from './strains';
+export { VARIANTS, getVariant, NORMAL_VARIANT_ID } from './variants';
+export type { VariantDef, VariantId } from './variants';
 
 export {
   RESOURCES,

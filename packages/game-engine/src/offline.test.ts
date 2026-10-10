@@ -64,7 +64,7 @@ describe('applyOfflineProgress', () => {
       {
         id: 'c1',
         hostId: 'bacterial_film',
-        strainId: 'normal',
+        variantId: 'normal',
         revealed: false,
         timeRemaining: 30,
         totalTime: 120,
