@@ -32,9 +32,11 @@
   let hostMaxHp = $state(1);
   let hostPct = $derived(hostMaxHp > 0 ? Math.max(0, (hostHp / hostMaxHp) * 100) : 0);
   let hpPct = $derived(maxHp > 0 ? Math.max(0, (hp / maxHp) * 100) : 0);
-  // Tutorial melee: charge meter (0–1) and whether the charge input is held.
+  // Charge-slam melee: charge meter (0–1), whether the input is held, and whether the
+  // arena is running melee (vs. the ranged spore shooter, when it is unlocked later).
   let charge = $state(0);
   let charging = $state(false);
+  let meleeMode = $state(true);
   let chargePct = $derived(Math.round(charge * 100));
   let dialogEl = $state<HTMLDivElement>();
   let arenaError = $state(false);
@@ -127,6 +129,7 @@
           hostMaxHp = stats.hostMaxHp;
           charge = stats.charge;
           charging = stats.charging;
+          meleeMode = stats.melee;
           gameStore.updateCombatHp(stats.hp);
         },
         onError: () => {
@@ -138,7 +141,6 @@
         speedMult: variant.speedMult,
         moveSpeedMult: variant.speedMult,
       },
-      { melee: wasTutorial },
     );
   }
 
@@ -303,7 +305,7 @@
             <h2 class="objective-title">Drive off {host?.name ?? hostId}</h2>
           </div>
           <p class="objective-sub">
-            {#if wasTutorial}
+            {#if meleeMode}
               {#if coarsePointer}
                 Drag to steer. Hold the Charge button, then release it to slam into the host.
               {:else}
@@ -352,7 +354,7 @@
                 <path d="M14 6 L18 6 L18 10" />
               </svg>
               <span
-                >{wasTutorial
+                >{meleeMode
                   ? 'Drag to move · hold Charge to slam'
                   : 'Drag to move · spores fire on their own'}</span
               >
@@ -363,7 +365,7 @@
                 <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
               </span>
               <span
-                >{wasTutorial
+                >{meleeMode
                   ? 'Move · hold Space to charge'
                   : 'Move · spores fire on their own'}</span
               >
@@ -377,7 +379,7 @@
           <span>{Math.max(0, Math.ceil(hp))} / {maxHp}</span>
         </div>
 
-        {#if wasTutorial}
+        {#if meleeMode}
           <div class="charge-panel">
             <div class="charge-meter">
               <span class="charge-label text-label-caps" class:full={chargePct >= 100}>

@@ -184,10 +184,12 @@ export interface RadarStats {
   shieldHits: number;
   hostHp: number;
   hostMaxHp: number;
-  /** Charge meter, 0–1 (0 outside melee mode). */
+  /** Charge meter, 0–1 (ranged mode only, currently always 0). */
   charge: number;
   /** True while the charge input is held. */
   charging: boolean;
+  /** True when the arena runs the charge-slam melee (the default). */
+  melee: boolean;
 }
 
 export interface RadarCallbacks {
@@ -240,8 +242,9 @@ export function createRadar(
   const hpMult = modifiers.hpMult ?? 1;
   const speedMult = modifiers.speedMult ?? 1;
   const moveSpeedMult = modifiers.moveSpeedMult ?? 1;
-  // Tutorial melee: no auto-fire — the player charges and slams instead.
-  const melee = options.melee ?? false;
+  // Melee is the default combat: the player charges and slams instead of auto-firing.
+  // Passing `{ melee: false }` restores the spore shooter (used when ranged is unlocked).
+  const melee = options.melee ?? true;
   const host = HOSTS.find((h) => h.id === hostId)!;
   const difficultyMult = 1 + (host.difficulty - 1) * 0.2;
   const nodeCount =
@@ -437,6 +440,7 @@ export function createRadar(
       hostMaxHp: totals.maxHp,
       charge: player.charge,
       charging: player.charging,
+      melee,
     };
     if (
       last &&

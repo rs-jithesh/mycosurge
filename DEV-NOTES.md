@@ -103,12 +103,13 @@ dodge lookahead/commit/cooldown/speed) live as constants in `combat-ai.ts` and a
 by `combat-ai.test.ts`. Re-run `pnpm --filter @mycosurge/game-engine test` after any
 balance change.
 
-**Dodge phase.** Difficulty 3+ hosts (`dodgeSkill > 0`) scan incoming friendly spores for
-their closest point of approach and apply a lateral avoidance force perpendicular to the
+**Dodge phase.** Difficulty 3+ hosts (`dodgeSkill > 0`) scan incoming friendly projectiles
+for their closest point of approach and apply a lateral avoidance force perpendicular to the
 shot, blended in at priority over the base steering. A `dodgeTimer` (commit) and
 `dodgeCooldown` (recovery) gate it so evasions are telegraphed sidesteps rather than
-twitch. The arena passes the live spore pool as `SteeringWorld.threats` (only when
-`dodgeSkill > 0`), reusing a scratch array to avoid per-frame allocation.
+twitch. The arena passes the live projectile pool as `SteeringWorld.threats` (only when
+`dodgeSkill > 0`), reusing a scratch array to avoid per-frame allocation. **Inert while melee
+is the default combat** (no friendly projectiles).
 
 ### Economy & upkeep
 

@@ -60,10 +60,10 @@ mycosurge/
 - **Build order**: `config → game-engine → design-system → web` (Turbo handles via `dependsOn`).
 - **Persistence**: game state auto-saves to `localStorage` key `mycosurge_save` every tick. The
   one-time post-tutorial overlay uses `mycosurge_unlock_seen`.
-- **Pixi arena**: a 500×500 logical canvas scaled to fit its container. Keyboard (WASD/arrows) and
-  touch-drag input; spores auto-fire. Entities are drawn as shapes (coral host tiles, mint player
-  with glow, pill spores, dot pellets), not ASCII. Twelve attack patterns drive hosts — see
-  `COMBAT.md`.
+- **Pixi arena**: a 500×500 logical canvas scaled to fit its container. Keyboard (WASD/arrows)
+  and touch-drag input; **hold Space / the on-screen Charge button to slam** into host nodes.
+  Entities are drawn as shapes (coral host tiles, mint player with glow, dot pellets), not
+  ASCII. Twelve attack patterns drive hosts — see `COMBAT.md`.
 - **ESM only**: all packages are `"type": "module"`.
 
 ## Style & Convention
